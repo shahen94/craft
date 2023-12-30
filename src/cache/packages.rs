@@ -1,9 +1,9 @@
 use std::{env, path::PathBuf};
 
+use async_trait::async_trait;
 use crate::common::{
     contracts::PackageCaching,
-    errors::{GzipDownloadError, PackageNotFoundError},
-    package::Package,
+    errors::GzipDownloadError,
     remote_package::RemotePackage,
     Downloader,
 };
@@ -67,7 +67,7 @@ impl PackagesCache {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait]
 impl PackageCaching for PackagesCache {
     async fn cache(&self, package: &RemotePackage) -> Result<PathBuf, GzipDownloadError> {
         let package_path = self.get_cached_remote_package_path(&package);
