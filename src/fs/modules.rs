@@ -1,11 +1,14 @@
-use std::{fs, io::Write, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 use async_trait::async_trait;
 
-use crate::common::{
-    contracts::Modules,
-    errors::{GzipDownloadError, UninstallError, UnzipError},
-    remote_package::RemotePackage,
+use crate::{
+    cache::PackagesCache,
+    common::{
+        contracts::{Modules, PackageCaching},
+        errors::{GzipDownloadError, UninstallError, UnzipError},
+        remote_package::RemotePackage, Gzip,
+    },
 };
 
 use flate2::read::GzDecoder;
@@ -17,37 +20,24 @@ const TEMPORARY_FOLDER: &str = ".craft";
 #[derive(Debug)]
 pub struct NodeModules {
     pub path: PathBuf,
+    cache: PackagesCache,
 }
 
 impl NodeModules {
     pub fn new(path: &str) -> Self {
         let path = PathBuf::from(path);
-        Self { path }
+        let cache = PackagesCache::new(None);
+
+        Self { path, cache }
     }
 
     pub fn init_folder(&self) {
-        // We should create node_modules if it doesn't exists, and .craft inside of it if it doesn't exists
+        self.cache.init_folder();
 
-        // We should create node_modules/.craft if it doesn't exists
         let craft_path = self.path.join(TEMPORARY_FOLDER);
         if !craft_path.exists() {
             std::fs::create_dir_all(craft_path).unwrap();
         }
-    }
-
-    pub fn get_gzip_name(&self, package: &RemotePackage) -> String {
-        format!("{}-{}.tgz", package.name, package.version)
-    }
-
-    pub fn cleanup_package_temporary_data(
-        &self,
-        archive_path: &PathBuf,
-        unzip_folder: &PathBuf,
-    ) -> Result<(), UnzipError> {
-        fs::remove_file(&archive_path)?;
-        fs::remove_dir(&unzip_folder)?;
-
-        Ok(())
     }
 }
 
@@ -57,75 +47,38 @@ impl Modules for NodeModules {
         &self,
         package: &RemotePackage,
     ) -> Result<PathBuf, GzipDownloadError> {
-        let url = package.dist.tarball.clone();
-        let name = self.get_gzip_name(&package);
-        let path = self.path.join(TEMPORARY_FOLDER).join(name.clone());
+        let cache_path = self.cache.get(&package).await;
 
-        if path.exists() {
-            return Ok(PathBuf::from(name));
+        if cache_path.is_some() {
+            return Ok(cache_path.unwrap());
         }
 
-        let response = reqwest::get(&url).await?;
-        let mut file = fs::File::create(path.clone()).map_err(|err| {
-            let error_msg = format!("Error creating file: {:?}", err);
-            GzipDownloadError::new(error_msg)
-        })?;
+        let dest = self.cache.cache(package).await?;
 
-        if !response.status().is_success() {
-            let error_msg = format!("Package {}@{} not found", package.name, package.version);
-            return Err(GzipDownloadError::new(error_msg));
-        }
-
-        let mut content = response.bytes().await?;
-
-        match file.write_all(&mut content) {
-            Ok(_) => {}
-            Err(error) => {
-                let error_msg = format!("Error writing file: {:?}", error);
-                return Err(GzipDownloadError::new(error_msg));
-            }
-        };
-
-        return Ok(PathBuf::from(name));
+        return Ok(PathBuf::from(dest));
     }
 
     async fn unzip_package(&self, package: &RemotePackage) -> Result<(), UnzipError> {
-        let name = self.get_gzip_name(&package);
-        let archive_path = self.path.join(TEMPORARY_FOLDER).join(name.clone());
-        // We should unzip file in the folder ./node_modules/.craft/gzip-filename/
-        // After unzip we'll receive folder package
-        // we should move this to the ./node_modules/{package_name}
+        let archive_path = self.cache.get(&package).await;
+        let unzip_folder = self.cache.get_temporary_cache_folder();
+        let package_path = self.path.join(&package.name);
 
-        if !archive_path.exists() {
+        if package_path.exists() {
+            return Ok(());
+        }
+
+        if archive_path.is_none() {
             let error_msg = format!("Package {}@{} not found", package.name, package.version);
             return Err(UnzipError::new(error_msg));
         }
 
-        let unzip_folder = self.path.join(TEMPORARY_FOLDER).join(package.name.clone());
-        let final_path = self.path.join(package.name.clone());
+        let archive_path = archive_path.unwrap();
 
-        if final_path.exists() {
-            self.cleanup_package_temporary_data(&archive_path, &unzip_folder)?;
-            return Ok(());
-        }
+        Gzip::extract(&archive_path, &unzip_folder).await?;
 
-        let file = fs::File::open(archive_path.clone()).map_err(|err| {
-            let error_msg = format!("Error opening file: {:?}", err);
-            UnzipError::new(error_msg)
-        })?;
+        let unzip_folder = unzip_folder.join("package");
 
-        let tar = GzDecoder::new(file);
-        let mut archive = Archive::new(tar);
-
-        match archive.unpack(&unzip_folder) {
-            Ok(_) => {}
-            Err(error) => {
-                let error_msg = format!("Error unpacking file: {:?}", error);
-                return Err(UnzipError::new(error_msg));
-            }
-        };
-
-        match fs::rename(unzip_folder.join("package"), final_path) {
+        match fs::rename(&unzip_folder, package_path) {
             Ok(_) => {}
             Err(error) => {
                 let error_msg = format!("Error renaming folder: {:?}", error);
@@ -133,9 +86,8 @@ impl Modules for NodeModules {
             }
         };
 
-        self.cleanup_package_temporary_data(&archive_path, &unzip_folder)?;
+        Ok(())
 
-        return Ok(());
     }
 
     async fn remove_package(&self, package: &str) -> Result<(), UninstallError> {

@@ -7,6 +7,7 @@ mod common;
 mod logger;
 mod fs;
 mod registry;
+mod cache;
 
 use std::process;
 use logger::CraftLogger;

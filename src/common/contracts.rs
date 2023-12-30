@@ -155,3 +155,10 @@ pub trait Modules {
 
     async fn cleanup(&self);
 }
+
+/// PackageCaching trait for caching and getting packages
+#[async_trait]
+pub trait PackageCaching {
+    async fn cache(&self, package: &RemotePackage) -> Result<PathBuf, GzipDownloadError>;
+    async fn get(&self, package: &RemotePackage) -> Option<PathBuf>;
+}

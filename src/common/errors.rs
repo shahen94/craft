@@ -13,3 +13,4 @@ error_impl!(UninstallError);
 convert_from_reqwest!(PackageNotFoundError);
 convert_from_reqwest!(GzipDownloadError);
 convert_from_io!(UnzipError);
+convert_from_io!(GzipDownloadError);
