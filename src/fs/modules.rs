@@ -11,9 +11,6 @@ use crate::{
     },
 };
 
-use flate2::read::GzDecoder;
-use tar::Archive;
-
 const TEMPORARY_FOLDER: &str = ".craft";
 
 /// NodeModules is a struct that implements the Modules trait
