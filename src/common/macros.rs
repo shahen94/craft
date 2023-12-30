@@ -1,3 +1,9 @@
+/// This macro is used to create Error structs and implements new method for them.
+/// 
+/// # Example
+/// ```
+/// error_impl!(GzipDownloadError);
+/// ```
 #[macro_export]
 macro_rules! error_impl {
     ($error:ident) => {
@@ -14,8 +20,12 @@ macro_rules! error_impl {
     };
 }
 
-// create macro to Implement trait to convert reqwest::Error to our own error type
-
+/// This macro is used to implement From<reqwest::Error> for Error structs.
+/// 
+/// # Example
+/// ```
+/// convert_from_reqwest!(PackageNotFoundError);
+/// ```
 #[macro_export]
 macro_rules! convert_from_reqwest {
     ($error:ident) => {
@@ -28,8 +38,13 @@ macro_rules! convert_from_reqwest {
 }
 
 
-// create macro to Implement trait to convert io::Result to our own error type
 
+/// This macro is used to implement From<std::io::Error> for Error structs.
+/// 
+/// # Example
+/// ```
+/// convert_from_io!(UnzipError);
+/// ```
 #[macro_export]
 macro_rules! convert_from_io {
     ($error:ident) => {

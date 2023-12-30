@@ -7,6 +7,7 @@ use crate::common::{
 
 const REGISTRY_URL: &str = "https://registry.npmjs.org";
 
+/// NpmRegistry is a struct that implements the Registry trait
 #[derive(Debug)]
 pub struct NpmRegistry {
     url: String,

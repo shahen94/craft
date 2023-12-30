@@ -13,6 +13,7 @@ use tar::Archive;
 
 const TEMPORARY_FOLDER: &str = ".craft";
 
+/// NodeModules is a struct that implements the Modules trait
 #[derive(Debug)]
 pub struct NodeModules {
     pub path: PathBuf,

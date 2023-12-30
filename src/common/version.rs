@@ -1,3 +1,9 @@
+/// Package version
+/// 
+/// # Example
+/// ```
+/// let version = PackageVersion::new(1, 0, 0);
+/// ```
 #[derive(Debug)]
 pub struct PackageVersion {
   pub major: u64,
