@@ -1,3 +1,4 @@
+[![Build & Test](https://github.com/shahen94/craft/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/shahen94/craft/actions/workflows/rust.yml)
 ```sh
 $ craft install react-native-video-processing
 ```
