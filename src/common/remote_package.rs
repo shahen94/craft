@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// This struct represents a package from the registry.
 /// 
@@ -10,7 +10,7 @@ use serde::Deserialize;
 /// ```
 /// let package: RemotePackage = response.json().await?;
 /// ```
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RemotePackage {
   pub name: String,
 
@@ -35,7 +35,7 @@ pub struct RemotePackage {
 /// let package: RemotePackage = response.json().await?;
 /// package.dist.integrity;
 /// ```
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Distribution {
   pub integrity: String,
   pub shasum: String,

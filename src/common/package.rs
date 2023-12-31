@@ -1,6 +1,4 @@
-use super::{version::PackageVersion, errors::VersionError};
-use semver::Version;
-
+use super::errors::VersionError;
 
 /// Single package with name and version
 /// 

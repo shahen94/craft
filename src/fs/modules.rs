@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use crate::{
     cache::PackagesCache,
     common::{
-        contracts::{Modules, PackageCaching},
+        contracts::Modules,
         errors::{GzipDownloadError, UninstallError, UnzipError},
         package::Package,
         remote_package::RemotePackage,
@@ -33,8 +33,8 @@ impl NodeModules {
     }
 
     /// Initializes the folder structure
-    pub fn init_folder(&self) {
-        self.cache.init_folder();
+    pub async fn init_folder(&self) {
+        self.cache.init_cache().await;
 
         let craft_path = self.path.join(TEMPORARY_FOLDER);
         if !craft_path.exists() {

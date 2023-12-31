@@ -8,7 +8,7 @@ use clap::Parser;
 /// let data = Command::parse();
 /// println!("{:?}", data);
 /// ```
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 #[command(author, version, about, long_about = None)]
 pub struct Command {
     #[clap(subcommand)]
@@ -27,7 +27,7 @@ pub struct Command {
 /// let command = data.command.unwrap();
 /// println!("{:?}", command);
 /// ```
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 pub enum SubCommand {
     #[clap(name = "install")]
     Install(Install),
@@ -48,13 +48,13 @@ pub enum SubCommand {
 ///  SubCommand::Install(install) => install,
 /// _ => panic!("Invalid command")
 /// };
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 pub struct Install {
     #[clap(name = "package")]
     pub package: String,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, Clone)]
 pub enum CacheAction {
     #[clap(name = "clean")]
     Clean,

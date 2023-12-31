@@ -1,11 +1,10 @@
-use async_trait::async_trait;
-
-use crate::common::{
-    contracts::Registry, errors::PackageNotFoundError, package::Package,
-    remote_package::RemotePackage,
+use crate::{
+    cache::RegistryCache,
+    common::{
+        errors::PackageNotFoundError, package::Package,
+        remote_package::RemotePackage,
+    },
 };
-
-use super::registry_cache::RegistryCache;
 
 const REGISTRY_URL: &str = "https://registry.npmjs.org";
 
@@ -13,18 +12,10 @@ const REGISTRY_URL: &str = "https://registry.npmjs.org";
 #[derive(Debug)]
 pub struct NpmRegistry {
     url: String,
-    cache: RegistryCache,
 }
 
 impl NpmRegistry {
-    fn get_package_url(&self, package: &Package) -> String {
-        format!("{}/{}/{}", self.url, package.name, package.version)
-    }
-}
-
-#[async_trait]
-impl Registry for NpmRegistry {
-    fn new(url: Option<&str>) -> Self {
+    pub fn new(url: Option<&str>) -> Self {
         let url = match url {
             Some(url) => url,
             None => REGISTRY_URL,
@@ -32,13 +23,22 @@ impl Registry for NpmRegistry {
 
         Self {
             url: url.to_string(),
-            cache: RegistryCache::new(),
         }
     }
 
-    async fn get_package(&mut self, package: &Package) -> Result<RemotePackage, PackageNotFoundError> {
-        if self.cache.has_package(&package.name) {
-            let package = self.cache.get_package(&package.name).unwrap();
+    fn get_package_url(&self, package: &Package) -> String {
+        format!("{}/{}/{}", self.url, package.name, package.version)
+    }
+}
+
+impl NpmRegistry {
+    pub async fn get_package(
+        &mut self,
+        package: &Package,
+        cache: &RegistryCache
+    ) -> Result<RemotePackage, PackageNotFoundError> {
+        if cache.has_package(&package.name).await {
+            let package = cache.get_package(&package.name).await.unwrap();
             return Ok(package.clone());
         }
 
@@ -49,7 +49,7 @@ impl Registry for NpmRegistry {
         if response.status().is_success() {
             let package: RemotePackage = response.json().await?;
 
-            self.cache.add_package(&package);
+            cache.add_package(&package).await;
             return Ok(package);
         }
 

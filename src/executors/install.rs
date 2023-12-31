@@ -1,17 +1,17 @@
 use std::collections::HashMap;
 
-use async_trait::async_trait;
 use futures::StreamExt;
+use async_recursion::async_recursion;
 
 use crate::{
     common::{
-        contracts::{Actor, Modules, Registry},
+        contracts::Modules,
         errors::{InstallError, UninstallError},
         package::Package,
     },
     fs::{NodeModules, Project},
     logger::CraftLogger,
-    registry::NpmRegistry,
+    registry::NpmRegistry, cache::RegistryCache,
 };
 
 #[derive(Debug)]
@@ -26,10 +26,15 @@ impl InstallActions {
             Some(base_dir) => base_dir,
             None => "./node_modules",
         };
+
         Self {
             registry: NpmRegistry::new(None),
             modules: NodeModules::new(base_dir),
         }
+    }
+
+    pub async fn init_directories(&self) {
+        self.modules.init_folder().await;
     }
 
     pub async fn clean_cache(&self) {
@@ -37,54 +42,54 @@ impl InstallActions {
     }
 }
 
-#[async_trait]
-impl Actor for InstallActions {
-    async fn install_package(&mut self, package: &Package) -> Result<(), InstallError> {
-        let is_installed = self.modules.is_package_installed(&package).await;
+impl InstallActions {
+    #[async_recursion]
+    pub async fn install_package(&mut self, package: &Package, registry_cache: &RegistryCache) -> Result<(), InstallError> {
+      let is_installed = self.modules.is_package_installed(&package).await;
 
-        if is_installed {
-            let msg = format!("{}@{} already installed", package.name, package.version);
+      if is_installed {
+        let msg = format!("{}@{} already installed", package.name, package.version);
 
-            CraftLogger::log(msg);
-            return Ok(());
+        CraftLogger::log(msg);
+        return Ok(());
+      }
+
+      let result = self.registry.get_package(package, registry_cache).await;
+
+      if result.is_err() {
+        return Err(InstallError::new(result.err().unwrap().reason));
+      }
+
+      let result = result.unwrap();
+      self.modules
+        .download_package(&result)
+        .await
+        .map_err(|err| InstallError::new(err.reason))?;
+
+      match self.modules.unzip_package(&result).await {
+        Ok(_) => {}
+        Err(err) => {
+          return Err(InstallError::new(err.reason));
         }
+      }
 
-        let result = self.registry.get_package(package).await;
+      // Recursively call install_package for each dependency
 
-        if result.is_err() {
-            return Err(InstallError::new(result.err().unwrap().reason));
-        }
+      let dependencies = result
+        .dependencies
+        .iter()
+        .chain(result.dev_dependencies.iter())
+        .collect::<HashMap<&String, &String>>();
 
-        let result = result.unwrap();
-        self.modules
-            .download_package(&result)
-            .await
-            .map_err(|err| InstallError::new(err.reason))?;
+      for (name, version) in dependencies.iter() {
+        let package = Package::new((**name).clone(), (**version).clone()).unwrap();
+        self.install_package(&package, registry_cache).await?;
+      }
+      
+      let msg = format!("{}@{} installed", package.name, package.version);
+      CraftLogger::info(msg);
 
-        match self.modules.unzip_package(&result).await {
-            Ok(_) => {}
-            Err(err) => {
-                return Err(InstallError::new(err.reason));
-            }
-        }
-
-        // Recursively call install_package for each dependency
-
-        let dependencies = result
-            .dependencies
-            .iter()
-            .chain(result.dev_dependencies.iter())
-            .collect::<HashMap<&String, &String>>();
-
-        for (name, version) in dependencies.iter() {
-            let package = Package::new((**name).clone(), (**version).clone()).unwrap();
-            self.install_package(&package).await?;
-        }
-        
-        let msg = format!("{}@{} installed", package.name, package.version);
-        CraftLogger::info(msg);
-
-        Ok(())
+      Ok(())
     }
 
     async fn uninstall_package(&self, package: &Package) -> Result<(), UninstallError> {
@@ -100,7 +105,7 @@ impl Actor for InstallActions {
 
     async fn list_packages(&self) {}
 
-    async fn install_all_packages(&self) {
+    pub async fn install_all_packages(&self, registry_cache: &RegistryCache) {
         let project = Project::new(None).await.unwrap();
         self.modules.cleanup().await;
 
@@ -119,7 +124,8 @@ impl Actor for InstallActions {
                 let package = Package::new((**name).clone(), (**version).clone()).unwrap();
 
                 let mut actions = InstallActions::new(None);
-                let data = actions.install_package(&package).await;
+                
+                let data = actions.install_package(&package, registry_cache).await;
 
                 if data.is_err() {
                     let msg = format!("{:?}", data.err().unwrap().reason);
@@ -127,25 +133,5 @@ impl Actor for InstallActions {
                 }
             })
             .await;
-
-        // for (name, version) in dependencies.iter() {
-        //     let package = Package::new((**name).clone(), (**version).clone()).unwrap();
-
-        //     let mut actions = InstallActions::new(None);
-        //     let task = tokio::spawn(async move {
-        //         let data = actions.install_package(&package).await;
-
-        //         if data.is_err() {
-        //             let msg = format!("{:?}", data.err().unwrap().reason);
-        //             CraftLogger::error(msg)
-        //         }
-        //     });
-
-        //     tasks.push(task);
-        // }
-
-        // for task in tasks {
-        //     task.await.unwrap();
-        // }
     }
 }
