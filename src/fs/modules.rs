@@ -7,9 +7,13 @@ use crate::{
     common::{
         contracts::{Modules, PackageCaching},
         errors::{GzipDownloadError, UninstallError, UnzipError},
-        remote_package::RemotePackage, Gzip,
+        package::Package,
+        remote_package::RemotePackage,
+        Gzip,
     },
 };
+
+use super::Project;
 
 const TEMPORARY_FOLDER: &str = ".craft";
 
@@ -17,7 +21,7 @@ const TEMPORARY_FOLDER: &str = ".craft";
 #[derive(Debug)]
 pub struct NodeModules {
     pub path: PathBuf,
-    cache: PackagesCache,
+    pub cache: PackagesCache,
 }
 
 impl NodeModules {
@@ -28,6 +32,7 @@ impl NodeModules {
         Self { path, cache }
     }
 
+    /// Initializes the folder structure
     pub fn init_folder(&self) {
         self.cache.init_folder();
 
@@ -36,10 +41,35 @@ impl NodeModules {
             std::fs::create_dir_all(craft_path).unwrap();
         }
     }
+
+    pub async fn is_package_installed(&self, package: &Package) -> bool {
+        let package_path = self.path.join(&package.name);
+
+        if !package_path.exists() {
+            return false;
+        }
+
+        let package_package_path = package_path.join("package.json");
+
+        let project = match Project::new(Some(package_package_path)).await {
+            Ok(project) => project,
+            Err(_) => return false,
+        };
+
+        if project.version.is_none() {
+            return false;
+        }
+
+        let version = project.version.unwrap();
+
+        version == package.version
+    }
 }
 
 #[async_trait]
 impl Modules for NodeModules {
+    /// Downloads a package
+    /// Either from the cache or from the registry
     async fn download_package(
         &self,
         package: &RemotePackage,
@@ -55,6 +85,8 @@ impl Modules for NodeModules {
         return Ok(PathBuf::from(dest));
     }
 
+    /// Unzips a package
+    /// Requires to have downloaded the package first and to have a cache entry
     async fn unzip_package(&self, package: &RemotePackage) -> Result<(), UnzipError> {
         let archive_path = self.cache.get(&package).await;
         let unzip_folder = self.cache.get_temporary_cache_folder();
@@ -84,9 +116,10 @@ impl Modules for NodeModules {
         };
 
         Ok(())
-
     }
 
+    /// Removes a package
+    ///! Updates the package.json file
     async fn remove_package(&self, package: &str) -> Result<(), UninstallError> {
         let path = self.path.join("node_modules").join(package);
 
@@ -105,6 +138,7 @@ impl Modules for NodeModules {
         return Ok(());
     }
 
+    /// Cleans up the temporary folder
     async fn cleanup(&self) {
         let path = self.path.join(TEMPORARY_FOLDER);
 
@@ -116,5 +150,7 @@ impl Modules for NodeModules {
             Ok(_) => {}
             Err(_) => {}
         };
+
+        self.cache.cleanup_temporary_cache_folder();
     }
 }

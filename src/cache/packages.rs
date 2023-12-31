@@ -65,6 +65,20 @@ impl PackagesCache {
           )
         )
     }
+
+    pub async fn force_clean(&self) -> Result<(), GzipDownloadError> {
+        let temporary_folder = self.get_temporary_cache_folder();
+
+        if temporary_folder.exists() {
+            tokio::fs::remove_dir_all(temporary_folder).await?;
+        }
+
+        if self.directory.exists() {
+            tokio::fs::remove_dir_all(&self.directory).await?;
+        }
+
+        Ok(())
+    }
 }
 
 #[async_trait]

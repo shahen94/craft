@@ -8,34 +8,6 @@ use super::{
     remote_package::RemotePackage,
 };
 
-/// Logger trait for logging messages
-///
-/// # Example
-/// ```
-/// use craft::common::contracts::Logger;
-///
-/// struct ConsoleLogger;
-///
-/// impl Logger for ConsoleLogger {
-///  fn log<S: AsRef<str>>(&self, message: S) {
-///   println!("{}", message.as_ref());
-/// }
-///
-/// fn error<S: AsRef<str>>(&self, message: S) {
-///  println!("{}", message.as_ref());
-/// }
-///
-/// fn warn<S: AsRef<str>>(&self, message: S) {
-///   println!("{}", message.as_ref());
-/// }
-///
-/// }
-pub trait Logger {
-    fn log<S: AsRef<str>>(&self, message: S);
-    fn error<S: AsRef<str>>(&self, message: S);
-    fn warn<S: AsRef<str>>(&self, message: S);
-}
-
 /// Actor trait for installing, uninstalling, updating and listing packages
 /// 
 /// # Example
@@ -74,7 +46,7 @@ pub trait Logger {
 /// ```
 #[async_trait]
 pub trait Actor {
-    async fn install_package(&self, package: &Package) -> Result<(), InstallError>;
+    async fn install_package(&mut self, package: &Package) -> Result<(), InstallError>;
     async fn uninstall_package(&self, package: &Package) -> Result<(), UninstallError>;
     async fn update_package(&self, package: &Package);
     async fn list_packages(&self);
@@ -107,7 +79,7 @@ pub trait PackageJson {
 pub trait Registry {
     fn new(url: Option<&str>) -> Self;
 
-    async fn get_package(&self, package: &Package) -> Result<RemotePackage, PackageNotFoundError>;
+    async fn get_package(&mut self, package: &Package) -> Result<RemotePackage, PackageNotFoundError>;
 }
 
 

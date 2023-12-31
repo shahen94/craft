@@ -18,7 +18,6 @@ impl Downloader {
       )));
     }
 
-    println!("Downloading file from {:?}", path);
     let mut file = File::create(path).await?;
 
     while let Some(chunk) = response.chunk().await? {

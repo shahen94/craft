@@ -10,7 +10,7 @@ use serde::Deserialize;
 /// ```
 /// let package: RemotePackage = response.json().await?;
 /// ```
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct RemotePackage {
   pub name: String,
 
@@ -35,15 +35,15 @@ pub struct RemotePackage {
 /// let package: RemotePackage = response.json().await?;
 /// package.dist.integrity;
 /// ```
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Distribution {
   pub integrity: String,
   pub shasum: String,
   pub tarball: String,
 
   #[serde(rename = "fileCount")]
-  pub file_count: u64,
+  pub file_count: Option<u64>,
 
   #[serde(rename = "unpackedSize")]
-  pub unpacked_size: u64,
+  pub unpacked_size: Option<u64>,
 }

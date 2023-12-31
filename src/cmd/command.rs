@@ -31,6 +31,10 @@ pub struct Command {
 pub enum SubCommand {
     #[clap(name = "install")]
     Install(Install),
+
+    #[clap(name = "cache")]
+    #[clap(subcommand)]
+    Cache(CacheAction),
 }
 
 
@@ -48,5 +52,11 @@ pub enum SubCommand {
 pub struct Install {
     #[clap(name = "package")]
     pub package: String,
+}
+
+#[derive(Debug, Parser)]
+pub enum CacheAction {
+    #[clap(name = "clean")]
+    Clean,
 }
 

@@ -1,7 +1,5 @@
 use colored::*;
 
-use crate::common::contracts::Logger;
-
 /// A logger that prints to stdout.
 /// 
 /// # Examples
@@ -16,28 +14,24 @@ use crate::common::contracts::Logger;
 /// logger.warn("Hello, world!");
 /// ```
 pub struct CraftLogger {
+  #[allow(dead_code)]
   verbose: bool,
 }
 
 impl CraftLogger {
-  pub fn new(verbose: bool) -> Self {
-    Self { verbose }
-  }
-}
-
-impl Logger for CraftLogger {
-  fn log<S: AsRef<str>>(&self, message: S) {
-    if !self.verbose {
-      return;
-    }
+  pub fn log<S: AsRef<str>>(message: S) {
     println!("{}", message.as_ref().green());
   }
 
-  fn error<S: AsRef<str>>(&self, message: S) {
+  pub fn info<S: AsRef<str>>(message: S) {
+    println!("{}", message.as_ref().blue());
+  }
+
+  pub fn error<S: AsRef<str>>(message: S) {
     println!("{}", message.as_ref().red());
   }
 
-  fn warn<S: AsRef<str>>(&self, message: S) {
+  pub fn warn<S: AsRef<str>>(message: S) {
     println!("{}", message.as_ref().yellow());
   }
 }
