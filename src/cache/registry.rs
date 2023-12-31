@@ -95,6 +95,7 @@ impl RegistryCache {
   }
 
   pub async fn clear(&self) {
+    // TODO: Delete registry cache file instead of clearing the registry
     let mut registry = self.registry.lock().await;
     registry.clear();
   }

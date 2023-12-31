@@ -50,7 +50,7 @@ impl Program {
             SubCommand::Cache(action) => match action {
                 CacheAction::Clean => {
                     self.registry_cache.clear().await;
-                    self.package_cache.cleanup_temporary_cache_folder();
+                    self.install_executor.clean_cache().await;
                 }
             },
 
