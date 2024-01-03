@@ -13,10 +13,7 @@ use colored::*;
 /// logger.error("Hello, world!");
 /// logger.warn("Hello, world!");
 /// ```
-pub struct CraftLogger {
-  #[allow(dead_code)]
-  verbose: bool,
-}
+pub struct CraftLogger;
 
 impl CraftLogger {
   pub fn log<S: AsRef<str>>(message: S) {

@@ -1,12 +1,12 @@
 use std::{env, path::PathBuf};
 
-use async_trait::async_trait;
 use crate::common::{
-    contracts::PackageCaching,
     errors::GzipDownloadError,
     remote_package::RemotePackage,
     Downloader,
 };
+
+use super::constants::PACKAGES_CACHE_FOLDER;
 
 #[derive(Debug)]
 pub struct PackagesCache {
@@ -19,7 +19,7 @@ impl PackagesCache {
             Some(directory) => PathBuf::from(directory),
             None => {
                 let mut home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
-                home.push_str("/.craft/cache/packages");
+                home.push_str(PACKAGES_CACHE_FOLDER);
 
                 PathBuf::from(home)
             }
@@ -30,15 +30,15 @@ impl PackagesCache {
         Self { directory }
     }
 
-    pub fn init_folder(&self) {
+    pub async fn init_cache(&self) {
         if !self.directory.exists() {
-            std::fs::create_dir_all(&self.directory).unwrap();
+            tokio::fs::create_dir_all(&self.directory).await.unwrap();
         }
 
         let temporary_folder = self.get_temporary_cache_folder();
 
         if !temporary_folder.exists() {
-            std::fs::create_dir_all(temporary_folder).unwrap();
+            tokio::fs::create_dir_all(temporary_folder).await.unwrap();
         }
     }
 
@@ -81,9 +81,8 @@ impl PackagesCache {
     }
 }
 
-#[async_trait]
-impl PackageCaching for PackagesCache {
-    async fn cache(&self, package: &RemotePackage) -> Result<PathBuf, GzipDownloadError> {
+impl PackagesCache {
+    pub async fn cache(&self, package: &RemotePackage) -> Result<PathBuf, GzipDownloadError> {
         let package_path = self.get_cached_remote_package_path(&package);
 
         if package_path.exists() {
@@ -96,7 +95,7 @@ impl PackageCaching for PackagesCache {
         return Ok(package_path);
     }
 
-    async fn get(&self, package: &RemotePackage) -> Option<PathBuf> {
+    pub async fn get(&self, package: &RemotePackage) -> Option<PathBuf> {
         let package_path = self.get_cached_remote_package_path(&package);
 
         if !package_path.exists() {

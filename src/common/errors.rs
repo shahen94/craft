@@ -8,6 +8,7 @@ error_impl!(UnzipError);
 error_impl!(InstallError);
 error_impl!(UninstallError);
 error_impl!(CacheResetError);
+error_impl!(RegistryCacheError);
 
 
 // reqwest::Error support
@@ -19,3 +20,4 @@ convert_from_io!(UnzipError);
 convert_from_io!(GzipDownloadError);
 convert_from_io!(JsonError);
 convert_from_io!(CacheResetError);
+convert_from_io!(RegistryCacheError);
