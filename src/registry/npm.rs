@@ -12,6 +12,7 @@ const REGISTRY_URL: &str = "https://registry.npmjs.org";
 #[derive(Debug)]
 pub struct NpmRegistry {
     url: String,
+    http: reqwest::Client,
 }
 
 impl NpmRegistry {
@@ -23,6 +24,7 @@ impl NpmRegistry {
 
         Self {
             url: url.to_string(),
+            http: reqwest::Client::new(),
         }
     }
 
@@ -44,7 +46,14 @@ impl NpmRegistry {
 
         let url = self.get_package_url(&package);
 
-        let response = reqwest::get(&url).await?;
+        let response = self.http
+            .get(&url)
+            .header(
+              "Accept",
+              "application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*",
+            )
+            .send()
+            .await?;
 
         if response.status().is_success() {
             let package: RemotePackage = response.json().await?;

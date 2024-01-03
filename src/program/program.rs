@@ -1,7 +1,7 @@
 use std::process;
 
 use crate::{
-    cache::{PackagesCache, RegistryCache},
+    cache::RegistryCache,
     cmd::{CacheAction, Command, Install, SubCommand},
     common::package::Package,
     executors::InstallActions,
@@ -11,7 +11,6 @@ use crate::{
 pub struct Program {
     action: Command,
     registry_cache: RegistryCache,
-    package_cache: PackagesCache,
 
     install_executor: InstallActions,
 }
@@ -19,17 +18,14 @@ pub struct Program {
 impl Program {
     pub async fn new(command: Command) -> Self {
         let registry_cache = RegistryCache::new(None);
-        let package_cache = PackagesCache::new(None);
         let install_executor = InstallActions::new(None);
 
         install_executor.init_directories().await;
         registry_cache.init_cache().await;
-        package_cache.init_cache().await;
 
         Self {
             action: command,
             registry_cache,
-            package_cache,
             install_executor,
         }
     }
@@ -38,6 +34,7 @@ impl Program {
         let command = match self.action.clone().command {
             Some(command) => command,
             None => {
+                // craft
                 self.install_executor
                     .install_all_packages(&self.registry_cache)
                     .await;
@@ -47,6 +44,7 @@ impl Program {
         };
 
         match command {
+            // craft cache clean
             SubCommand::Cache(action) => match action {
                 CacheAction::Clean => {
                     self.registry_cache.clear().await;
@@ -54,6 +52,7 @@ impl Program {
                 }
             },
 
+            // craft install <package>
             SubCommand::Install(Install { package }) => {
                 let (name, version) = Package::parse_package(package);
                 let package = match Package::new(name, version) {

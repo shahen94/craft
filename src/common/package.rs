@@ -56,6 +56,7 @@ impl Package {
       });
     }
 
+    println!("Version: {}", version);
     let escaped_version = version
       .replace("^", "")
       .replace("~", "")

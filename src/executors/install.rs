@@ -9,7 +9,7 @@ use crate::{
         errors::{InstallError, UninstallError},
         package::Package,
     },
-    fs::{NodeModules, Project},
+    node::{NodeModules, Project},
     logger::CraftLogger,
     registry::NpmRegistry, cache::RegistryCache,
 };
@@ -109,15 +109,11 @@ impl InstallActions {
         let project = Project::new(None).await.unwrap();
         self.modules.cleanup().await;
 
-        // let mut tasks = Vec::new();
-
         let dependencies = project
             .dependencies
             .iter()
             .chain(project.dev_dependencies.iter())
             .collect::<HashMap<&String, &String>>();
-
-        // Use futures::stream to run tasks in parallel
 
         futures::stream::iter(dependencies.iter())
             .for_each_concurrent(10, |(name, version)| async move {

@@ -2,10 +2,9 @@ use clap::Parser;
 use cmd::Command;
 
 mod cmd;
-
 mod common;
 mod logger;
-mod fs;
+mod node;
 mod registry;
 mod cache;
 mod executors;
