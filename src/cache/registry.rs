@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc, path::PathBuf, env};
 
 use futures::lock::Mutex;
 
-use crate::common::{remote_package::RemotePackage, errors::RegistryCacheError};
+use crate::{common::{remote_package::RemotePackage, errors::RegistryCacheError}, logger::CraftLogger};
 
 use super::constants::REGISTRY_CACHE_FOLDER;
 
@@ -50,12 +50,11 @@ impl RegistryCache {
   /// 
   /// If cache already exists, it will be loaded into memory
   pub async fn init_cache(&self) {
-    if !self.directory.exists() {
-      println!("Cache file does not exist, creating it...");
-      std::fs::create_dir_all(&self.directory).unwrap();
+    if !self.directory.join(filename).exists() {
+      CraftLogger::info("Registry cache does not exist, creating it.");
+      tokio::fs::create_dir_all(&self.directory).await.unwrap();
     } else {
-
-      println!("Cache file exists, loading it into memory...");
+      CraftLogger::info("Registry cache exists, loading it into memory.");
       let registry = tokio::fs::read_to_string(&self.directory.join(filename)).await.unwrap();
 
       let registry: HashMap<String, RemotePackage> = serde_json::from_str(&registry).unwrap();

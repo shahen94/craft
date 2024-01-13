@@ -1,6 +1,3 @@
-use clap::Parser;
-use cmd::Command;
-
 mod cmd;
 mod common;
 mod logger;
@@ -10,6 +7,8 @@ mod cache;
 mod executors;
 mod program;
 
+use clap::Parser;
+use cmd::Command;
 use program::Program;
 
 #[tokio::main]

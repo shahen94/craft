@@ -51,7 +51,7 @@ impl NodeModules {
 
         let package_package_path = package_path.join("package.json");
 
-        let project = match Project::new(Some(package_package_path)).await {
+        let project = match Project::load(Some(package_package_path)).await {
             Ok(project) => project,
             Err(_) => return false,
         };

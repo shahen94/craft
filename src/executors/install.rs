@@ -83,7 +83,12 @@ impl InstallActions {
 
       for (name, version) in dependencies.iter() {
         let package = Package::new((**name).clone(), (**version).clone()).unwrap();
-        self.install_package(&package, registry_cache).await?;
+        let packages_path = self.modules.path.join(&package.name);
+
+        if !packages_path.exists() {
+          tokio::fs::create_dir_all(&packages_path).await.unwrap();
+        }
+        InstallActions::new(packages_path.to_str()).install_package(&package, registry_cache).await?;
       }
       
       let msg = format!("{}@{} installed", package.name, package.version);
@@ -106,7 +111,7 @@ impl InstallActions {
     async fn list_packages(&self) {}
 
     pub async fn install_all_packages(&self, registry_cache: &RegistryCache) {
-        let project = Project::new(None).await.unwrap();
+        let project = Project::load(None).await.unwrap();
         self.modules.cleanup().await;
 
         let dependencies = project

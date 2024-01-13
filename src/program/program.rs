@@ -34,7 +34,7 @@ impl Program {
         let command = match self.action.clone().command {
             Some(command) => command,
             None => {
-                // craft
+                // $ craft
                 self.install_executor
                     .install_all_packages(&self.registry_cache)
                     .await;
@@ -44,7 +44,7 @@ impl Program {
         };
 
         match command {
-            // craft cache clean
+            // $ craft cache clean
             SubCommand::Cache(action) => match action {
                 CacheAction::Clean => {
                     self.registry_cache.clear().await;
@@ -52,7 +52,7 @@ impl Program {
                 }
             },
 
-            // craft install <package>
+            // $ craft install <package>
             SubCommand::Install(Install { package }) => {
                 let (name, version) = Package::parse_package(package);
                 let package = match Package::new(name, version) {

@@ -42,7 +42,7 @@ impl Project {
     ///
     /// # Errors
     /// * `JsonError` - If the package.json file could not be read
-    pub async fn new(source: Option<PathBuf>) -> Result<Project, JsonError> {
+    pub async fn load(source: Option<PathBuf>) -> Result<Project, JsonError> {
         let source = match source {
             Some(source) => source,
             None => PathBuf::from("package.json"),
