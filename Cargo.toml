@@ -5,6 +5,8 @@ authors = ["Shahen Hovhannisyan <shahen.hovhannisyan.94@gmail.com>"]
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+
 
 [dependencies]
 clap = { version = "4.4.11", features = ["derive"] }

@@ -6,4 +6,4 @@ mod graph;
 
 pub use packages::PackagesCache;
 pub use registry::RegistryCache;
-pub use manager::CacheManager;
+pub use manager::CacheManagerImpl;

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{package::Package, contracts::{Job, Logger}, errors::ExecutionError, logger::CraftLogger};
+use crate::{package::Package, contracts::{Job, Logger}, errors::ExecutionError, logger::CraftLogger, cache::CacheManagerImpl};
 
 pub struct InstallJob<T> where T: Logger {
   package: Package,

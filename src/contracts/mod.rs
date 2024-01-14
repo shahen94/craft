@@ -6,6 +6,7 @@ mod job;
 pub use cache::{
   PersistentCache,
   InMemoryCache,
+  CacheManager,
 };
 
 pub use logger::Logger;

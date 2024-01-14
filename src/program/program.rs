@@ -1,18 +1,31 @@
 use crate::{
-    command::{Command, SubCommand, CacheAction},
+    cache::CacheManagerImpl,
+    command::{CacheAction, Command, SubCommand},
     contracts::{Job, Logger},
     errors::ExecutionError,
+    jobs::CacheJob,
     logger::CraftLogger,
-    package::Package, cache::CacheManager,
+    package::Package,
 };
 
 use crate::jobs::InstallJob;
 
-pub struct Program;
+pub struct Program {
+    cache_manager: CacheManagerImpl,
+}
 
 impl Program {
-    pub async fn execute(cmd: Command) -> Result<(), ExecutionError> {
+    pub fn new() -> Self {
+        Self {
+            cache_manager: CacheManagerImpl::new(),
+        }
+    }
+}
+
+impl Program {
+    pub async fn execute(&mut self, cmd: Command) -> Result<(), ExecutionError> {
         let logger = CraftLogger::new(cmd.verbose);
+
         logger.info(format!(
             "Craft Package Manager: {}",
             env!("CARGO_PKG_VERSION")
@@ -23,7 +36,9 @@ impl Program {
             return Ok(());
         }
 
-        match cmd.command.unwrap() {
+        let command = cmd.command.unwrap();
+
+        match command {
             SubCommand::Install(action) => {
                 logger.debug(format!("Installing package {}", &action.package));
 
@@ -31,17 +46,14 @@ impl Program {
 
                 InstallJob::new(package, logger).run().await.unwrap();
             }
-            SubCommand::Cache(action) => {
-              match action {
+            SubCommand::Cache(action) => match action {
                 CacheAction::Clean => {
-                  logger.info("Cleaning cache");
-                  let cache_manager = CacheManager::new();
-
-                  cache_manager.clean().await;
+                    logger.info("Cleaning cache");
+                    CacheJob::new(None).run().await?;
                 }
-              }
-            }
+            },
         }
+
         Ok(())
     }
 }
