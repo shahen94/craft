@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use super::{RegistryCache, PackagesCache, graph::DependencyGraph};
-use crate::{contracts::{PersistentCache, CacheManager}, package::Package};
+use crate::{contracts::{PersistentCache, CacheManager}, package::{Package, RemotePackage}};
 
 /// CacheManager is a struct that manages all the caches in the application.
 /// 
@@ -39,23 +39,7 @@ impl CacheManagerImpl {
 
 #[async_trait]
 impl CacheManager for CacheManagerImpl {
-  async fn get_registry_cache_path(&self, key: &str) -> Option<Package> {
-    self.registry.get(key).await
-  }
-
-  async fn get_packages_cache_path(&self, key: &str) -> Option<Package> {
-    self.packages.get(key).await
-  }
-
-  async fn set_registry_cache_path(&self, key: &str, value: Package) -> () {
-    self.registry.set(key, value).await
-  }
-
-  async fn set_packages_cache_path(&self, key: &str, value: Package) -> () {
-    self.packages.set(key, value).await
-  }
-
-  async fn init(&self) -> () {
+  async fn init(&mut self) -> () {
     self.registry.init().await.unwrap();
     self.packages.init().await.unwrap();
   }

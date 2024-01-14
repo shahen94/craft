@@ -5,5 +5,5 @@ use crate::errors::ExecutionError;
 
 #[async_trait]
 pub trait Job {
-  async fn run(&self) -> Result<(), ExecutionError>;
+  async fn run(&mut self) -> Result<(), ExecutionError>;
 }

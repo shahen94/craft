@@ -1,7 +1,7 @@
 use crate::{
     cache::CacheManagerImpl,
     command::{CacheAction, Command, SubCommand},
-    contracts::{Job, Logger},
+    contracts::{Job, Logger, CacheManager},
     errors::ExecutionError,
     jobs::CacheJob,
     logger::CraftLogger,
@@ -43,6 +43,7 @@ impl Program {
                 logger.debug(format!("Installing package {}", &action.package));
 
                 let package = Package::new(action.package).unwrap();
+                self.cache_manager.init().await;
 
                 InstallJob::new(package, logger).run().await.unwrap();
             }

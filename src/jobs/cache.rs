@@ -19,7 +19,7 @@ impl CacheJob {
 
 #[async_trait]
 impl Job for CacheJob {
-  async fn run(&self) -> Result<(), ExecutionError> {
+  async fn run(&mut self) -> Result<(), ExecutionError> {
     self.manager.clean().await;
 
     Ok(())

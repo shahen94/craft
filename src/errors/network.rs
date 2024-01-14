@@ -7,4 +7,7 @@ pub enum NetworkError {
 
   #[error("Failed to write file")]
   FailedToWrite(#[from] tokio::io::Error),
+
+  #[error("Failed to fetch package {0}")]
+  FailedToFetchPackage(String),
 }

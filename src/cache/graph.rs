@@ -7,6 +7,7 @@ use crate::contracts::InMemoryCache;
 /// Dependency graph is a representation of a packages and it's dependencies
 /// Since multiple packages can have the same dependency, we'll need to identify them
 /// by their name and version. so we'll not need to fetch the same dependency multiple times.
+/// Example: PackageA@1.0.0 is a dependency for packages PackageB@2.0.0, PackageC@1.1.2
 /// TODO: Add Support for Lockfile
 #[derive(Debug)]
 pub struct DependencyGraph {
