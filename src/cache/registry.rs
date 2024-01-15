@@ -1,5 +1,4 @@
-use std::{collections::HashMap, env, fs::File, path::PathBuf, str::FromStr};
-
+use std::{collections::HashMap, env, fs::File, path::PathBuf};
 use async_trait::async_trait;
 
 use crate::{contracts::PersistentCache, errors::CacheError, package::RemotePackage};

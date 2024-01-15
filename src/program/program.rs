@@ -1,7 +1,11 @@
+use std::sync::Arc;
+
+use tokio::sync::Mutex;
+
 use crate::{
     cache::CacheManagerImpl,
     command::{CacheAction, Command, SubCommand},
-    contracts::{Job, Logger, CacheManager},
+    contracts::{CacheManager, Job, Logger},
     errors::ExecutionError,
     jobs::CacheJob,
     logger::CraftLogger,
@@ -11,13 +15,13 @@ use crate::{
 use crate::jobs::InstallJob;
 
 pub struct Program {
-    cache_manager: CacheManagerImpl,
+    cache_manager: Arc<Mutex<CacheManagerImpl>>,
 }
 
 impl Program {
     pub fn new() -> Self {
         Self {
-            cache_manager: CacheManagerImpl::new(),
+            cache_manager: Arc::new(Mutex::new(CacheManagerImpl::new())),
         }
     }
 }
@@ -35,7 +39,6 @@ impl Program {
             logger.warn("No command provided");
             return Ok(());
         }
-
         let command = cmd.command.unwrap();
 
         match command {
@@ -43,9 +46,16 @@ impl Program {
                 logger.debug(format!("Installing package {}", &action.package));
 
                 let package = Package::new(action.package).unwrap();
-                self.cache_manager.init().await;
+                self.cache_manager
+                  .lock()
+                  .await
+                  .init()
+                  .await;
 
-                InstallJob::new(package, logger).run().await.unwrap();
+                InstallJob::new(package, logger)
+                  .run()
+                  .await
+                  .unwrap();
             }
             SubCommand::Cache(action) => match action {
                 CacheAction::Clean => {

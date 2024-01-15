@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use super::{RegistryCache, PackagesCache, graph::DependencyGraph};
-use crate::{contracts::{PersistentCache, CacheManager}, package::{Package, RemotePackage}};
+use crate::contracts::{PersistentCache, CacheManager};
 
 /// CacheManager is a struct that manages all the caches in the application.
 /// 

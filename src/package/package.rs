@@ -28,10 +28,10 @@ impl Package {
     /// println!("{:?}", package);
     /// ```
     pub fn new(package: String) -> Result<Self, VersionError> {
-        let (name, version) = Package::parse_package(package);
+        let (name, version) = Package::parse_package(&package);
 
         if version == "latest" || version == "*" {
-            return Ok(Self { name, version });
+            return Ok(Self { name, version: "latest".to_owned() });
         }
 
         let data = VersionReq::parse(&version.clone()).map_err(|err| {
@@ -47,17 +47,12 @@ impl Package {
             );
         })?;
 
-        let parsed_version = match (comparator.major, comparator.minor, comparator.patch) {
-            (major, Some(minor), Some(patch)) => format!("{}.{}.{}", major, minor, patch),
-            (major, Some(minor), None) => format!("{}.{}", major, minor),
-            (major, None, None) => format!("{}", major),
-            _ => {
-                return Err(VersionError::Parse(
-                    version,
-                    name,
-                    "Failed to get version".to_string(),
-                ))
-            }
+        let major = comparator.major;
+        let minor = comparator.minor.unwrap_or(0);
+        let patch = comparator.patch.unwrap_or(0);
+
+        let parsed_version = match (major, minor, patch) {
+            (major, minor, patch) => format!("{}.{}.{}", major, minor, patch),
         };
 
         Ok(Self {
@@ -76,7 +71,7 @@ impl Package {
     /// let version = Package::get_version_from_package("lodash@latest");
     /// assert_eq!(version, "latest");
     /// ```
-    pub fn parse_package(package: String) -> (String, String) {
+    pub fn parse_package(package: &str) -> (String, String) {
         let parts = package.split("@").collect::<Vec<&str>>();
         let name = parts[0].to_owned();
 

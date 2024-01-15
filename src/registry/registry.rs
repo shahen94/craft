@@ -22,7 +22,7 @@ impl NpmRegistry {
     }
 
     pub async fn get_package(&mut self, package: Package) -> Result<RemotePackage, NetworkError> {
-        if let Some(remote_package) = self.cache.get(&package.name).await {
+        if let Some(remote_package) = self.cache.get(&format!("{}@{}", &package.name, package.version)).await {
             return Ok(remote_package);
         }
 

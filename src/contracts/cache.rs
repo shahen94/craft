@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{errors::CacheError, package::{Package, RemotePackage}};
+use crate::errors::CacheError;
 
 #[async_trait]
 pub trait PersistentCache<T> {
