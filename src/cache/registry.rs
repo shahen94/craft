@@ -44,7 +44,6 @@ impl PersistentCache<RemotePackage> for RegistryCache {
                 .map_err(|err| CacheError::FileSystemError(err))?;
         } else {
             // load cache
-
             let stored_cache = File::open(self.directory.join("cache.json")).unwrap();
             let stored_cache: HashMap<String, RemotePackage> =
                 serde_json::from_reader(stored_cache).unwrap();

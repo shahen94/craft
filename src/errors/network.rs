@@ -10,4 +10,7 @@ pub enum NetworkError {
 
   #[error("Failed to fetch package {0}")]
   FailedToFetchPackage(String),
+
+  #[error("Failed to fetch version {0}")]
+  FailedToFetchVersion(String),
 }

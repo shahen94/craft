@@ -45,7 +45,7 @@ impl Program {
             SubCommand::Install(action) => {
                 logger.debug(format!("Installing package {}", &action.package));
 
-                let package = Package::new(action.package).unwrap();
+                let package = Package::new(&action.package);
                 self.cache_manager
                   .lock()
                   .await

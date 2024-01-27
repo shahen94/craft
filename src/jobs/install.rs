@@ -75,15 +75,15 @@ impl Job for InstallJob {
     async fn run(&mut self) -> Result<(), ExecutionError> {
         let remote_package = self.fetch_from_registry().await?;
 
-        let all_deps = remote_package
+        let deps = remote_package
             .dependencies
             .iter()
             .chain(remote_package.dev_dependencies.iter());
 
         // Iterate over dependencies and devDependencies and install them
-        for (name, version) in all_deps {
+        for (name, version) in deps {
             let package_name = format!("{}@{}", name, version);
-            let package = Package::new(package_name).expect("Failed to create package");
+            let package = Package::new(&package_name);
 
             InstallJob::extend(package, self).run().await?;
         }

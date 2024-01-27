@@ -1,86 +1,48 @@
-use semver::VersionReq;
+use semver::{VersionReq, Version};
 
-use crate::errors::VersionError;
+use super::info::VersionInfo;
 
-/// Single package with name and version
-///
-/// # Example
-/// ```
-/// let package = Package::new("lodash".to_owned(), "latest".to_owned());
-/// println!("{:?}", package);
-/// ```
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Package {
     pub name: String,
-    pub version: String,
+    pub version: VersionInfo,
+    pub raw_version: String,
 }
 
 impl Package {
-    /// Returns a new instance of Package
-    ///
-    /// # Arguments
-    /// * `name` - A string slice that holds the package name
-    /// * `version` - A string slice that holds the package version
-    ///
-    /// # Example
-    /// ```
-    /// let package = Package::new("lodash".to_owned(), "latest".to_owned());
-    /// println!("{:?}", package);
-    /// ```
-    pub fn new(package: String) -> Result<Self, VersionError> {
-        let (name, version) = Package::parse_package(&package);
+  pub fn new(package: &str) -> Self {
+      let parts = package.rsplitn(2, '@').collect::<Vec<_>>();
 
-        if version == "latest" || version == "*" {
-            return Ok(Self { name, version: "latest".to_owned() });
-        }
+      match parts.len() {
+          1 => Self {
+              name: parts[0].to_string(),
+              version: VersionInfo::new("*"),
+              raw_version: "*".to_string(),
+          },
+          2 => {
+            let escaped_version = if parts[0] == "latest" {
+              "*".to_string()
+            } else {
+              parts[0].to_string()
+            };
 
-        let data = VersionReq::parse(&version.clone()).map_err(|err| {
-            println!("{:?}", version);
-            return VersionError::Parse(version.clone(), name.clone(), err.to_string());
-        })?;
+            return Self {
+              name: if package.starts_with("@") {
+                  format!("{}", parts[1])
+              } else {
+                  parts[1].to_string()
+              },
 
-        let comparator = data.comparators.first().ok_or_else(|| {
-            return VersionError::Parse(
-                version.clone(),
-                name.clone(),
-                "Failed to get comparator".to_string(),
-            );
-        })?;
+              version:VersionInfo::new(&escaped_version),
+              raw_version: parts[0].to_string(),
+          };
+          },
+          _ => panic!("Invalid package name: {}", package),
+      }
+  }
 
-        let major = comparator.major;
-        let minor = comparator.minor.unwrap_or(0);
-        let patch = comparator.patch.unwrap_or(0);
-
-        let parsed_version = match (major, minor, patch) {
-            (major, minor, patch) => format!("{}.{}.{}", major, minor, patch),
-        };
-
-        Ok(Self {
-            name,
-            version: parsed_version,
-        })
-    }
-
-    /// Returns the name and version of the package
-    ///
-    /// # Arguments
-    /// * `package` - A string slice that holds the package name and version
-    ///
-    /// # Example
-    /// ```
-    /// let version = Package::get_version_from_package("lodash@latest");
-    /// assert_eq!(version, "latest");
-    /// ```
-    pub fn parse_package(package: &str) -> (String, String) {
-        let parts = package.split("@").collect::<Vec<&str>>();
-        let name = parts[0].to_owned();
-
-        if parts.len() < 2 {
-            return (name, "latest".to_owned());
-        }
-
-        let version = parts[1].to_owned();
-
-        (name, version)
-    }
+  pub fn satisfies(&self, version: &str) -> bool {
+    // self.version.matches(&Version::parse(version).expect("Invalid version"))
+    false
+  }
 }
