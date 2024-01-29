@@ -122,10 +122,31 @@ impl ToString for VersionField {
 }
 
 // --------------------------------------------
+// Connector
+// --------------------------------------------
+#[derive(Debug)]
+enum Connector {
+    And,
+    Or,
+}
+
+impl FromStr for Connector {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "," | " " => Ok(Connector::And),
+            "|" | "||" => Ok(Connector::Or),
+            _ => Ok(Connector::And),
+        }
+    }
+}
+// --------------------------------------------
 // VersionImpl
 // --------------------------------------------
 #[derive(Debug)]
 struct VersionImpl {
+    connector: Connector,
     inner: Vec<VersionConstraint>,
 }
 
@@ -140,16 +161,16 @@ impl ToString for VersionImpl {
 }
 
 impl VersionImpl {
-    fn parse_constraints(version: &str) -> Vec<VersionConstraint> {
+    fn parse_constraints(version: &str) -> (Connector, Vec<VersionConstraint>) {
         let mut constraints = vec![];
 
-        if version.contains(">") || version.contains("<") {
+        if version.contains(">") || version.contains("<") || version.contains("||") {
             return Self::parse_range(&version);
         }
 
         constraints.push(Self::parse_single_constraint(&version));
 
-        constraints
+        (Connector::And, constraints)
     }
 
     fn parse_single_constraint(version: &str) -> VersionConstraint {
@@ -217,14 +238,14 @@ impl VersionImpl {
         }
     }
 
-    fn parse_range(version: &str) -> Vec<VersionConstraint> {
-        let regex = r"^(?P<start_operator>[<>]=?|~|\^)?(?P<start_major>\d+|x|\*)(?:\.(?P<start_minor>\d+|x|\*))?(?:\.(?P<start_patch>\d+|x|\*))?(?:(?P<connector>,)?\s*(?P<end_operator>[<>]=?|~|\^)?(?P<end_major>\d+|x|\*)(?:\.(?P<end_minor>\d+|x|\*))?(?:\.(?P<end_patch>\d+|x|\*))?)?$";
-        
+    fn parse_range(version: &str) -> (Connector, Vec<VersionConstraint>) {
+        let regex = r"^(?P<start_operator>[<>]=?|~|\^)?(?P<start_major>\d+|x|\*)(?:\.(?P<start_minor>\d+|x|\*))?(?:\.(?P<start_patch>\d+|x|\*))?(?:(?P<connector>,|\|\|)?\s*(?P<end_operator>[<>]=?|~|\^)?(?P<end_major>\d+|x|\*)(?:\.(?P<end_minor>\d+|x|\*))?(?:\.(?P<end_patch>\d+|x|\*))?)?$";
+
         let mut start_operator = Operator::Equal;
         let mut start_major = VersionField::Wildcard;
         let mut start_minor = VersionField::Wildcard;
         let mut start_patch = VersionField::Wildcard;
-        let mut connector = None;
+        let mut connector: Connector = Connector::And;
         let mut end_operator = Operator::Equal;
         let mut end_major = VersionField::Wildcard;
         let mut end_minor = VersionField::Wildcard;
@@ -242,24 +263,27 @@ impl VersionImpl {
 
         if let Some(start_major_value) = captures.name("start_major") {
             if start_major_value.as_str() != "*" && start_major_value.as_str() != "x" {
-                start_major = VersionField::Exact(start_major_value.as_str().parse::<u64>().unwrap());
+                start_major =
+                    VersionField::Exact(start_major_value.as_str().parse::<u64>().unwrap());
             }
         }
 
         if let Some(start_minor_value) = captures.name("start_minor") {
             if start_minor_value.as_str() != "*" && start_minor_value.as_str() != "x" {
-                start_minor = VersionField::Exact(start_minor_value.as_str().parse::<u64>().unwrap());
+                start_minor =
+                    VersionField::Exact(start_minor_value.as_str().parse::<u64>().unwrap());
             }
         }
 
         if let Some(start_patch_value) = captures.name("start_patch") {
             if start_patch_value.as_str() != "*" && start_patch_value.as_str() != "x" {
-                start_patch = VersionField::Exact(start_patch_value.as_str().parse::<u64>().unwrap());
+                start_patch =
+                    VersionField::Exact(start_patch_value.as_str().parse::<u64>().unwrap());
             }
         }
 
         if let Some(connector_value) = captures.name("connector") {
-            connector = Some(connector_value.as_str().to_string());
+            connector = connector_value.as_str().parse::<Connector>().unwrap();
         }
 
         if let Some(end_operator_value) = captures.name("end_operator") {
@@ -296,27 +320,27 @@ impl VersionImpl {
         });
 
         constraints.push(VersionConstraint {
-          operator: end_operator,
-          major: end_major,
-          minor: end_minor,
-          patch: end_patch,
-          pre_release: None,
-          build: None,
-      });
+            operator: end_operator,
+            major: end_major,
+            minor: end_minor,
+            patch: end_patch,
+            pre_release: None,
+            build: None,
+        });
 
-        constraints
+        (connector, constraints)
     }
 }
 
 impl Version for VersionImpl {
     fn new(version: &str) -> Self {
-        let mut inner = Self::parse_constraints(&version);
+        let (connector, inner) = Self::parse_constraints(&version);
 
-        Self { inner }
+        Self { connector, inner }
     }
 
     fn satisfies(&self, version: &str) -> bool {
-        todo!()
+        true
     }
 }
 
@@ -352,32 +376,623 @@ impl Package<VersionImpl> {
 }
 
 fn main() {
-    let versions = vec![
-        "react@16.13.1",
-        "@nest/core@16.13.1",
-        "react@^16.13.1",
-        "react@~16.13.1",
-        "react@16.13",
-        "react@16",
-        "react@^16",
-        "react@~16",
-        "react@16.x",
-        "react@^16.*",
-        "react@~16.*",
-        "react@*",
-        "react@latest",
-        "react@>=10.0.0 <11.0.0",
-        "react@>=10.0.0,<11.0.0",
-        "react@>=10.0.0",
-        "react@<10.0.0",
-        "react@10.0.0||11||13",
+    struct Checks {
+        pub name: String,
+        pub assertions: Vec<String>,
+    }
+    let checks = vec![
+        Checks {
+            name: "react@16.13.1".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16".to_string(),
+                "16.x".to_string(),
+                "16.*".to_string(),
+                "*".to_string(),
+                "latest".to_string(),
+            ],
+        },
+        Checks {
+            name: "@nest/core@16.13.1".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16".to_string(),
+                "16.x".to_string(),
+                "16.*".to_string(),
+                "*".to_string(),
+                "latest".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@^16.13.1".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16".to_string(),
+                "16.x".to_string(),
+                "16.*".to_string(),
+                "*".to_string(),
+                "latest".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@~16.13.1".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16".to_string(),
+                "16.x".to_string(),
+                "16.*".to_string(),
+                "*".to_string(),
+                "latest".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@16.13".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16".to_string(),
+                "16.x".to_string(),
+                "16.*".to_string(),
+                "*".to_string(),
+                "latest".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@16".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16".to_string(),
+                "16.x".to_string(),
+                "16.*".to_string(),
+                "*".to_string(),
+                "latest".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@^16".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16".to_string(),
+                "16.x".to_string(),
+                "16.*".to_string(),
+                "*".to_string(),
+                "latest".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@~16".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16".to_string(),
+                "16.x".to_string(),
+                "16.*".to_string(),
+                "*".to_string(),
+                "latest".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@16.x".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16".to_string(),
+                "16.x".to_string(),
+                "16.*".to_string(),
+                "*".to_string(),
+                "latest".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@^16.*".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16.14".to_string(),
+                "16.15".to_string(),
+                "16.16".to_string(),
+                "16.17".to_string(),
+                "16.18".to_string(),
+                "16.19".to_string(),
+                "16.20".to_string(),
+                "16.21".to_string(),
+                "16.22".to_string(),
+                "16.23".to_string(),
+                "16.24".to_string(),
+                "16.25".to_string(),
+                "16.26".to_string(),
+                "16.27".to_string(),
+                "16.28".to_string(),
+                "16.29".to_string(),
+                "16.30".to_string(),
+                "16.31".to_string(),
+                "16.32".to_string(),
+                "16.33".to_string(),
+                "16.34".to_string(),
+                "16.35".to_string(),
+                "16.36".to_string(),
+                "16.37".to_string(),
+                "16.38".to_string(),
+                "16.39".to_string(),
+                "16.40".to_string(),
+                "16.41".to_string(),
+                "16.42".to_string(),
+                "16.43".to_string(),
+                "16.44".to_string(),
+                "16.45".to_string(),
+                "16.46".to_string(),
+                "16.47".to_string(),
+                "16.48".to_string(),
+                "16.49".to_string(),
+                "16.50".to_string(),
+                "16.51".to_string(),
+                "16.52".to_string(),
+                "16.53".to_string(),
+                "16.54".to_string(),
+                "16.55".to_string(),
+                "16.56".to_string(),
+                "16.57".to_string(),
+                "16.58".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@~16.*".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16.14".to_string(),
+                "16.15".to_string(),
+                "16.16".to_string(),
+                "16.17".to_string(),
+                "16.18".to_string(),
+                "16.19".to_string(),
+                "16.20".to_string(),
+                "16.21".to_string(),
+                "16.22".to_string(),
+                "16.23".to_string(),
+                "16.24".to_string(),
+                "16.25".to_string(),
+                "16.26".to_string(),
+                "16.27".to_string(),
+                "16.28".to_string(),
+                "16.29".to_string(),
+                "16.30".to_string(),
+                "16.31".to_string(),
+                "16.32".to_string(),
+                "16.33".to_string(),
+                "16.34".to_string(),
+                "16.35".to_string(),
+                "16.36".to_string(),
+                "16.37".to_string(),
+                "16.38".to_string(),
+                "16.39".to_string(),
+                "16.40".to_string(),
+                "16.41".to_string(),
+                "16.42".to_string(),
+                "16.43".to_string(),
+                "16.44".to_string(),
+                "16.45".to_string(),
+                "16.46".to_string(),
+                "16.47".to_string(),
+                "16.48".to_string(),
+                "16.49".to_string(),
+                "16.50".to_string(),
+                "16.51".to_string(),
+                "16.52".to_string(),
+                "16.53".to_string(),
+                "16.54".to_string(),
+                "16.55".to_string(),
+                "16.56".to_string(),
+                "16.57".to_string(),
+                "16.58".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@*".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16.14".to_string(),
+                "16.15".to_string(),
+                "16.16".to_string(),
+                "16.17".to_string(),
+                "16.18".to_string(),
+                "16.19".to_string(),
+                "16.20".to_string(),
+                "16.21".to_string(),
+                "16.22".to_string(),
+                "16.23".to_string(),
+                "16.24".to_string(),
+                "16.25".to_string(),
+                "16.26".to_string(),
+                "16.27".to_string(),
+                "16.28".to_string(),
+                "16.29".to_string(),
+                "16.30".to_string(),
+                "16.31".to_string(),
+                "16.32".to_string(),
+                "16.33".to_string(),
+                "16.34".to_string(),
+                "16.35".to_string(),
+                "16.36".to_string(),
+                "16.37".to_string(),
+                "16.38".to_string(),
+                "16.39".to_string(),
+                "16.40".to_string(),
+                "16.41".to_string(),
+                "16.42".to_string(),
+                "16.43".to_string(),
+                "16.44".to_string(),
+                "16.45".to_string(),
+                "16.46".to_string(),
+                "16.47".to_string(),
+                "16.48".to_string(),
+                "16.49".to_string(),
+                "16.50".to_string(),
+                "16.51".to_string(),
+                "16.52".to_string(),
+                "16.53".to_string(),
+                "16.54".to_string(),
+                "16.55".to_string(),
+                "16.56".to_string(),
+                "16.57".to_string(),
+                "16.58".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@latest".to_string(),
+            assertions: vec![
+                "16.13.1".to_string(),
+                "16.13".to_string(),
+                "16.14".to_string(),
+                "16.15".to_string(),
+                "16.16".to_string(),
+                "16.17".to_string(),
+                "16.18".to_string(),
+                "16.19".to_string(),
+                "16.20".to_string(),
+                "16.21".to_string(),
+                "16.22".to_string(),
+                "16.23".to_string(),
+                "16.24".to_string(),
+                "16.25".to_string(),
+                "16.26".to_string(),
+                "16.27".to_string(),
+                "16.28".to_string(),
+                "16.29".to_string(),
+                "16.30".to_string(),
+                "16.31".to_string(),
+                "16.32".to_string(),
+                "16.33".to_string(),
+                "16.34".to_string(),
+                "16.35".to_string(),
+                "16.36".to_string(),
+                "16.37".to_string(),
+                "16.38".to_string(),
+                "16.39".to_string(),
+                "16.40".to_string(),
+                "16.41".to_string(),
+                "16.42".to_string(),
+                "16.43".to_string(),
+                "16.44".to_string(),
+                "16.45".to_string(),
+                "16.46".to_string(),
+                "16.47".to_string(),
+                "16.48".to_string(),
+                "16.49".to_string(),
+                "16.50".to_string(),
+                "16.51".to_string(),
+                "16.52".to_string(),
+                "16.53".to_string(),
+                "16.54".to_string(),
+                "16.55".to_string(),
+                "16.56".to_string(),
+                "16.57".to_string(),
+                "16.58".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@>=10.0.0 <11.0.0".to_string(),
+            assertions: vec![
+                "10.0.0".to_string(),
+                "10.0.1".to_string(),
+                "10.0.2".to_string(),
+                "10.0.3".to_string(),
+                "10.0.4".to_string(),
+                "10.0.5".to_string(),
+                "10.0.6".to_string(),
+                "10.0.7".to_string(),
+                "10.0.8".to_string(),
+                "10.0.9".to_string(),
+                "10.0.10".to_string(),
+                "10.0.11".to_string(),
+                "10.0.12".to_string(),
+                "10.0.13".to_string(),
+                "10.0.14".to_string(),
+                "10.0.15".to_string(),
+                "10.0.16".to_string(),
+                "10.0.17".to_string(),
+                "10.0.18".to_string(),
+                "10.0.19".to_string(),
+                "10.0.20".to_string(),
+                "10.0.21".to_string(),
+                "10.0.22".to_string(),
+                "10.0.23".to_string(),
+                "10.0.24".to_string(),
+                "10.0.25".to_string(),
+                "10.0.26".to_string(),
+                "10.0.27".to_string(),
+                "10.0.28".to_string(),
+                "10.0.29".to_string(),
+                "10.0.30".to_string(),
+                "10.0.31".to_string(),
+                "10.0.32".to_string(),
+                "10.0.33".to_string(),
+                "10.0.34".to_string(),
+                "10.0.35".to_string(),
+                "10.0.36".to_string(),
+                "10.0.37".to_string(),
+                "10.0.38".to_string(),
+                "10.0.39".to_string(),
+                "10.0.40".to_string(),
+                "10.0.41".to_string(),
+                "10.0.42".to_string(),
+                "10.0.43".to_string(),
+                "10.0.44".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@>=10.0.0,<11.0.0".to_string(),
+            assertions: vec![
+                "10.0.0".to_string(),
+                "10.0.1".to_string(),
+                "10.0.2".to_string(),
+                "10.0.3".to_string(),
+                "10.0.4".to_string(),
+                "10.0.5".to_string(),
+                "10.0.6".to_string(),
+                "10.0.7".to_string(),
+                "10.0.8".to_string(),
+                "10.0.9".to_string(),
+                "10.0.10".to_string(),
+                "10.0.11".to_string(),
+                "10.0.12".to_string(),
+                "10.0.13".to_string(),
+                "10.0.14".to_string(),
+                "10.0.15".to_string(),
+                "10.0.16".to_string(),
+                "10.0.17".to_string(),
+                "10.0.18".to_string(),
+                "10.0.19".to_string(),
+                "10.0.20".to_string(),
+                "10.0.21".to_string(),
+                "10.0.22".to_string(),
+                "10.0.23".to_string(),
+                "10.0.24".to_string(),
+                "10.0.25".to_string(),
+                "10.0.26".to_string(),
+                "10.0.27".to_string(),
+                "10.0.28".to_string(),
+                "10.0.29".to_string(),
+                "10.0.30".to_string(),
+                "10.0.31".to_string(),
+                "10.0.32".to_string(),
+                "10.0.33".to_string(),
+                "10.0.34".to_string(),
+                "10.0.35".to_string(),
+                "10.0.36".to_string(),
+                "10.0.37".to_string(),
+                "10.0.38".to_string(),
+                "10.0.39".to_string(),
+                "10.0.40".to_string(),
+                "10.0.41".to_string(),
+                "10.0.42".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@>=10.0.0".to_string(),
+            assertions: vec![
+                "10.0.0".to_string(),
+                "10.0.1".to_string(),
+                "10.0.2".to_string(),
+                "10.0.3".to_string(),
+                "10.0.4".to_string(),
+                "10.0.5".to_string(),
+                "10.0.6".to_string(),
+                "10.0.7".to_string(),
+                "10.0.8".to_string(),
+                "10.0.9".to_string(),
+                "10.0.10".to_string(),
+                "10.0.11".to_string(),
+                "10.0.12".to_string(),
+                "10.0.13".to_string(),
+                "10.0.14".to_string(),
+                "10.0.15".to_string(),
+                "10.0.16".to_string(),
+                "10.0.17".to_string(),
+                "10.0.18".to_string(),
+                "10.0.19".to_string(),
+                "10.0.20".to_string(),
+                "10.0.21".to_string(),
+                "10.0.22".to_string(),
+                "10.0.23".to_string(),
+                "10.0.24".to_string(),
+                "10.0.25".to_string(),
+                "10.0.26".to_string(),
+                "10.0.27".to_string(),
+                "10.0.28".to_string(),
+                "10.0.29".to_string(),
+                "10.0.30".to_string(),
+                "10.0.31".to_string(),
+                "10.0.32".to_string(),
+                "10.0.33".to_string(),
+                "10.0.34".to_string(),
+                "10.0.35".to_string(),
+                "10.0.36".to_string(),
+                "10.0.37".to_string(),
+                "10.0.38".to_string(),
+                "10.0.39".to_string(),
+                "10.0.40".to_string(),
+                "10.0.41".to_string(),
+                "10.0.42".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@<10.0.0".to_string(),
+            assertions: vec![
+                "9.0.0".to_string(),
+                "9.0.1".to_string(),
+                "9.0.2".to_string(),
+                "9.0.3".to_string(),
+                "9.0.4".to_string(),
+                "9.0.5".to_string(),
+                "9.0.6".to_string(),
+                "9.0.7".to_string(),
+                "9.0.8".to_string(),
+                "9.0.9".to_string(),
+                "9.0.10".to_string(),
+                "9.0.11".to_string(),
+                "9.0.12".to_string(),
+                "9.0.13".to_string(),
+                "9.0.14".to_string(),
+                "9.0.15".to_string(),
+                "9.0.16".to_string(),
+                "9.0.17".to_string(),
+                "9.0.18".to_string(),
+                "9.0.19".to_string(),
+                "9.0.20".to_string(),
+                "9.0.21".to_string(),
+                "9.0.22".to_string(),
+                "9.0.23".to_string(),
+                "9.0.24".to_string(),
+                "9.0.25".to_string(),
+                "9.0.26".to_string(),
+                "9.0.27".to_string(),
+                "9.0.28".to_string(),
+                "9.0.29".to_string(),
+                "9.0.30".to_string(),
+                "9.0.31".to_string(),
+                "9.0.32".to_string(),
+                "9.0.33".to_string(),
+                "9.0.34".to_string(),
+                "9.0.35".to_string(),
+                "9.0.36".to_string(),
+                "9.0.37".to_string(),
+                "9.0.38".to_string(),
+                "9.0.39".to_string(),
+                "9.0.40".to_string(),
+                "9.0.41".to_string(),
+                "9.0.42".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@10.0.0||11".to_string(),
+            assertions: vec![
+                "10.0.0".to_string(),
+                "10.0.1".to_string(),
+                "10.0.2".to_string(),
+                "10.0.3".to_string(),
+                "10.0.4".to_string(),
+                "10.0.5".to_string(),
+                "10.0.6".to_string(),
+                "10.0.7".to_string(),
+                "10.0.8".to_string(),
+                "10.0.9".to_string(),
+                "10.0.10".to_string(),
+                "10.0.11".to_string(),
+                "10.0.12".to_string(),
+                "10.0.13".to_string(),
+                "10.0.14".to_string(),
+                "10.0.15".to_string(),
+                "10.0.16".to_string(),
+                "10.0.17".to_string(),
+                "10.0.18".to_string(),
+                "10.0.19".to_string(),
+                "10.0.20".to_string(),
+                "10.0.21".to_string(),
+                "10.0.22".to_string(),
+                "10.0.23".to_string(),
+                "10.0.24".to_string(),
+                "10.0.25".to_string(),
+                "10.0.26".to_string(),
+                "10.0.27".to_string(),
+                "10.0.28".to_string(),
+                "10.0.29".to_string(),
+                "10.0.30".to_string(),
+                "10.0.31".to_string(),
+                "10.0.32".to_string(),
+                "10.0.33".to_string(),
+                "10.0.34".to_string(),
+                "10.0.35".to_string(),
+                "10.0.36".to_string(),
+                "10.0.37".to_string(),
+                "10.0.38".to_string(),
+                "10.0.39".to_string(),
+                "10.0.40".to_string(),
+                "10.0.41".to_string(),
+                "10.0.42".to_string(),
+            ],
+        },
+        Checks {
+            name: "react@>=10.0.0||<=11".to_string(),
+            assertions: vec![
+                "10.0.0".to_string(),
+                "10.0.1".to_string(),
+                "10.0.2".to_string(),
+                "10.0.3".to_string(),
+                "10.0.4".to_string(),
+                "10.0.5".to_string(),
+                "10.0.6".to_string(),
+                "10.0.7".to_string(),
+                "10.0.8".to_string(),
+                "10.0.9".to_string(),
+                "10.0.10".to_string(),
+                "10.0.11".to_string(),
+                "10.0.12".to_string(),
+                "10.0.13".to_string(),
+                "10.0.14".to_string(),
+                "10.0.15".to_string(),
+                "10.0.16".to_string(),
+                "10.0.17".to_string(),
+                "10.0.18".to_string(),
+                "10.0.19".to_string(),
+                "10.0.20".to_string(),
+                "10.0.21".to_string(),
+                "10.0.22".to_string(),
+                "10.0.23".to_string(),
+                "10.0.24".to_string(),
+                "10.0.25".to_string(),
+                "10.0.26".to_string(),
+                "10.0.27".to_string(),
+                "10.0.28".to_string(),
+                "10.0.29".to_string(),
+                "10.0.30".to_string(),
+                "10.0.31".to_string(),
+                "10.0.32".to_string(),
+                "10.0.33".to_string(),
+                "10.0.34".to_string(),
+                "10.0.35".to_string(),
+                "10.0.36".to_string(),
+                "10.0.37".to_string(),
+                "10.0.38".to_string(),
+                "10.0.39".to_string(),
+                "10.0.40".to_string(),
+                "10.0.41".to_string(),
+                "10.0.42".to_string(),
+            ],
+        },
     ];
 
-    // let package = Package::new(package_name)
-    // package.version.satisfies(version) -> true | false;
-
-    for version in versions {
-        let package = Package::new(&version);
-        println!("{:?}", package.version.inner.len());
+    for check in checks {
+        let package = Package::new(&check.name);
+        for assertion in check.assertions {
+            assert!(package.version.satisfies(&assertion));
+        }
     }
 }
