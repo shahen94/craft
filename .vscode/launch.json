@@ -1,0 +1,101 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'craft'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=craft"
+        ],
+        "filter": {
+          "name": "craft",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'check'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=check",
+          "--package=craft"
+        ],
+        "filter": {
+          "name": "check",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'check'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=check",
+          "--package=craft"
+        ],
+        "filter": {
+          "name": "check",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'craft'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=craft",
+          "--package=craft"
+        ],
+        "filter": {
+          "name": "craft",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'craft'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=craft",
+          "--package=craft"
+        ],
+        "filter": {
+          "name": "craft",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

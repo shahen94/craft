@@ -1,12 +1,18 @@
 use regex::Regex;
 use std::{str::FromStr, string::ToString};
 
+const SEMVER_REGEX: &str = r"^(?P<operator>\^|~|=)?(?P<major>\d+|x|\*)(?:\.(?P<minor>\d+|x|\*))?(?:\.(?P<patch>\d+|x|\*))?(?:[-.](?P<alpha>[a-zA-Z0-9-]+))?(?:\+(?P<build>[a-zA-Z0-9-]+))?$";
+
 // --------------------------------------------
 // Version
 // --------------------------------------------
 trait Version: ToString {
     fn new(version: &str) -> Self;
 
+    fn satisfies(&self, version: &str) -> bool;
+}
+
+trait Satisfies {
     fn satisfies(&self, version: &str) -> bool;
 }
 
@@ -17,6 +23,7 @@ trait Version: ToString {
 struct Package<T: Version> {
     pub name: String,
     pub version: T,
+    pub raw_version: String,
 }
 
 // --------------------------------------------
@@ -30,6 +37,110 @@ struct VersionConstraint {
     pub patch: VersionField,
     pub pre_release: Option<String>,
     pub build: Option<String>,
+}
+
+impl VersionConstraint {
+    pub fn parse(version: &str) -> Self {
+        let mut major = VersionField::Wildcard;
+        let mut minor = VersionField::Wildcard;
+        let mut patch = VersionField::Wildcard;
+        let mut pre_release = None;
+        let mut build = None;
+        let mut operator = Operator::Equal;
+
+        if version == "*" || version == "x" || version == "latest" {
+            return VersionConstraint {
+                operator,
+                major,
+                minor,
+                patch,
+                pre_release,
+                build,
+            };
+        }
+
+        let semver_regex = regex::Regex::new(SEMVER_REGEX).unwrap();
+
+        let captures = semver_regex
+            .captures(&version)
+            .expect(format!("Invalid version: {}", version).as_str());
+
+        if let Some(symbol_value) = captures.name("operator") {
+            operator = symbol_value.as_str().parse::<Operator>().unwrap();
+        }
+        if let Some(major_value) = captures.name("major") {
+            if major_value.as_str() != "*" && major_value.as_str() != "x" {
+                major = VersionField::Exact(major_value.as_str().parse::<u64>().unwrap());
+            }
+        }
+
+        if let Some(minor_value) = captures.name("minor") {
+            if minor_value.as_str() != "*" && minor_value.as_str() != "x" {
+                minor = VersionField::Exact(minor_value.as_str().parse::<u64>().unwrap());
+            }
+        }
+
+        if let Some(patch_value) = captures.name("patch") {
+            if patch_value.as_str() != "*" && patch_value.as_str() != "x" {
+                patch = VersionField::Exact(patch_value.as_str().parse::<u64>().unwrap());
+            }
+        }
+
+        if let Some(alpha_value) = captures.name("alpha") {
+            pre_release = Some(alpha_value.as_str().to_string());
+        }
+
+        if let Some(build_value) = captures.name("build") {
+            build = Some(build_value.as_str().to_string());
+        }
+
+        VersionConstraint {
+            operator,
+            major,
+            minor,
+            patch,
+            pre_release,
+            build,
+        }
+    }
+}
+
+impl Satisfies for VersionConstraint {
+    fn satisfies(&self, version: &str) -> bool {
+        let version = VersionConstraint::parse(version);
+
+        if !self.major.satisfies(&version.major.to_string()) {
+            return false;
+        }
+
+        if !self.minor.satisfies(&version.minor.to_string()) {
+            return false;
+        }
+
+        if !self.patch.satisfies(&version.patch.to_string()) {
+            return false;
+        }
+
+        if let Some(pre_release) = &self.pre_release {
+            if let Some(version_pre_release) = &version.pre_release {
+                if pre_release != version_pre_release {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        if let Some(build) = &self.build {
+            if let Some(version_build) = &version.build {
+                if build != version_build {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        true
+    }
 }
 
 impl ToString for VersionConstraint {
@@ -106,7 +217,7 @@ impl ToString for Operator {
 // --------------------------------------------
 // VersionField
 // --------------------------------------------
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum VersionField {
     Exact(u64),
     Wildcard,
@@ -121,10 +232,54 @@ impl ToString for VersionField {
     }
 }
 
+impl Satisfies for VersionField {
+    fn satisfies(&self, version: &str) -> bool {
+        match self {
+            VersionField::Exact(value) => {
+                if version == "*" || version == "x" || version == "latest" {
+                    return true;
+                }
+
+                let version = VersionConstraint::parse(version);
+
+                match version.major {
+                    VersionField::Exact(major) => {
+                        if major != *value {
+                            return false;
+                        }
+                    }
+                    _ => {}
+                }
+
+                match version.minor {
+                    VersionField::Exact(minor) => {
+                        if minor != *value {
+                            return false;
+                        }
+                    }
+                    _ => {}
+                }
+
+                match version.patch {
+                    VersionField::Exact(patch) => {
+                        if patch != *value {
+                            return false;
+                        }
+                    }
+                    _ => {}
+                }
+
+                true
+            }
+            VersionField::Wildcard => true,
+        }
+    }
+}
+
 // --------------------------------------------
 // Connector
 // --------------------------------------------
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum Connector {
     And,
     Or,
@@ -141,13 +296,48 @@ impl FromStr for Connector {
         }
     }
 }
+
+// --------------------------------------------
+// VersionGroup
+// --------------------------------------------
+#[derive(Debug)]
+struct VersionGroup {
+    constraints: Vec<VersionConstraint>,
+    connector: Connector,
+}
+
+impl VersionGroup {
+    pub fn new(constraints: Vec<VersionConstraint>, connector: Connector) -> Self {
+        Self {
+            constraints,
+            connector,
+        }
+    }
+}
+
+impl ToString for VersionGroup {
+    fn to_string(&self) -> String {
+        let mut constraints = self
+            .constraints
+            .iter()
+            .map(|constraint| constraint.to_string())
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        if self.connector == Connector::Or {
+            constraints = format!("({})", constraints);
+        }
+
+        constraints
+    }
+}
+
 // --------------------------------------------
 // VersionImpl
 // --------------------------------------------
 #[derive(Debug)]
 struct VersionImpl {
-    connector: Connector,
-    inner: Vec<VersionConstraint>,
+    inner: Vec<VersionGroup>,
 }
 
 impl ToString for VersionImpl {
@@ -161,91 +351,45 @@ impl ToString for VersionImpl {
 }
 
 impl VersionImpl {
-    fn parse_constraints(version: &str) -> (Connector, Vec<VersionConstraint>) {
-        let mut constraints = vec![];
+    fn parse_constraints(version: &str) -> Vec<VersionGroup> {
+        if version.contains("||") {
+            let parts = version.split("||").collect::<Vec<_>>();
+            let mut groups = vec![];
 
-        if version.contains(">") || version.contains("<") || version.contains("||") {
-            return Self::parse_range(&version);
+            for part in parts {
+                let mut constraints = vec![];
+                if part.contains(">") || part.contains("<") {
+                    constraints.append(&mut Self::parse_range(&part));
+                } else {
+                    constraints.push(VersionConstraint::parse(part));
+                }
+
+                let group = VersionGroup::new(constraints, Connector::Or);
+                groups.push(group);
+            }
+
+            return groups;
         }
 
-        constraints.push(Self::parse_single_constraint(&version));
+        if version.contains(">") || version.contains("<") {
+            let constraints = Self::parse_range(&version);
 
-        (Connector::And, constraints)
+            return vec![VersionGroup::new(constraints, Connector::And)];
+        }
+
+        let constraint = VersionConstraint::parse(version);
+
+        vec![VersionGroup::new(vec![constraint], Connector::And)]
     }
 
-    fn parse_single_constraint(version: &str) -> VersionConstraint {
-        let mut major = VersionField::Wildcard;
-        let mut minor = VersionField::Wildcard;
-        let mut patch = VersionField::Wildcard;
-        let mut pre_release = None;
-        let mut build = None;
-        let mut operator = Operator::Equal;
-
-        if version == "*" || version == "x" || version == "latest" {
-            return VersionConstraint {
-                operator,
-                major,
-                minor,
-                patch,
-                pre_release,
-                build,
-            };
-        }
-
-        let semver_regex = r"^(?P<operator>\^|~|=)?(?P<major>\d+|x|\*)(?:\.(?P<minor>\d+|x|\*))?(?:\.(?P<patch>\d+|x|\*))?(?:[-.](?P<alpha>[a-zA-Z0-9-]+))?(?:\+(?P<build>[a-zA-Z0-9-]+))?$";
-        let semver_regex = regex::Regex::new(semver_regex).unwrap();
-
-        let captures = semver_regex
-            .captures(&version)
-            .expect(format!("Invalid version: {}", version).as_str());
-
-        if let Some(symbol_value) = captures.name("operator") {
-            operator = symbol_value.as_str().parse::<Operator>().unwrap();
-        }
-        if let Some(major_value) = captures.name("major") {
-            if major_value.as_str() != "*" && major_value.as_str() != "x" {
-                major = VersionField::Exact(major_value.as_str().parse::<u64>().unwrap());
-            }
-        }
-
-        if let Some(minor_value) = captures.name("minor") {
-            if minor_value.as_str() != "*" && minor_value.as_str() != "x" {
-                minor = VersionField::Exact(minor_value.as_str().parse::<u64>().unwrap());
-            }
-        }
-
-        if let Some(patch_value) = captures.name("patch") {
-            if patch_value.as_str() != "*" && patch_value.as_str() != "x" {
-                patch = VersionField::Exact(patch_value.as_str().parse::<u64>().unwrap());
-            }
-        }
-
-        if let Some(alpha_value) = captures.name("alpha") {
-            pre_release = Some(alpha_value.as_str().to_string());
-        }
-
-        if let Some(build_value) = captures.name("build") {
-            build = Some(build_value.as_str().to_string());
-        }
-
-        VersionConstraint {
-            operator,
-            major,
-            minor,
-            patch,
-            pre_release,
-            build,
-        }
-    }
-
-    fn parse_range(version: &str) -> (Connector, Vec<VersionConstraint>) {
+    fn parse_range(version: &str) -> Vec<VersionConstraint> {
         let regex = r"^(?P<start_operator>[<>]=?|~|\^)?(?P<start_major>\d+|x|\*)(?:\.(?P<start_minor>\d+|x|\*))?(?:\.(?P<start_patch>\d+|x|\*))?(?:(?P<connector>,|\|\|)?\s*(?P<end_operator>[<>]=?|~|\^)?(?P<end_major>\d+|x|\*)(?:\.(?P<end_minor>\d+|x|\*))?(?:\.(?P<end_patch>\d+|x|\*))?)?$";
 
         let mut start_operator = Operator::Equal;
         let mut start_major = VersionField::Wildcard;
         let mut start_minor = VersionField::Wildcard;
         let mut start_patch = VersionField::Wildcard;
-        let mut connector: Connector = Connector::And;
+
         let mut end_operator = Operator::Equal;
         let mut end_major = VersionField::Wildcard;
         let mut end_minor = VersionField::Wildcard;
@@ -282,10 +426,6 @@ impl VersionImpl {
             }
         }
 
-        if let Some(connector_value) = captures.name("connector") {
-            connector = connector_value.as_str().parse::<Connector>().unwrap();
-        }
-
         if let Some(end_operator_value) = captures.name("end_operator") {
             end_operator = end_operator_value.as_str().parse::<Operator>().unwrap();
         }
@@ -310,33 +450,47 @@ impl VersionImpl {
 
         let mut constraints = vec![];
 
-        constraints.push(VersionConstraint {
-            operator: start_operator,
-            major: start_major,
-            minor: start_minor,
-            patch: start_patch,
-            pre_release: None,
-            build: None,
-        });
+        // Check if there was any start version specified
 
-        constraints.push(VersionConstraint {
-            operator: end_operator,
-            major: end_major,
-            minor: end_minor,
-            patch: end_patch,
-            pre_release: None,
-            build: None,
-        });
+        if start_major != VersionField::Wildcard
+            || start_minor != VersionField::Wildcard
+            || start_patch != VersionField::Wildcard
+        {
+            constraints.push(VersionConstraint {
+                operator: start_operator,
+                major: start_major,
+                minor: start_minor,
+                patch: start_patch,
+                pre_release: None,
+                build: None,
+            });
+        }
 
-        (connector, constraints)
+        // Check if there was any end version specified
+
+        if end_major != VersionField::Wildcard
+            || end_minor != VersionField::Wildcard
+            || end_patch != VersionField::Wildcard
+        {
+            constraints.push(VersionConstraint {
+                operator: end_operator,
+                major: end_major,
+                minor: end_minor,
+                patch: end_patch,
+                pre_release: None,
+                build: None,
+            });
+        }
+
+        constraints
     }
 }
 
 impl Version for VersionImpl {
     fn new(version: &str) -> Self {
-        let (connector, inner) = Self::parse_constraints(&version);
+        let inner = Self::parse_constraints(&version);
 
-        Self { connector, inner }
+        Self { inner }
     }
 
     fn satisfies(&self, version: &str) -> bool {
@@ -352,6 +506,7 @@ impl Package<VersionImpl> {
             1 => Self {
                 name: parts[0].to_string(),
                 version: VersionImpl::new("*"),
+                raw_version: "*".to_string(),
             },
             2 => {
                 let escaped_version = if parts[0] == "latest" {
@@ -368,6 +523,7 @@ impl Package<VersionImpl> {
                     },
 
                     version: VersionImpl::new(&escaped_version),
+                    raw_version: escaped_version,
                 };
             }
             _ => panic!("Invalid package name: {}", package_name),
@@ -987,12 +1143,68 @@ fn main() {
                 "10.0.42".to_string(),
             ],
         },
+        Checks {
+          name: "react@>=10.0.0<13||>=11<15".to_string(),
+          assertions: vec![
+              "10.0.0".to_string(),
+              "10.0.1".to_string(),
+              "10.0.2".to_string(),
+              "10.0.3".to_string(),
+              "10.0.4".to_string(),
+              "10.0.5".to_string(),
+              "10.0.6".to_string(),
+              "10.0.7".to_string(),
+              "10.0.8".to_string(),
+              "10.0.9".to_string(),
+              "10.0.10".to_string(),
+              "10.0.11".to_string(),
+              "10.0.12".to_string(),
+              "10.0.13".to_string(),
+              "10.0.14".to_string(),
+              "10.0.15".to_string(),
+              "10.0.16".to_string(),
+              "10.0.17".to_string(),
+              "10.0.18".to_string(),
+              "10.0.19".to_string(),
+              "10.0.20".to_string(),
+              "10.0.21".to_string(),
+              "10.0.22".to_string(),
+              "10.0.23".to_string(),
+              "10.0.24".to_string(),
+              "10.0.25".to_string(),
+              "10.0.26".to_string(),
+              "10.0.27".to_string(),
+              "10.0.28".to_string(),
+              "10.0.29".to_string(),
+              "10.0.30".to_string(),
+              "10.0.31".to_string(),
+              "10.0.32".to_string(),
+              "10.0.33".to_string(),
+              "10.0.34".to_string(),
+              "10.0.35".to_string(),
+              "10.0.36".to_string(),
+              "10.0.37".to_string(),
+              "10.0.38".to_string(),
+              "10.0.39".to_string(),
+              "10.0.40".to_string(),
+              "10.0.41".to_string(),
+              "10.0.42".to_string(),
+          ],
+      },
     ];
 
     for check in checks {
         let package = Package::new(&check.name);
+
+        println!("Package version: {}", package.raw_version);
+        println!("Parsed groups count: {}", package.version.inner.len());
+        println!(
+          "Parsed constraints count: {}",
+          package.version.inner.iter().fold(0, |acc, group| acc + group.constraints.len())
+        );
         for assertion in check.assertions {
-            assert!(package.version.satisfies(&assertion));
+            println!("{}: {}", assertion, package.version.satisfies(&assertion));
         }
+        println!("--------------------------------------------\n\n\n");
     }
 }
