@@ -1,0 +1,1 @@
+pub const SEMVER_REGEX: &str = r"^(?P<operator>\^|~|=)?(?P<major>\d+|x|\*)(?:\.(?P<minor>\d+|x|\*))?(?:\.(?P<patch>\d+|x|\*))?(?:[-.](?P<alpha>[a-zA-Z0-9-]+))?(?:\+(?P<build>[a-zA-Z0-9-]+))?$";

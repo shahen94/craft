@@ -1,11 +1,8 @@
-use semver::{VersionReq, Version};
-
-use super::info::VersionInfo;
-
+use super::version::{contracts::Version, VersionImpl};
 #[derive(Debug, Clone)]
 pub struct Package {
     pub name: String,
-    pub version: VersionInfo,
+    pub version: VersionImpl,
     pub raw_version: String,
 }
 
@@ -16,7 +13,7 @@ impl Package {
       match parts.len() {
           1 => Self {
               name: parts[0].to_string(),
-              version: VersionInfo::new("*"),
+              version: Version::new("*"),
               raw_version: "*".to_string(),
           },
           2 => {
@@ -33,7 +30,7 @@ impl Package {
                   parts[1].to_string()
               },
 
-              version:VersionInfo::new(&escaped_version),
+              version:Version::new(&escaped_version),
               raw_version: parts[0].to_string(),
           };
           },

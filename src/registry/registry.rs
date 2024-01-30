@@ -2,7 +2,7 @@ use crate::{
     cache::RegistryCache,
     contracts::PersistentCache,
     errors::NetworkError,
-    package::{Package, RemotePackage, FullPackage},
+    package::{Package, RemotePackage, FullPackage, contracts::Version},
 };
 
 const REGISTRY_URL: &str = "https://registry.npmjs.org";
