@@ -1,5 +1,4 @@
 mod package;
-mod info;
 mod remote_package;
 mod full_package;
 mod version;
