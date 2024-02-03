@@ -2,14 +2,14 @@ use std::{collections::HashMap, env, path::PathBuf};
 
 use async_trait::async_trait;
 
-use crate::{contracts::PersistentCache, errors::CacheError, package::Package};
+use crate::{contracts::PersistentCache, errors::CacheError};
 
 use super::constants::PACKAGES_CACHE_FOLDER;
 
 #[derive(Debug)]
 pub struct PackagesCache {
     pub directory: PathBuf,
-    pub cache: Vec<String>,
+    pub cache: HashMap<String, bool>,
 }
 
 impl PackagesCache {
@@ -23,7 +23,7 @@ impl PackagesCache {
 
         Self {
             directory,
-            cache: Vec::new(),
+            cache: HashMap::new(),
         }
     }
 
@@ -44,27 +44,29 @@ impl PersistentCache<PathBuf> for PackagesCache {
                 .await
                 .map_err(|err| CacheError::FileSystemError(err))?;
 
-              println!("Packages cache directory created");
+            return Ok(());
         }
 
         // We need to ls the directory and populate the cache
 
-        let mut cache = Vec::new();
+        let mut cache = HashMap::new();
 
         let mut entries = tokio::fs::read_dir(&self.directory).await?;
 
         while let Ok(entry) = entries.next_entry().await {
             let entry = match entry {
                 Some(entry) => entry,
-                None => return Ok(()),
+                None => break,
             };
             let path = entry.path();
 
             if path.is_file() {
                 let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
-                cache.push(file_name);
+                cache.insert(file_name, true);
             }
         }
+
+        self.cache = cache;
 
         Ok(())
     }
@@ -87,10 +89,10 @@ impl PersistentCache<PathBuf> for PackagesCache {
         None
     }
     async fn set(&mut self, key: &str, _: PathBuf) -> () {
-        self.cache.push(key.to_string());
+        self.cache.insert(key.to_string(), true);
     }
 
     async fn has(&self, key: &str) -> bool {
-        self.cache.contains(&key.to_owned())
+        self.cache.contains_key(&key.to_owned())
     }
 }
