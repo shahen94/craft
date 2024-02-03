@@ -18,6 +18,7 @@ impl FromStr for Operator {
       match s {
           "~" => Ok(Operator::Tilde),
           "^" => Ok(Operator::Caret),
+          "~>" => Ok(Operator::Tilde),
           ">" => Ok(Operator::GreaterThan),
           ">=" => Ok(Operator::GreaterThanOrEqual),
           "<" => Ok(Operator::LessThan),

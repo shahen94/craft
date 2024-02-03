@@ -1,11 +1,12 @@
 use clap::Parser;
-use craft::command;
-use craft::program;
+use craft::command::Command;
+use craft::program::Program;
 
 #[tokio::main]
 async fn main() -> () {
-    let cmd = command::Command::parse();
-    let mut craft = program::Program::new();
+  let args = Command::parse();
 
-    craft.execute(cmd).await.unwrap();
+  let mut program = Program::new();
+
+  program.execute(args).await;
 }

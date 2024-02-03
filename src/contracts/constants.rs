@@ -1,0 +1,1 @@
+pub const CRAFT_VERBOSE_LOGGING: &str = "CRAFT_VERBOSE";

@@ -1,6 +1,6 @@
 use colored::Colorize;
 
-use crate::contracts::Logger;
+use crate::contracts::{Logger, CRAFT_VERBOSE_LOGGING};
 
 #[derive(Debug, Clone)]
 pub struct CraftLogger {
@@ -10,6 +10,20 @@ pub struct CraftLogger {
 impl CraftLogger {
     pub fn new(verbose: bool) -> Self {
         CraftLogger { verbose }
+    }
+
+    pub fn is_verbose() -> bool {
+        let verbose = std::env::var(CRAFT_VERBOSE_LOGGING).unwrap_or("false".to_string());
+        let verbose = verbose.parse::<bool>().unwrap_or(false);
+
+        verbose
+    }
+
+    pub fn verbose<S: AsRef<str>>(message: S) {
+      if CraftLogger::is_verbose() {
+        let prefix = "[CraftLog]:".bold().red();
+        println!("{} {}", prefix, message.as_ref().bold().purple());
+      }
     }
 }
 
@@ -22,17 +36,15 @@ impl Logger for CraftLogger {
         println!("{}", message.as_ref().blue());
     }
 
-    fn debug<S: AsRef<str>>(&self, message: S) {
-        if self.verbose {
-            println!("{}", message.as_ref().bold().purple());
-        }
-    }
-
     fn error<S: AsRef<str>>(&self, message: S) {
         println!("{}", message.as_ref().red());
     }
 
     fn warn<S: AsRef<str>>(&self, message: S) {
         println!("{}", message.as_ref().yellow());
+    }
+
+    fn set_verbose(&mut self, verbose: bool) -> () {
+        self.verbose = verbose;
     }
 }

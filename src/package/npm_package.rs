@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 /// let package: RemotePackage = response.json().await?;
 /// ```
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct RemotePackage {
+pub struct NpmPackage {
   pub name: String,
 
   pub version: String,
@@ -26,6 +26,12 @@ pub struct RemotePackage {
   pub dist: Distribution,
 }
 
+impl PartialEq for NpmPackage {
+  fn eq(&self, other: &Self) -> bool {
+    self.name == other.name && self.version == other.version
+  }
+}
+
 /// This struct represents the distribution of a package.
 /// 
 /// It is used to deserialize the JSON response from the registry.
@@ -37,7 +43,7 @@ pub struct RemotePackage {
 /// ```
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Distribution {
-  pub integrity: String,
+  pub integrity: Option<String>,
   pub shasum: String,
   pub tarball: String,
 
@@ -46,4 +52,10 @@ pub struct Distribution {
 
   #[serde(rename = "unpackedSize")]
   pub unpacked_size: Option<u64>,
+}
+
+impl ToString for NpmPackage {
+  fn to_string(&self) -> String {
+    format!("{}@{}", self.name, self.version)
+  }
 }

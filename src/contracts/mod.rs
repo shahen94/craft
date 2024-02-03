@@ -1,7 +1,9 @@
 mod cache;
 mod registry;
 mod logger;
-mod job;
+mod pipe;
+mod constants;
+mod pipe_resolve_artifact;
 
 pub use cache::{
   PersistentCache,
@@ -9,6 +11,8 @@ pub use cache::{
   CacheManager,
 };
 
+pub use constants::CRAFT_VERBOSE_LOGGING;
 pub use logger::Logger;
 pub use registry::Registry;
-pub use job::Job;
+pub use pipe::Pipe;
+pub use pipe_resolve_artifact::PipeResolveArtifact;

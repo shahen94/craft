@@ -33,7 +33,7 @@ impl VersionConstraint {
         let semver_regex = regex::Regex::new(SEMVER_REGEX).unwrap();
 
         let captures = semver_regex
-            .captures(&version)
+            .captures(&version.trim())
             .expect(format!("Invalid version: {}", version).as_str());
 
         if let Some(symbol_value) = captures.name("operator") {

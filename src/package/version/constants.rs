@@ -1,1 +1,3 @@
-pub const SEMVER_REGEX: &str = r"^(?P<operator>\^|~|=)?(?P<major>\d+|x|\*)(?:\.(?P<minor>\d+|x|\*))?(?:\.(?P<patch>\d+|x|\*))?(?:[-.](?P<alpha>[a-zA-Z0-9-]+))?(?:\+(?P<build>[a-zA-Z0-9-]+))?$";
+pub const SEMVER_REGEX: &str = r"^(?P<operator>\^|~|=)?\s?(?P<major>\d+|x|\*)(?:\.(?P<minor>\d+|x|\*))?(?:\.(?P<patch>\d+|x|\*))?(?:[-.](?P<alpha>[a-zA-Z0-9-]+(?:\.\w+)?))?(?:\+(?P<build>[a-zA-Z0-9-+]+))?$";
+pub const RANGE_REGEX: &str = r"^(\s+)?(?P<start_operator>~?[<>]=?|~|\^)?\s?(?P<start_major>\d+|x|\*)(?:\.(?P<start_minor>\d+|x|\*))?(?:\.(?P<start_patch>\d+|x|\*))?(?:(?P<connector>,|\|\|)?\s*(?P<end_operator>[<>]=?|~|\^)?\s*(?P<end_major>\d+|x|\*)(?:\.(?P<end_minor>\d+|x|\*))?(?:\.(?P<end_patch>\d+|x|\*))?)?$";
+pub const LINEAR_RANGE_REGEX: &str = r"^(?P<operator>\^|~|)?(?P<start_major>(\d)+|x|\*)\.?(?P<start_minor>(\d)+|x|\*)?\.?(?P<start_patch>(\d)+|x|\*)?\s?-(\^|~|)?(?P<end_major>(\d)+|x|\*)\.?(?P<end_minor>(\d)+|x|\*)?\.?(?P<end_patch>(\d)+|x|\*)?";
