@@ -1,5 +1,9 @@
 use crate::{
-    command::{Command, SubCommand}, contracts::Pipe, errors::ExecutionError, logger::CraftLogger, pipeline::{CacheCleanPipe, DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe}
+    command::{Command, SubCommand},
+    contracts::Pipe,
+    errors::ExecutionError,
+    logger::CraftLogger,
+    pipeline::{CacheCleanPipe, DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
 };
 
 pub struct Program;
