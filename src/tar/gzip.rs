@@ -8,7 +8,7 @@ use crate::errors::ZipError;
 pub struct Gzip;
 
 impl Gzip {
-    pub async fn extract(source: &PathBuf, dest: &PathBuf) -> Result<(), ZipError> {
+    pub fn extract(source: &PathBuf, dest: &PathBuf) -> Result<(), ZipError> {
       let file = File::open(source.clone())?;
 
       let tar = GzDecoder::new(file);

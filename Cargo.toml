@@ -27,3 +27,7 @@ flate2 = "1.0.28"
 
 thiserror = "1.0.24"
 regex = "1.10.2"
+
+indicatif = "0.17.7"
+console = { version = "0.15", default-features = false, features = ["ansi-parsing"] }
+spinners = "4.1.1"

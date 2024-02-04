@@ -13,10 +13,6 @@ use clap::Parser;
 pub struct Command {
     #[clap(subcommand)]
     pub command: Option<SubCommand>,
-
-    #[arg(short, long)]
-    #[clap(default_value = "false")]
-    pub verbose: bool,
 }
 
 /// Sub commands

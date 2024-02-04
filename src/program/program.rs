@@ -1,70 +1,74 @@
-use std::sync::Arc;
-
-use tokio::sync::Mutex;
-
-use crate::{
-    cache::CacheManagerImpl,
-    command::{CacheAction, Command, SubCommand},
-    contracts::{CacheManager, Job, Logger},
-    errors::ExecutionError,
-    jobs::CacheJob,
-    logger::CraftLogger,
-    package::Package,
+use std::{
+    sync::{
+        mpsc::{Receiver, Sender},
+        Arc,
+    },
+    thread::{self, JoinHandle},
 };
 
-use crate::jobs::InstallJob;
+use crate::{
+    command::{Command, SubCommand},
+    contracts::{Pipe, Progress, ProgressAction},
+    errors::ExecutionError,
+    logger::CraftLogger,
+    pipeline::{CacheCleanPipe, DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
+    ui::UIProgress,
+};
 
-pub struct Program {
-    cache_manager: Arc<Mutex<CacheManagerImpl>>,
-}
+pub struct Program;
 
 impl Program {
     pub fn new() -> Self {
         Self {
-            cache_manager: Arc::new(Mutex::new(CacheManagerImpl::new())),
         }
     }
-}
 
-impl Program {
-    pub async fn execute(&mut self, cmd: Command) -> Result<(), ExecutionError> {
-        let logger = CraftLogger::new(cmd.verbose);
+    pub fn start_progress(&self, rx: Receiver<ProgressAction>) -> JoinHandle<()> {
+        thread::spawn(move || {
+          let progress = UIProgress::new();
 
-        logger.info(format!(
-            "Craft Package Manager: {}",
-            env!("CARGO_PKG_VERSION")
-        ));
+          progress.start(rx);
+        })
+    }
 
-        if cmd.command.is_none() {
-            logger.warn("No command provided");
-            return Ok(());
+    pub async fn execute(&mut self, args: Command) -> Result<(), ExecutionError> {
+        if args.command.is_none() {
+            todo!("Read package.json and install dependencies");
         }
-        let command = cmd.command.unwrap();
+
+        let command = args.command.unwrap();
 
         match command {
-            SubCommand::Install(action) => {
-                logger.debug(format!("Installing package {}", &action.package));
+            SubCommand::Install(args) => {
+                let (tx, rx) = std::sync::mpsc::channel();
 
-                let package = Package::new(&action.package);
-                self.cache_manager
-                  .lock()
-                  .await
-                  .init()
-                  .await;
+                let ui_thread = self.start_progress(rx);
 
-                InstallJob::new(package, logger)
-                  .run()
-                  .await
-                  .unwrap();
+                CraftLogger::verbose_n(3, "Resolving dependencies");
+                let resolve_artifacts = ResolverPipe::new(args.package, tx.clone()).run().await?;
+
+                CraftLogger::verbose_n(3, "Downloading dependencies");
+                let download_artifacts = DownloaderPipe::new(&resolve_artifacts, tx.clone())
+                    .run()
+                    .await?;
+
+                CraftLogger::verbose_n(3, "Extracting dependencies");
+                let extracted_artifacts = ExtractorPipe::new(&download_artifacts, tx.clone())
+                    .run()
+                    .await?;
+
+                CraftLogger::verbose_n(3, "Linking dependencies");
+                LinkerPipe::new(tx.clone()).run().await?;
+
+                drop(tx);
+                ui_thread.join().unwrap();
+                return Ok(());
             }
-            SubCommand::Cache(action) => match action {
-                CacheAction::Clean => {
-                    logger.info("Cleaning cache");
-                    CacheJob::new(None).run().await?;
-                }
-            },
-        }
+            SubCommand::Cache(args) => {
+                let _ = CacheCleanPipe::new(args).run().await;
 
-        Ok(())
+                return Ok(());
+            }
+        }
     }
 }
