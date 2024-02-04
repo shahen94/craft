@@ -6,11 +6,15 @@ use crate::{contracts::PersistentCache, errors::CacheError};
 
 use super::constants::PACKAGES_CACHE_FOLDER;
 
+// ─── PackagesCache ───────────────────────────────────────────────────────────────
+
 #[derive(Debug)]
 pub struct PackagesCache {
     pub directory: PathBuf,
     pub cache: HashMap<String, bool>,
 }
+
+// ───────────────────────────────────────────────────────────────────────────────
 
 impl PackagesCache {
     pub fn new() -> Self {
@@ -35,6 +39,8 @@ impl PackagesCache {
         self.directory.join(key)
     }
 }
+
+// ───────────────────────────────────────────────────────────────────────────────
 
 #[async_trait]
 impl PersistentCache<PathBuf> for PackagesCache {

@@ -8,6 +8,7 @@ mod registry;
 mod tar;
 
 mod pipeline;
+
 pub mod command;
 pub mod program;
 

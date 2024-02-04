@@ -1,17 +1,12 @@
 use crate::{
-    command::{Command, SubCommand},
-    contracts::Pipe,
-    errors::ExecutionError,
-    pipeline::{CacheCleanPipe, DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
+    command::{Command, SubCommand}, contracts::Pipe, errors::ExecutionError, logger::CraftLogger, pipeline::{CacheCleanPipe, DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe}
 };
 
 pub struct Program;
 
 impl Program {
     pub fn new() -> Self {
-        Self {
-            
-        }
+        Self {}
     }
 
     pub async fn execute(&mut self, args: Command) -> Result<(), ExecutionError> {
@@ -23,19 +18,16 @@ impl Program {
 
         match command {
             SubCommand::Install(args) => {
+                CraftLogger::verbose("\n\n\nResolving dependencies");
                 let artifacts = ResolverPipe::new(args.package).run().await?;
 
-                DownloaderPipe::new(&artifacts)
-                    .run()
-                    .await?;
+                CraftLogger::verbose("\n\n\nDownloading dependencies");
+                let artifacts = DownloaderPipe::new(&artifacts).run().await?;
 
-                ExtractorPipe::new()
-                    .run()
-                    .await?;
+                CraftLogger::verbose("\n\n\nExtracting dependencies");
+                ExtractorPipe::new(&artifacts).run().await?;
 
-                LinkerPipe::new()
-                    .run()
-                    .await?;
+                LinkerPipe::new().run().await?;
 
                 return Ok(());
             }

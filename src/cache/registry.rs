@@ -5,11 +5,15 @@ use crate::{contracts::PersistentCache, errors::CacheError, package::NpmPackage}
 
 use super::constants::{REGISTRY_CACHE_FOLDER, REGISTRY_CACHE_FILE};
 
+// ─── RegistryCache ───────────────────────────────────────────────────────────────
+
 #[derive(Debug)]
 pub struct RegistryCache {
     pub directory: PathBuf,
     pub cache: HashMap<String, NpmPackage>,
 }
+
+// ───────────────────────────────────────────────────────────────────────────────
 
 impl RegistryCache {
     pub fn new() -> Self {
@@ -34,6 +38,8 @@ impl RegistryCache {
         Ok(())
     }
 }
+
+// ───────────────────────────────────────────────────────────────────────────────
 
 #[async_trait]
 impl PersistentCache<NpmPackage> for RegistryCache {

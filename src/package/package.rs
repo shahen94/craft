@@ -4,6 +4,9 @@ use super::{
     registry::Registry,
     version::{contracts::Version, VersionImpl},
 };
+
+// ─── Package ───────────────────────────────────────────────────────────────────
+
 #[derive(Debug, Clone)]
 pub struct Package {
     pub name: String,
@@ -12,11 +15,15 @@ pub struct Package {
     pub raw_version: String,
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 impl ToString for Package {
     fn to_string(&self) -> String {
         format!("{}@{}", self.name, self.raw_version)
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 impl Package {
     fn detect_registry(version: &str) -> Registry {

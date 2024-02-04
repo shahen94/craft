@@ -1,10 +1,14 @@
 use super::{constraint::VersionConstraint, contracts::Satisfies};
 
+// ─── VersionField ────────────────────────────────────────────────────────────
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum VersionField {
     Exact(u64),
     Wildcard,
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 impl ToString for VersionField {
     fn to_string(&self) -> String {
@@ -14,6 +18,8 @@ impl ToString for VersionField {
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 impl Satisfies for VersionField {
     fn satisfies(&self, version: &str) -> bool {

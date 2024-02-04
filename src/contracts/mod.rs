@@ -15,4 +15,4 @@ pub use constants::CRAFT_VERBOSE_LOGGING;
 pub use logger::Logger;
 pub use registry::Registry;
 pub use pipe::Pipe;
-pub use pipe_resolve_artifact::PipeResolveArtifact;
+pub use pipe_resolve_artifact::PipeArtifact;

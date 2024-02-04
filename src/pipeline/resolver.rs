@@ -9,7 +9,7 @@ use crate::package::{NpmPackage, Package};
 use crate::registry::GitRegistry;
 use crate::registry::NpmRegistry;
 
-use super::artifacts::Artifacts;
+use super::artifacts::ResolveArtifacts;
 
 // ─── ResolverPipe ────────────────────────────────────────────────────────────
 
@@ -20,7 +20,7 @@ pub struct ResolverPipe<C: PersistentCache<NpmPackage>> {
   npm_registry: NpmRegistry,
   git_registry: GitRegistry,
 
-  artifacts: Artifacts
+  artifacts: ResolveArtifacts,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ impl ResolverPipe<RegistryCache> {
       cache: RegistryCache::new(),
       npm_registry: NpmRegistry::new(),
       git_registry: GitRegistry::new(),
-      artifacts: Artifacts::new()
+      artifacts: ResolveArtifacts::new()
     }
   }
 
@@ -90,8 +90,8 @@ impl ResolverPipe<RegistryCache> {
 }
 
 #[async_trait]
-impl Pipe<Artifacts> for ResolverPipe<RegistryCache> {
-  async fn run(&mut self) -> Result<Artifacts, ExecutionError> {
+impl Pipe<ResolveArtifacts> for ResolverPipe<RegistryCache> {
+  async fn run(&mut self) -> Result<ResolveArtifacts, ExecutionError> {
     CraftLogger::verbose(format!("Resolving package and dependencies for: {}", self.package));
 
     match self.resolve().await {

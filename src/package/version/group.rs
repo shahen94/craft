@@ -1,10 +1,14 @@
 use super::{connector::Connector, constraint::VersionConstraint};
 
+// ─── VersionGroup ──────────────────────────────────────────────────────────────
+
 #[derive(Debug, Clone)]
 pub struct VersionGroup {
     pub constraints: Vec<VersionConstraint>,
     pub connector: Connector,
 }
+
+// ───────────────────────────────────────────────────────────────────────────────
 
 impl VersionGroup {
     pub fn new(constraints: Vec<VersionConstraint>, connector: Connector) -> Self {
@@ -14,6 +18,8 @@ impl VersionGroup {
         }
     }
 }
+
+// ───────────────────────────────────────────────────────────────────────────────
 
 impl ToString for VersionGroup {
     fn to_string(&self) -> String {

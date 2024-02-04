@@ -1,4 +1,8 @@
-use super::{constants::SEMVER_REGEX, contracts::Satisfies, field::VersionField, operator::Operator};
+use super::{
+    constants::SEMVER_REGEX, contracts::Satisfies, field::VersionField, operator::Operator,
+};
+
+// ─── VersionConstraint ───────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
 pub struct VersionConstraint {
@@ -9,6 +13,8 @@ pub struct VersionConstraint {
     pub pre_release: Option<String>,
     pub build: Option<String>,
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 impl VersionConstraint {
     pub fn parse(version: &str) -> Self {
@@ -76,6 +82,8 @@ impl VersionConstraint {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 impl Satisfies for VersionConstraint {
     fn satisfies(&self, version: &str) -> bool {
         let version = VersionConstraint::parse(version);
@@ -113,6 +121,8 @@ impl Satisfies for VersionConstraint {
         true
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 impl ToString for VersionConstraint {
     fn to_string(&self) -> String {

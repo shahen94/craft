@@ -1,10 +1,12 @@
 use regex::Regex;
 
-use crate::{logger::CraftLogger, package::version::{connector::Connector, constants::LINEAR_RANGE_REGEX}};
+use crate::package::version::{connector::Connector, constants::LINEAR_RANGE_REGEX};
 
 use super::{
     constants::RANGE_REGEX, constraint::VersionConstraint, contracts::{Satisfies, Version}, field::VersionField, group::VersionGroup, operator::Operator
 };
+
+// ─── VersionImpl ─────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
 pub struct VersionImpl {
@@ -285,6 +287,8 @@ impl Version for VersionImpl {
         true
     }
 }
+
+// ─── Satisfies ───────────────────────────────────────────────────────────────
 
 impl Satisfies for VersionImpl {
     fn satisfies(&self, version: &str) -> bool {

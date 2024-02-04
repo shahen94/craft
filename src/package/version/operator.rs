@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+// ─── Operator ──────────────────────────────────────────────────────────────────
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Operator {
     Tilde,
@@ -10,6 +12,8 @@ pub enum Operator {
     LessThanOrEqual,
     Equal,
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 impl FromStr for Operator {
   type Err = ();
@@ -28,6 +32,8 @@ impl FromStr for Operator {
       }
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 impl ToString for Operator {
   fn to_string(&self) -> String {

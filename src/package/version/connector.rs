@@ -1,10 +1,14 @@
 use std::str::FromStr;
 
+// ─── Connector ───────────────────────────────────────────────────────────────
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum Connector {
     And,
     Or,
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 impl FromStr for Connector {
     type Err = ();

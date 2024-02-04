@@ -2,16 +2,14 @@ use colored::Colorize;
 
 use crate::contracts::{Logger, CRAFT_VERBOSE_LOGGING};
 
+// ─── CraftLogger ─────────────────────────────────────────────────────────────────
+
 #[derive(Debug, Clone)]
-pub struct CraftLogger {
-    verbose: bool,
-}
+pub struct CraftLogger;
+
+// ───────────────────────────────────────────────────────────────────────────────
 
 impl CraftLogger {
-    pub fn new(verbose: bool) -> Self {
-        CraftLogger { verbose }
-    }
-
     pub fn is_verbose() -> bool {
         let verbose = std::env::var(CRAFT_VERBOSE_LOGGING).unwrap_or("false".to_string());
         let verbose = verbose.parse::<bool>().unwrap_or(false);
@@ -21,30 +19,28 @@ impl CraftLogger {
 
     pub fn verbose<S: AsRef<str>>(message: S) {
       if CraftLogger::is_verbose() {
-        let prefix = "[CraftLog]:".bold().red();
+        let prefix = "[VERBOSE]:".bold().red();
         println!("{} {}", prefix, message.as_ref().bold().purple());
       }
     }
 }
 
+// ───────────────────────────────────────────────────────────────────────────────
+
 impl Logger for CraftLogger {
-    fn log<S: AsRef<str>>(&self, message: S) {
+    fn log<S: AsRef<str>>(message: S) {
         println!("{}", message.as_ref().green());
     }
 
-    fn info<S: AsRef<str>>(&self, message: S) {
+    fn info<S: AsRef<str>>(message: S) {
         println!("{}", message.as_ref().blue());
     }
 
-    fn error<S: AsRef<str>>(&self, message: S) {
+    fn error<S: AsRef<str>>(message: S) {
         println!("{}", message.as_ref().red());
     }
 
-    fn warn<S: AsRef<str>>(&self, message: S) {
+    fn warn<S: AsRef<str>>(message: S) {
         println!("{}", message.as_ref().yellow());
-    }
-
-    fn set_verbose(&mut self, verbose: bool) -> () {
-        self.verbose = verbose;
     }
 }
