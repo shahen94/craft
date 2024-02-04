@@ -1,10 +1,9 @@
-use std::{env, path::PathBuf, sync::{mpsc::Sender, Arc}};
+use std::sync::{mpsc::Sender, Arc};
 
 use async_trait::async_trait;
 use tokio::sync::Mutex;
 
 use crate::{
-    cache::TMP_CACHE_FOLDER,
     contracts::{Phase, Pipe, PipeArtifact, ProgressAction},
     errors::{ExecutionError, ZipError},
     logger::CraftLogger,

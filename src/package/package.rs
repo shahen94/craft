@@ -75,7 +75,6 @@ impl Package {
     }
 
     pub fn satisfies(&self, version: &str) -> bool {
-        // self.version.matches(&Version::parse(version).expect("Invalid version"))
         false
     }
 }

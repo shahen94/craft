@@ -20,6 +20,8 @@ pub struct ResolverPipe<C: PersistentCache<NpmPackage>> {
   package: String,
   cache: C,
   npm_registry: NpmRegistry,
+
+  #[allow(dead_code)]
   git_registry: GitRegistry,
 
   artifacts: ResolveArtifacts,

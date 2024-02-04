@@ -39,8 +39,6 @@ impl DownloaderPipe<PackagesCache> {
     pub async fn download_pkg(&self, package: &NpmPackage) -> Result<(), ExecutionError> {
         let pkg = package.clone();
 
-        let tx = self.tx.clone();
-
         if self.cache.lock().await.has(&pkg.to_string()).await {
             CraftLogger::verbose(format!("Package already downloaded: {}", pkg.to_string()));
             let cache = self.cache.lock().await;
