@@ -6,6 +6,7 @@ mod logger;
 mod network;
 mod registry;
 mod tar;
+mod ui;
 
 mod pipeline;
 

@@ -23,6 +23,14 @@ impl CraftLogger {
         println!("{} {}", prefix, message.as_ref().bold().purple());
       }
     }
+
+    pub fn verbose_n<S: AsRef<str>>(n: usize, message: S) {
+      if CraftLogger::is_verbose() {
+        let newline = "\n".repeat(n);
+        let prefix = "[VERBOSE]:".bold().red();
+        println!("{}{} {}", newline, prefix, message.as_ref().bold().purple());
+      }
+    }
 }
 
 // ───────────────────────────────────────────────────────────────────────────────

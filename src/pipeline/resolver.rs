@@ -1,8 +1,10 @@
+use std::sync::mpsc::Sender;
+
 use async_recursion::async_recursion;
 use async_trait::async_trait;
 
 use crate::cache::RegistryCache;
-use crate::contracts::{PersistentCache, Pipe, Registry};
+use crate::contracts::{PersistentCache, Phase, Pipe, ProgressAction, Registry};
 use crate::errors::{ExecutionError, NetworkError};
 use crate::logger::CraftLogger;
 use crate::package::{NpmPackage, Package};
@@ -21,18 +23,21 @@ pub struct ResolverPipe<C: PersistentCache<NpmPackage>> {
   git_registry: GitRegistry,
 
   artifacts: ResolveArtifacts,
+
+  tx: Sender<ProgressAction>,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 impl ResolverPipe<RegistryCache> {
-  pub fn new(package: String) -> Self {
+  pub fn new(package: String, tx: Sender<ProgressAction>) -> Self {
     Self {
       package,
       cache: RegistryCache::new(),
       npm_registry: NpmRegistry::new(),
       git_registry: GitRegistry::new(),
-      artifacts: ResolveArtifacts::new()
+      artifacts: ResolveArtifacts::new(),
+      tx
     }
   }
 
@@ -82,6 +87,8 @@ impl ResolverPipe<RegistryCache> {
 
   pub async fn resolve(&mut self) -> Result<(), NetworkError> {
     let package = Package::new(&self.package);
+
+    let _ = self.tx.send(ProgressAction::new(Phase::Resolving));
 
     self.resolve_pkg(&package).await?;
 

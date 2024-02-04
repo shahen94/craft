@@ -1,11 +1,11 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::{mpsc::Sender, Arc}};
 
 use async_trait::async_trait;
 use tokio::sync::Mutex;
 
 use crate::{
     cache::PackagesCache,
-    contracts::{PersistentCache, Pipe, PipeArtifact},
+    contracts::{PersistentCache, Phase, Pipe, PipeArtifact, ProgressAction},
     errors::ExecutionError,
     logger::CraftLogger,
     network::Network,
@@ -21,21 +21,25 @@ pub struct DownloaderPipe<C: PersistentCache<PathBuf>> {
     packages: Vec<NpmPackage>,
     cache: Arc<Mutex<C>>,
     artifacts: Arc<Mutex<DownloadArtifacts>>,
+    tx: Sender<ProgressAction>,
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────
 
 impl DownloaderPipe<PackagesCache> {
-    pub fn new(artifacts: &dyn PipeArtifact<Vec<NpmPackage>>) -> Self {
+    pub fn new(artifacts: &dyn PipeArtifact<Vec<NpmPackage>>, tx: Sender<ProgressAction>,) -> Self {
         Self {
             packages: artifacts.get_artifacts(),
             cache: Arc::new(Mutex::new(PackagesCache::new())),
             artifacts: Arc::new(Mutex::new(DownloadArtifacts::new())),
+            tx
         }
     }
 
     pub async fn download_pkg(&self, package: &NpmPackage) -> Result<(), ExecutionError> {
         let pkg = package.clone();
+
+        let tx = self.tx.clone();
 
         if self.cache.lock().await.has(&pkg.to_string()).await {
             CraftLogger::verbose(format!("Package already downloaded: {}", pkg.to_string()));
@@ -82,6 +86,8 @@ impl DownloaderPipe<PackagesCache> {
 impl Pipe<DownloadArtifacts> for DownloaderPipe<PackagesCache> {
     async fn run(&mut self) -> Result<DownloadArtifacts, ExecutionError> {
         let _ = self.cache.lock().await.init().await;
+
+        let _ = self.tx.send(ProgressAction::new(Phase::Downloading));
 
         let _ = tokio::join! {
           async {

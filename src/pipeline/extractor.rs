@@ -1,59 +1,71 @@
-use std::{env, path::PathBuf};
+use std::{env, path::PathBuf, sync::{mpsc::Sender, Arc}};
 
 use async_trait::async_trait;
+use tokio::sync::Mutex;
 
 use crate::{
     cache::TMP_CACHE_FOLDER,
-    contracts::{Pipe, PipeArtifact},
+    contracts::{Phase, Pipe, PipeArtifact, ProgressAction},
     errors::{ExecutionError, ZipError},
     logger::CraftLogger,
     tar::Gzip,
 };
 
-use super::artifacts::StoredArtifact;
+use super::artifacts::{ExtractArtifacts, StoredArtifact};
 
 pub struct ExtractorPipe {
     packages: Vec<StoredArtifact>,
+    artifacts: Arc<Mutex<ExtractArtifacts>>,
+
+    tx: Sender<ProgressAction>,
 }
 
 impl ExtractorPipe {
-    pub fn get_tmp_folder() -> PathBuf {
-      let mut home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
-      home.push_str(TMP_CACHE_FOLDER);
-
-      PathBuf::from(home)
-    }
-
-    pub fn new(artifacts: &dyn PipeArtifact<Vec<StoredArtifact>>) -> Self {
+    pub fn new(artifacts: &dyn PipeArtifact<Vec<StoredArtifact>>, tx: Sender<ProgressAction>,) -> Self {
         Self {
             packages: artifacts.get_artifacts(),
+            artifacts: Arc::new(Mutex::new(ExtractArtifacts::new())),
+            tx
         }
     }
 
     pub async fn unzip_archive(&self, artifact: &StoredArtifact) -> Result<(), ZipError> {
-        let artifact = artifact.clone();
+        let artifact_s = artifact.clone();
+
+        let tmp_folder = ExtractArtifacts::get_tmp_folder();
 
         tokio::task::spawn_blocking(move || {
-            let tmp_folder = Self::get_tmp_folder();
-
             let dest = tmp_folder.join(format!(
                 "{}-{}",
-                artifact.package.name, artifact.package.version
+                &artifact_s.package.name, &artifact_s.package.version
             ));
-
-            match Gzip::extract(&artifact.zip_path, &dest) {
+            match Gzip::extract(&artifact_s.zip_path, &dest) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e),
             }
         })
         .await
-        .unwrap()
+        .unwrap()?;
+
+        let extracted_at = ExtractArtifacts::get_tmp_folder().join(format!(
+            "{}-{}",
+            &artifact.package.name, &artifact.package.version
+        ));
+
+        self.artifacts
+            .lock()
+            .await
+            .add(artifact.package.clone(), extracted_at);
+
+        Ok(())
     }
 }
 
 #[async_trait]
-impl Pipe<()> for ExtractorPipe {
-    async fn run(&mut self) -> Result<(), ExecutionError> {
+impl Pipe<ExtractArtifacts> for ExtractorPipe {
+    async fn run(&mut self) -> Result<ExtractArtifacts, ExecutionError> {
+      let _ = self.tx.send(ProgressAction::new(Phase::Extracting));
+
         for artifact in &self.packages {
             CraftLogger::verbose(format!(
                 "Extracting artifact: {}",
@@ -62,13 +74,13 @@ impl Pipe<()> for ExtractorPipe {
             self.unzip_archive(artifact).await.unwrap();
         }
 
-        let tmp_folder = Self::get_tmp_folder();
+        let tmp_folder = ExtractArtifacts::get_tmp_folder();
 
         if tmp_folder.exists() {
             CraftLogger::verbose("Cleaning up temporary cache folder");
             tokio::fs::remove_dir_all(&tmp_folder).await.unwrap();
         }
 
-        Ok(())
+        Ok(self.artifacts.lock().await.clone())
     }
 }
