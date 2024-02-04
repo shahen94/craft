@@ -13,7 +13,6 @@ clap = { version = "4.4.11", features = ["derive"] }
 reqwest = { version = "0.11.23", features = ["json"] }
 tokio = { version = "1.35.1", features = ["full"] }
 async-trait = "0.1.75"
-futures = "0.3.30"
 async-recursion = "1.0.5"
 
 serde = { version = "1.0.193", features = ["derive"] }
@@ -30,4 +29,3 @@ regex = "1.10.2"
 
 indicatif = "0.17.7"
 console = { version = "0.15", default-features = false, features = ["ansi-parsing"] }
-spinners = "4.1.1"

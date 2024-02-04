@@ -10,6 +10,7 @@ use super::constants::{COMPLETED, DOWNLOADING, EXTRACTING, LINKING, RESOLVING};
 
 #[derive(Debug)]
 pub struct UIProgress {
+    #[allow(dead_code)]
     multi_pb: MultiProgress,
     resolving_spinner: ProgressBar,
     downloading_spinner: ProgressBar,

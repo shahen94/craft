@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf, vec};
+use std::{collections::HashMap, path::PathBuf};
 
 use crate::{contracts::PipeArtifact, package::NpmPackage};
 
@@ -39,10 +39,6 @@ impl DownloadArtifacts {
 
   pub fn to_artifact(package: NpmPackage, zip_path: PathBuf) -> StoredArtifact {
     StoredArtifact::new(package, zip_path)
-  }
-  
-  pub fn get(&self, key: &str) -> Option<&StoredArtifact> {
-    self.packages.get(key)
   }
 
   pub fn insert(&mut self, key: String, value: StoredArtifact) {
