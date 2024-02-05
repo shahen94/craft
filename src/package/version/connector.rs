@@ -21,3 +21,19 @@ impl FromStr for Connector {
         }
     }
 }
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_connector_from_str() {
+        assert_eq!(",".parse::<Connector>().unwrap(), Connector::And);
+        assert_eq!("|".parse::<Connector>().unwrap(), Connector::Or);
+        assert_eq!(" ".parse::<Connector>().unwrap(), Connector::And);
+        assert_eq!("||".parse::<Connector>().unwrap(), Connector::Or);
+        assert_eq!("".parse::<Connector>().unwrap(), Connector::And);
+    }
+}

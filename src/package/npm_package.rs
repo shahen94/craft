@@ -5,11 +5,6 @@ use serde::{Deserialize, Serialize};
 /// This struct represents a package from the registry.
 /// 
 /// It is used to deserialize the JSON response from the registry.
-/// 
-/// # Example
-/// ```
-/// let package: RemotePackage = response.json().await?;
-/// ```
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct NpmPackage {
   pub name: String,
@@ -35,12 +30,6 @@ impl PartialEq for NpmPackage {
 /// This struct represents the distribution of a package.
 /// 
 /// It is used to deserialize the JSON response from the registry.
-/// 
-/// # Example
-/// ```
-/// let package: RemotePackage = response.json().await?;
-/// package.dist.integrity;
-/// ```
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Distribution {
   pub integrity: Option<String>,

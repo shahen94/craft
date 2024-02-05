@@ -48,3 +48,33 @@ impl ToString for Operator {
       }
   }
 }
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_operator_from_str() {
+      assert_eq!("~".parse::<Operator>().unwrap(), Operator::Tilde);
+      assert_eq!("^".parse::<Operator>().unwrap(), Operator::Caret);
+      assert_eq!(">".parse::<Operator>().unwrap(), Operator::GreaterThan);
+      assert_eq!(">=".parse::<Operator>().unwrap(), Operator::GreaterThanOrEqual);
+      assert_eq!("<".parse::<Operator>().unwrap(), Operator::LessThan);
+      assert_eq!("<=".parse::<Operator>().unwrap(), Operator::LessThanOrEqual);
+      assert_eq!("=".parse::<Operator>().unwrap(), Operator::Equal);
+      assert_eq!("".parse::<Operator>().is_err(), true);
+  }
+
+  #[test]
+  fn test_operator_to_string() {
+      assert_eq!(Operator::Tilde.to_string(), "~");
+      assert_eq!(Operator::Caret.to_string(), "^");
+      assert_eq!(Operator::GreaterThan.to_string(), ">");
+      assert_eq!(Operator::GreaterThanOrEqual.to_string(), ">=");
+      assert_eq!(Operator::LessThan.to_string(), "<");
+      assert_eq!(Operator::LessThanOrEqual.to_string(), "<=");
+      assert_eq!(Operator::Equal.to_string(), "=");
+  }
+}

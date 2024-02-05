@@ -149,3 +149,104 @@ impl ToString for VersionConstraint {
         version
     }
 }
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_version_constraint_parse() {
+        let version = VersionConstraint::parse("1.0.0");
+        assert_eq!(version.major, VersionField::Exact(1));
+        assert_eq!(version.minor, VersionField::Exact(0));
+        assert_eq!(version.patch, VersionField::Exact(0));
+        assert_eq!(version.operator, Operator::Equal);
+        assert_eq!(version.pre_release, None);
+        assert_eq!(version.build, None);
+
+        let version = VersionConstraint::parse("=1.0.0");
+        assert_eq!(version.major, VersionField::Exact(1));
+        assert_eq!(version.minor, VersionField::Exact(0));
+        assert_eq!(version.patch, VersionField::Exact(0));
+        assert_eq!(version.operator, Operator::Equal);
+        assert_eq!(version.pre_release, None);
+        assert_eq!(version.build, None);
+
+        let version = VersionConstraint::parse("^1.0.0-alpha");
+        assert_eq!(version.major, VersionField::Exact(1));
+        assert_eq!(version.minor, VersionField::Exact(0));
+        assert_eq!(version.patch, VersionField::Exact(0));
+        assert_eq!(version.operator, Operator::Caret);
+        assert_eq!(version.pre_release, Some("alpha".to_string()));
+        assert_eq!(version.build, None);
+
+        let version = VersionConstraint::parse("~1.0.0+build");
+        assert_eq!(version.major, VersionField::Exact(1));
+        assert_eq!(version.minor, VersionField::Exact(0));
+        assert_eq!(version.patch, VersionField::Exact(0));
+        assert_eq!(version.operator, Operator::Tilde);
+        assert_eq!(version.pre_release, None);
+        assert_eq!(version.build, Some("build".to_string()));
+
+        let version = VersionConstraint::parse("1.0.0-alpha+build");
+        assert_eq!(version.major, VersionField::Exact(1));
+        assert_eq!(version.minor, VersionField::Exact(0));
+        assert_eq!(version.patch, VersionField::Exact(0));
+        assert_eq!(version.operator, Operator::Equal);
+        assert_eq!(version.pre_release, Some("alpha".to_string()));
+        assert_eq!(version.build, Some("build".to_string()));
+
+        let version = VersionConstraint::parse("=1.0.0");
+        assert_eq!(version.major, VersionField::Exact(1));
+        assert_eq!(version.minor, VersionField::Exact(0));
+        assert_eq!(version.patch, VersionField::Exact(0));
+        assert_eq!(version.operator, Operator::Equal);
+        assert_eq!(version.pre_release, None);
+        assert_eq!(version.build, None);
+    }
+    
+    #[test]
+    fn test_version_constraint_to_string() {
+        let version = VersionConstraint {
+            major: VersionField::Exact(1),
+            minor: VersionField::Exact(0),
+            patch: VersionField::Exact(0),
+            operator: Operator::Equal,
+            pre_release: None,
+            build: None,
+        };
+        assert_eq!(version.to_string(), "1.0.0");
+
+        let version = VersionConstraint {
+            major: VersionField::Exact(1),
+            minor: VersionField::Exact(0),
+            patch: VersionField::Exact(0),
+            operator: Operator::GreaterThan,
+            pre_release: None,
+            build: None,
+        };
+        assert_eq!(version.to_string(), ">1.0.0");
+
+        let version = VersionConstraint {
+            major: VersionField::Exact(1),
+            minor: VersionField::Exact(0),
+            patch: VersionField::Exact(0),
+            operator: Operator::GreaterThan,
+            pre_release: Some("alpha".to_string()),
+            build: None,
+        };
+        assert_eq!(version.to_string(), ">1.0.0-alpha");
+
+        let version = VersionConstraint {
+            major: VersionField::Exact(1),
+            minor: VersionField::Exact(0),
+            patch: VersionField::Exact(0),
+            operator: Operator::GreaterThan,
+            pre_release: Some("alpha".to_string()),
+            build: Some("build".to_string()),
+        };
+        assert_eq!(version.to_string(), ">1.0.0-alpha+build");
+    }
+}

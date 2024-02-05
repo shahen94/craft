@@ -5,6 +5,9 @@ use clap::Parser;
 /// # Example
 /// 
 /// ```
+/// use clap::Parser;
+/// use craft::command::Command;
+/// 
 /// let data = Command::parse();
 /// println!("{:?}", data);
 /// ```
@@ -19,8 +22,11 @@ pub struct Command {
 /// 
 /// # Example
 /// ```
+/// use clap::Parser;
+/// use craft::command::{Command, SubCommand};
+/// 
 /// let data = Command::parse();
-/// let command = data.command.unwrap();
+/// let command = data.command;
 /// println!("{:?}", command);
 /// ```
 #[derive(Debug, Parser, Clone)]
@@ -38,7 +44,15 @@ pub enum SubCommand {
 ///
 /// # Example
 /// ```
+/// use clap::Parser;
+/// use craft::command::{Command, SubCommand, Install};
+/// 
 /// let data = Command::parse();
+/// 
+/// if data.command.is_none() {
+///    println!("Reading package.json");
+///     return;
+/// }
 /// let command = data.command.unwrap();
 /// let install = match command {
 ///  SubCommand::Install(install) => install,

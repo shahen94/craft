@@ -37,3 +37,31 @@ impl ToString for VersionGroup {
         constraints
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_version_group_to_string() {
+        let group = VersionGroup::new(
+            vec![
+                VersionConstraint::parse("1.0.0"),
+                VersionConstraint::parse("2.0.0"),
+            ],
+            Connector::And,
+        );
+
+        assert_eq!(group.to_string(), "1.0.0 2.0.0");
+
+        let group = VersionGroup::new(
+            vec![
+                VersionConstraint::parse("1.0.0"),
+                VersionConstraint::parse("2.0.0"),
+            ],
+            Connector::Or,
+        );
+
+        assert_eq!(group.to_string(), "(1.0.0 2.0.0)");
+    }
+}

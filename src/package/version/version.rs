@@ -113,7 +113,7 @@ impl VersionImpl {
         }
 
         constraints.push(VersionConstraint {
-            operator: Operator::LessThanOrEqual,
+            operator: Operator::GreaterThanOrEqual,
             major: start_major,
             minor: start_minor,
             patch: start_patch,
@@ -122,7 +122,7 @@ impl VersionImpl {
         });
 
         constraints.push(VersionConstraint {
-            operator: Operator::GreaterThanOrEqual,
+            operator: Operator::LessThanOrEqual,
             major: end_major,
             minor: end_minor,
             patch: end_patch,
@@ -293,5 +293,88 @@ impl Version for VersionImpl {
 impl Satisfies for VersionImpl {
     fn satisfies(&self, version: &str) -> bool {
         true
+    }
+}
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_version_new() {
+        let version = VersionImpl::new("1.0.0");
+        assert_eq!(version.inner.len(), 1);
+        assert_eq!(version.inner[0].constraints.len(), 1);
+        assert_eq!(version.inner[0].constraints[0].operator, Operator::Equal);
+        assert_eq!(version.inner[0].constraints[0].major, VersionField::Exact(1));
+        assert_eq!(version.inner[0].constraints[0].minor, VersionField::Exact(0));
+        assert_eq!(version.inner[0].constraints[0].patch, VersionField::Exact(0));
+
+        let version = VersionImpl::new("1.0.0 || 2.0.0");
+        assert_eq!(version.inner.len(), 2);
+        assert_eq!(version.inner[0].constraints.len(), 1);
+        assert_eq!(version.inner[0].constraints[0].operator, Operator::Equal);
+        assert_eq!(version.inner[0].constraints[0].major, VersionField::Exact(1));
+        assert_eq!(version.inner[0].constraints[0].minor, VersionField::Exact(0));
+        assert_eq!(version.inner[0].constraints[0].patch, VersionField::Exact(0));
+        assert_eq!(version.inner[1].constraints.len(), 1);
+        assert_eq!(version.inner[1].constraints[0].operator, Operator::Equal);
+        assert_eq!(version.inner[1].constraints[0].major, VersionField::Exact(2));
+        assert_eq!(version.inner[1].constraints[0].minor, VersionField::Exact(0));
+        assert_eq!(version.inner[1].constraints[0].patch, VersionField::Exact(0));
+
+        let version = VersionImpl::new(">=1.0.0 <2.0.0");
+        assert_eq!(version.inner.len(), 1);
+        assert_eq!(version.inner[0].constraints.len(), 2);
+        assert_eq!(version.inner[0].constraints[0].operator, Operator::GreaterThanOrEqual);
+        assert_eq!(version.inner[0].constraints[0].major, VersionField::Exact(1));
+        assert_eq!(version.inner[0].constraints[0].minor, VersionField::Exact(0));
+        assert_eq!(version.inner[0].constraints[0].patch, VersionField::Exact(0));
+        assert_eq!(version.inner[0].constraints[1].operator, Operator::LessThan);
+        assert_eq!(version.inner[0].constraints[1].major, VersionField::Exact(2));
+        assert_eq!(version.inner[0].constraints[1].minor, VersionField::Exact(0));
+        assert_eq!(version.inner[0].constraints[1].patch, VersionField::Exact(0));
+
+        let version = VersionImpl::new("1.0.0 - 2.0.0");
+        assert_eq!(version.inner.len(), 1);
+        assert_eq!(version.inner[0].constraints.len(), 2);
+        assert_eq!(version.inner[0].constraints[0].operator, Operator::GreaterThanOrEqual);
+        assert_eq!(version.inner[0].constraints[0].major, VersionField::Exact(1));
+        assert_eq!(version.inner[0].constraints[0].minor, VersionField::Exact(0));
+        assert_eq!(version.inner[0].constraints[0].patch, VersionField::Exact(0));
+        assert_eq!(version.inner[0].constraints[1].operator, Operator::LessThanOrEqual);
+        assert_eq!(version.inner[0].constraints[1].major, VersionField::Exact(2));
+        assert_eq!(version.inner[0].constraints[1].minor, VersionField::Exact(0));
+        assert_eq!(version.inner[0].constraints[1].patch, VersionField::Exact(0));
+    }
+
+    #[test]
+    fn test_version_is_exact() {
+        let version = VersionImpl::new("1.0.0");
+        assert_eq!(version.is_exact(), true);
+
+        let version = VersionImpl::new("1.0.0 || 2.0.0");
+        assert_eq!(version.is_exact(), false);
+
+        let version = VersionImpl::new(">=1.0.0 <2.0.0");
+        assert_eq!(version.is_exact(), false);
+
+        let version = VersionImpl::new("1.0.0 - 2.0.0");
+        assert_eq!(version.is_exact(), false);
+
+        let version = VersionImpl::new("1.*.*");
+        assert_eq!(version.is_exact(), false);
+    }
+
+    #[test]
+    fn test_version_satisfies() {
+        
+    }
+
+    #[test]
+    fn test_version_satisfies_range() {
+        
     }
 }
