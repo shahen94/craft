@@ -73,10 +73,6 @@ impl Package {
             _ => panic!("Invalid package name: {}", package),
         }
     }
-
-    pub fn satisfies(&self, version: &str) -> bool {
-        false
-    }
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────

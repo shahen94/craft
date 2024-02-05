@@ -8,6 +8,60 @@ pub enum VersionField {
     Wildcard,
 }
 
+impl VersionField {
+    pub fn is_gt(&self, version: &str) -> bool {
+        match self {
+            VersionField::Exact(value) => {
+                if version == "*" || version == "x" || version == "latest" {
+                    return true;
+                }
+                let version = version.parse::<u64>().unwrap();
+                version > *value
+            }
+            VersionField::Wildcard => true,
+        }
+    }
+
+    pub fn is_gte(&self, version: &str) -> bool {
+        match self {
+            VersionField::Exact(value) => {
+                if version == "*" || version == "x" || version == "latest" {
+                    return true;
+                }
+                let version = version.parse::<u64>().unwrap();
+                version >= *value
+            }
+            VersionField::Wildcard => true,
+        }
+    }
+
+    pub fn is_lt(&self, version: &str) -> bool {
+        match self {
+            VersionField::Exact(value) => {
+                if version == "*" || version == "x" || version == "latest" {
+                    return true;
+                }
+                let version = version.parse::<u64>().unwrap();
+                version < *value
+            }
+            VersionField::Wildcard => true,
+        }
+    }
+
+    pub fn is_lte(&self, version: &str) -> bool {
+        match self {
+            VersionField::Exact(value) => {
+                if version == "*" || version == "x" || version == "latest" {
+                    return true;
+                }
+                let version = version.parse::<u64>().unwrap();
+                version <= *value
+            }
+            VersionField::Wildcard => true,
+        }
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 impl ToString for VersionField {
@@ -28,39 +82,44 @@ impl Satisfies for VersionField {
                 if version == "*" || version == "x" || version == "latest" {
                     return true;
                 }
+                let version = version.parse::<u64>().unwrap();
 
-                let version = VersionConstraint::parse(version);
-
-                match version.major {
-                    VersionField::Exact(major) => {
-                        if major != *value {
-                            return false;
-                        }
-                    }
-                    _ => {}
-                }
-
-                match version.minor {
-                    VersionField::Exact(minor) => {
-                        if minor != *value {
-                            return false;
-                        }
-                    }
-                    _ => {}
-                }
-
-                match version.patch {
-                    VersionField::Exact(patch) => {
-                        if patch != *value {
-                            return false;
-                        }
-                    }
-                    _ => {}
-                }
-
-                true
+                version == *value
             }
             VersionField::Wildcard => true,
         }
+    }
+}
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_version_field_to_string() {
+        let version_field = VersionField::Exact(1);
+        assert_eq!(version_field.to_string(), "1".to_string());
+
+        let version_field = VersionField::Wildcard;
+        assert_eq!(version_field.to_string(), "*".to_string());
+    }
+
+    #[test]
+    fn test_version_field_satisfies() {
+        let version_field = VersionField::Exact(1);
+        assert_eq!(version_field.satisfies("1"), true);
+        assert_eq!(version_field.satisfies("2"), false);
+        assert_eq!(version_field.satisfies("*"), true);
+        assert_eq!(version_field.satisfies("x"), true);
+        assert_eq!(version_field.satisfies("latest"), true);
+
+        let version_field = VersionField::Wildcard;
+        assert_eq!(version_field.satisfies("1"), true);
+        assert_eq!(version_field.satisfies("2"), true);
+        assert_eq!(version_field.satisfies("*"), true);
+        assert_eq!(version_field.satisfies("x"), true);
+        assert_eq!(version_field.satisfies("latest"), true);
     }
 }

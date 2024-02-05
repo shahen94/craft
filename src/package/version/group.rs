@@ -1,4 +1,4 @@
-use super::{connector::Connector, constraint::VersionConstraint};
+use super::{connector::Connector, constraint::VersionConstraint, contracts::Satisfies};
 
 // ─── VersionGroup ──────────────────────────────────────────────────────────────
 
@@ -38,6 +38,23 @@ impl ToString for VersionGroup {
     }
 }
 
+impl Satisfies for VersionGroup {
+    fn satisfies(&self, version: &str) -> bool {
+        match self.connector {
+            Connector::And => self
+                .constraints
+                .iter()
+                .all(|constraint| constraint.satisfies(version)),
+            Connector::Or => self
+                .constraints
+                .iter()
+                .any(|constraint| constraint.satisfies(version)),
+        }
+    }
+}
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -63,5 +80,32 @@ mod tests {
         );
 
         assert_eq!(group.to_string(), "(1.0.0 2.0.0)");
+    }
+
+    #[test]
+    fn test_version_group_satisfies() {
+        let group = VersionGroup::new(
+            vec![
+                VersionConstraint::parse("1.0.0"),
+                VersionConstraint::parse("2.0.0"),
+            ],
+            Connector::And,
+        );
+
+        assert_eq!(group.satisfies("1.0.0"), false);
+        assert_eq!(group.satisfies("2.0.0"), false);
+        assert_eq!(group.satisfies("3.0.0"), false);
+
+        let group = VersionGroup::new(
+            vec![
+                VersionConstraint::parse("1.0.0"),
+                VersionConstraint::parse("2.0.0"),
+            ],
+            Connector::Or,
+        );
+
+        assert_eq!(group.satisfies("1.0.0"), true);
+        assert_eq!(group.satisfies("2.0.0"), true);
+        assert_eq!(group.satisfies("3.0.0"), false);
     }
 }

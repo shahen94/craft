@@ -3,7 +3,10 @@ use async_trait::async_trait;
 use crate::{
     contracts::Registry,
     errors::NetworkError,
-    package::{contracts::Version, FullPackage, NpmPackage, Package},
+    package::{
+        contracts::{Satisfies, Version},
+        FullPackage, NpmPackage, Package,
+    },
 };
 
 #[derive(Debug)]

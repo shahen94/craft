@@ -71,6 +71,17 @@ impl VersionConstraint {
             build = Some(build_value.as_str().to_string());
         }
 
+        match operator {
+            Operator::Caret => {
+                minor = VersionField::Wildcard;
+                patch = VersionField::Wildcard;
+            }
+            Operator::Tilde => {
+                patch = VersionField::Wildcard;
+            }
+            _ => {}
+        }
+
         VersionConstraint {
             operator,
             major,
@@ -80,45 +91,160 @@ impl VersionConstraint {
             build,
         }
     }
+
+    fn satisfies_equal(&self, version: &str) -> bool {
+        let version = VersionConstraint::parse(version);
+
+        self.major.satisfies(&version.major.to_string())
+            && self.minor.satisfies(&version.minor.to_string())
+            && self.patch.satisfies(&version.patch.to_string())
+            && self.pre_release == version.pre_release
+            && self.build == version.build
+    }
+
+    fn satisfies_gte(&self, version: &str) -> bool {
+        // Is Equal
+        if self.satisfies_equal(&version) {
+            return true;
+        }
+
+        let version = VersionConstraint::parse(version);
+
+        let is_major_gt = self.major.is_gt(&version.major.to_string());
+        let is_minor_gt = self.minor.is_gte(&version.minor.to_string());
+        let is_patch_gt = self.patch.is_gte(&version.patch.to_string());
+
+        if is_major_gt {
+            return true;
+        }
+
+        // Major is not gt, then it should be Equal
+
+        let is_major_satisfies = self.major.satisfies(&version.major.to_string());
+
+        // If major is satisfies, then minor should be gt
+        if is_major_satisfies && is_minor_gt {
+            return true;
+        }
+
+        // Then at least patch should be gte
+
+        let is_minor_satisfies = self.minor.satisfies(&version.minor.to_string());
+
+        if is_major_satisfies && is_minor_satisfies && is_patch_gt {
+            return true;
+        }
+
+        false
+    }
+
+    fn satisfies_gt(&self, version: &str) -> bool {
+        if self.satisfies_equal(&version) {
+            return false;
+        }
+
+        let version = VersionConstraint::parse(version);
+
+        let is_major_gt = self.major.is_gt(&version.major.to_string());
+        let is_minor_gt = self.minor.is_gte(&version.minor.to_string());
+        let is_patch_gt = self.patch.is_gte(&version.patch.to_string());
+
+        if is_major_gt {
+            return true;
+        }
+
+        // Major is not gt, then it should be Equal
+        let is_major_satisfies = self.major.satisfies(&version.major.to_string());
+
+        // If major is satisfies, then minor should be gt
+        if is_major_satisfies && is_minor_gt {
+            return true;
+        }
+
+        let is_minor_satisfies = self.minor.satisfies(&version.minor.to_string());
+
+        if is_major_satisfies && is_minor_satisfies && is_patch_gt {
+            return true;
+        }
+
+        false
+    }
+
+    fn satisfies_lte(&self, version: &str) -> bool {
+        if self.satisfies_equal(&version) {
+            return true;
+        }
+
+        let version = VersionConstraint::parse(version);
+
+        let is_major_lt = self.major.is_lt(&version.major.to_string());
+        let is_minor_lt = self.minor.is_lte(&version.minor.to_string());
+        let is_patch_lt = self.patch.is_lte(&version.patch.to_string());
+
+        if is_major_lt {
+            return true;
+        }
+
+        // Major is not lt, then it should be Equal
+        let is_major_satisfies = self.major.satisfies(&version.major.to_string());
+
+        // If major is satisfies, then minor should be lt
+        if is_major_satisfies && is_minor_lt {
+            return true;
+        }
+
+        let is_minor_satisfies = self.minor.satisfies(&version.minor.to_string());
+
+        if is_major_satisfies && is_minor_satisfies && is_patch_lt {
+            return true;
+        }
+
+        false
+    }
+
+    fn satisfies_lt(&self, version: &str) -> bool {
+        if self.satisfies_equal(&version) {
+            return false;
+        }
+        let version = VersionConstraint::parse(version);
+
+        let is_major_lt = self.major.is_lt(&version.major.to_string());
+        let is_minor_lt = self.minor.is_lte(&version.minor.to_string());
+        let is_patch_lt = self.patch.is_lte(&version.patch.to_string());
+
+        if is_major_lt {
+            return true;
+        }
+
+        // Major is not lt, then it should be Equal
+        let is_major_satisfies = self.major.satisfies(&version.major.to_string());
+
+        // If major is satisfies, then minor should be lt
+        if is_major_satisfies && is_minor_lt {
+            return true;
+        }
+
+        let is_minor_satisfies = self.minor.satisfies(&version.minor.to_string());
+
+        if is_major_satisfies && is_minor_satisfies && is_patch_lt {
+            return true;
+        }
+
+        false
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 impl Satisfies for VersionConstraint {
     fn satisfies(&self, version: &str) -> bool {
-        let version = VersionConstraint::parse(version);
-
-        if !self.major.satisfies(&version.major.to_string()) {
-            return false;
+        match self.operator {
+            Operator::Caret | Operator::Equal | Operator::Tilde => self.satisfies_equal(version),
+            Operator::GreaterThan => self.satisfies_gt(version),
+            Operator::GreaterThanOrEqual => self.satisfies_gte(version),
+            Operator::LessThan => self.satisfies_lt(version),
+            Operator::LessThanOrEqual => self.satisfies_lte(version),
         }
-
-        if !self.minor.satisfies(&version.minor.to_string()) {
-            return false;
-        }
-
-        if !self.patch.satisfies(&version.patch.to_string()) {
-            return false;
-        }
-
-        if let Some(pre_release) = &self.pre_release {
-            if let Some(version_pre_release) = &version.pre_release {
-                if pre_release != version_pre_release {
-                    return false;
-                }
-            }
-            return false;
-        }
-
-        if let Some(build) = &self.build {
-            if let Some(version_build) = &version.build {
-                if build != version_build {
-                    return false;
-                }
-            }
-            return false;
-        }
-
-        true
     }
 }
 
@@ -176,8 +302,8 @@ mod tests {
 
         let version = VersionConstraint::parse("^1.0.0-alpha");
         assert_eq!(version.major, VersionField::Exact(1));
-        assert_eq!(version.minor, VersionField::Exact(0));
-        assert_eq!(version.patch, VersionField::Exact(0));
+        assert_eq!(version.minor, VersionField::Wildcard);
+        assert_eq!(version.patch, VersionField::Wildcard);
         assert_eq!(version.operator, Operator::Caret);
         assert_eq!(version.pre_release, Some("alpha".to_string()));
         assert_eq!(version.build, None);
@@ -185,7 +311,7 @@ mod tests {
         let version = VersionConstraint::parse("~1.0.0+build");
         assert_eq!(version.major, VersionField::Exact(1));
         assert_eq!(version.minor, VersionField::Exact(0));
-        assert_eq!(version.patch, VersionField::Exact(0));
+        assert_eq!(version.patch, VersionField::Wildcard);
         assert_eq!(version.operator, Operator::Tilde);
         assert_eq!(version.pre_release, None);
         assert_eq!(version.build, Some("build".to_string()));
@@ -248,5 +374,41 @@ mod tests {
             build: Some("build".to_string()),
         };
         assert_eq!(version.to_string(), ">1.0.0-alpha+build");
+    }
+
+    #[test]
+    fn test_satisfies() {
+        let version = VersionConstraint::parse("1.0.0");
+        assert_eq!(version.satisfies("1.0.0"), true);
+        assert_eq!(version.satisfies("1.0.1"), false);
+        assert_eq!(version.satisfies("1.1.0"), false);
+        assert_eq!(version.satisfies("2.0.0"), false);
+
+        let version = VersionConstraint::parse("=1.0.0");
+        assert_eq!(version.satisfies("1.0.0"), true);
+        assert_eq!(version.satisfies("1.0.1"), false);
+        assert_eq!(version.satisfies("1.1.0"), false);
+        assert_eq!(version.satisfies("2.0.0"), false);
+
+        let version = VersionConstraint::parse("^1.0.0");
+        assert_eq!(version.satisfies("1.0.0"), true);
+        assert_eq!(version.satisfies("1.0.1"), true);
+        assert_eq!(version.satisfies("1.1.0"), true);
+        assert_eq!(version.satisfies("2.0.0"), false);
+
+        let version = VersionConstraint::parse("~1.0.0");
+        assert_eq!(version.satisfies("1.0.0"), true);
+        assert_eq!(version.satisfies("1.0.1"), true);
+        assert_eq!(version.satisfies("1.1.0"), false);
+        assert_eq!(version.satisfies("2.0.0"), false);
+
+        let version = VersionConstraint::parse("1.0.0-alpha");
+        assert_eq!(version.satisfies("1.0.0-alpha"), true);
+        assert_eq!(version.satisfies("1.0.0-beta"), false);
+        assert_eq!(version.satisfies("1.0.0"), false);
+
+        let version = VersionConstraint::parse("1.0.0+build");
+        assert_eq!(version.satisfies("1.0.0+build"), true);
+        assert_eq!(version.satisfies("1.0.0"), false);
     }
 }

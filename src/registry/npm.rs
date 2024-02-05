@@ -3,7 +3,10 @@ use async_trait::async_trait;
 use crate::{
     contracts::Registry,
     errors::NetworkError,
-    package::{contracts::Version, FullPackage, NpmPackage, Package},
+    package::{
+        contracts::{Satisfies, Version},
+        FullPackage, NpmPackage, Package,
+    },
 };
 
 const NPM_REGISTRY_URL: &str = "https://registry.npmjs.org";
