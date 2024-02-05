@@ -34,3 +34,54 @@ impl PipeArtifact<Vec<NpmPackage>> for ResolveArtifacts {
         self.packages.values().cloned().collect()
     }
 }
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_resolve_artifacts() {
+        let mut resolve_artifacts = ResolveArtifacts::new();
+
+        let package = serde_json::from_str::<NpmPackage>(
+            r#"
+            {
+                "name": "package",
+                "version": "1.0.0",
+                "dist": {
+                    "shasum": "shasum",
+                    "tarball": "https://registry.npmjs.org/package/-/package-1.0.0.tgz"
+                }
+            }
+            "#,
+        )
+        .unwrap();
+        resolve_artifacts.insert("package".to_string(), package);
+
+        assert_eq!(resolve_artifacts.get("package").unwrap().version, "1.0.0");
+    }
+
+    #[test]
+    fn test_get_artifacts() {
+        let mut resolve_artifacts = ResolveArtifacts::new();
+
+        let package = serde_json::from_str::<NpmPackage>(
+            r#"
+            {
+                "name": "package",
+                "version": "1.0.0",
+                "dist": {
+                    "shasum": "shasum",
+                    "tarball": "https://registry.npmjs.org/package/-/package-1.0.0.tgz"
+                }
+            }
+            "#,
+        )
+        .unwrap();
+        resolve_artifacts.insert("package".to_string(), package);
+
+        assert_eq!(resolve_artifacts.get_artifacts().len(), 1);
+    }
+}

@@ -50,3 +50,55 @@ impl PipeArtifact<Vec<StoredArtifact>> for DownloadArtifacts {
         self.packages.values().cloned().collect()
     }
 }
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_artifact() {
+        let package = serde_json::from_str::<NpmPackage>(
+            r#"
+            {
+                "name": "package",
+                "version": "1.0.0",
+                "dist": {
+                    "shasum": "shasum",
+                    "tarball": "https://registry.npmjs.org/package/-/package-1.0.0.tgz"
+                }
+            }
+            "#,
+        )
+        .unwrap();
+        let zip_path = PathBuf::from("path");
+        let stored_artifact = DownloadArtifacts::to_artifact(package, zip_path);
+
+        assert_eq!(stored_artifact.package.name, "package");
+        assert_eq!(stored_artifact.zip_path, PathBuf::from("path"));
+    }
+
+    #[test]
+    fn test_download_artifacts() {
+        let mut download_artifacts = DownloadArtifacts::new();
+
+        let package = serde_json::from_str::<NpmPackage>(
+            r#"
+            {
+                "name": "package",
+                "version": "1.0.0",
+                "dist": {
+                    "shasum": "shasum",
+                    "tarball": "https://registry.npmjs.org/package/-/package-1.0.0.tgz"
+                }
+            }
+            "#,
+        )
+        .unwrap();
+        let stored_artifact = StoredArtifact::new(package, PathBuf::from("path"));
+        download_artifacts.insert("package".to_string(), stored_artifact);
+
+        assert_eq!(download_artifacts.get_artifacts().len(), 1);
+    }
+}

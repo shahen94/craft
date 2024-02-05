@@ -69,3 +69,57 @@ impl PipeArtifact<Vec<ExtractArtifactItem>> for ExtractArtifacts {
         self.tmp_cache.values().cloned().collect()
     }
 }
+
+// ─── Tests ─────────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_artifact() {
+        let package = serde_json::from_str::<NpmPackage>(
+            r#"
+            {
+                "name": "package",
+                "version": "1.0.0",
+                "dist": {
+                    "shasum": "shasum",
+                    "tarball": "https://registry.npmjs.org/package/-/package-1.0.0.tgz"
+                }
+            }
+            "#,
+        )
+        .unwrap();
+
+        let mut extract_artifacts = ExtractArtifacts::new();
+        extract_artifacts.add(package.clone(), PathBuf::from("/tmp/package"));
+
+        assert_eq!(
+            extract_artifacts.get("package").unwrap().package.version,
+            "1.0.0"
+        );
+    }
+
+    #[test]
+    fn test_get_artifacts() {
+        let mut extract_artifacts = ExtractArtifacts::new();
+
+        let package = serde_json::from_str::<NpmPackage>(
+            r#"
+            {
+                "name": "package",
+                "version": "1.0.0",
+                "dist": {
+                    "shasum": "shasum",
+                    "tarball": "https://registry.npmjs.org/package/-/package-1.0.0.tgz"
+                }
+            }
+            "#,
+        )
+        .unwrap();
+        extract_artifacts.add(package.clone(), PathBuf::from("/tmp/package"));
+
+        assert_eq!(extract_artifacts.get_artifacts().len(), 1);
+    }
+}
