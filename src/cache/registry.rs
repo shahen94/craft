@@ -1,9 +1,9 @@
-use std::{collections::HashMap, env, fs::File, path::PathBuf};
 use async_trait::async_trait;
+use std::{collections::HashMap, env, fs::File, path::PathBuf};
 
 use crate::{contracts::PersistentCache, errors::CacheError, package::NpmPackage};
 
-use super::constants::{REGISTRY_CACHE_FOLDER, REGISTRY_CACHE_FILE};
+use super::constants::{REGISTRY_CACHE_FILE, REGISTRY_CACHE_FOLDER};
 
 // ─── RegistryCache ───────────────────────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ impl PersistentCache<NpmPackage> for RegistryCache {
             tokio::fs::File::create(self.directory.join(REGISTRY_CACHE_FILE))
                 .await
                 .map_err(|err| CacheError::FileSystemError(err))?;
-            return Ok(())
+            return Ok(());
         }
 
         // load cache

@@ -1,10 +1,9 @@
+mod artifacts;
+mod cache_clean;
 mod downloader;
 mod extractor;
 mod linker;
 mod resolver;
-mod cache_clean;
-mod artifacts;
-
 
 pub use resolver::ResolverPipe;
 

@@ -1,10 +1,10 @@
-pub mod contracts;
-mod operator;
-mod field;
 mod connector;
-mod constraint;
 mod constants;
+mod constraint;
+pub mod contracts;
+mod field;
 mod group;
+mod operator;
 mod version;
 
 pub use version::VersionImpl;

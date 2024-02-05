@@ -47,7 +47,8 @@ impl Progress for UIProgress {
             }
             Phase::Downloading => {
                 self.resolving_spinner.finish();
-                self.resolving_spinner.set_message(format!("{} Resolved", COMPLETED));
+                self.resolving_spinner
+                    .set_message(format!("{} Resolved", COMPLETED));
                 self.downloading_spinner
                     .set_message(format!("{} Downloading ...", DOWNLOADING));
                 self.downloading_spinner
@@ -55,7 +56,8 @@ impl Progress for UIProgress {
             }
             Phase::Extracting => {
                 self.downloading_spinner.finish();
-                self.downloading_spinner.set_message(format!("{} Downloaded", COMPLETED));
+                self.downloading_spinner
+                    .set_message(format!("{} Downloaded", COMPLETED));
                 self.extracting_spinner
                     .set_message(format!("{} Extracting ...", EXTRACTING));
                 self.extracting_spinner
@@ -63,7 +65,8 @@ impl Progress for UIProgress {
             }
             Phase::Linking => {
                 self.extracting_spinner.finish();
-                self.extracting_spinner.set_message(format!("{} Extracted", COMPLETED));
+                self.extracting_spinner
+                    .set_message(format!("{} Extracted", COMPLETED));
                 self.linking_spinner
                     .set_message(format!("{} Linking ...", LINKING));
                 self.linking_spinner
@@ -73,7 +76,8 @@ impl Progress for UIProgress {
     }
 
     fn finish(&self) {
-        self.linking_spinner.set_message(format!("{} Linked", COMPLETED));
+        self.linking_spinner
+            .set_message(format!("{} Linked", COMPLETED));
         self.resolving_spinner.finish();
         self.downloading_spinner.finish();
         self.extracting_spinner.finish();
@@ -83,7 +87,7 @@ impl Progress for UIProgress {
 
     fn start(&self, rx: std::sync::mpsc::Receiver<ProgressAction>) {
         while let Ok(action) = rx.recv() {
-          self.set_phase(action.phase);
+            self.set_phase(action.phase);
         }
         self.finish();
     }

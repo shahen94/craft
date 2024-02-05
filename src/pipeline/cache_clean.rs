@@ -1,31 +1,34 @@
 use async_trait::async_trait;
 
-use crate::{cache::{PackagesCache, RegistryCache}, command::CacheAction, contracts::{PersistentCache, Pipe}, errors::ExecutionError};
+use crate::{
+    cache::{PackagesCache, RegistryCache},
+    command::CacheAction,
+    contracts::{PersistentCache, Pipe},
+    errors::ExecutionError,
+};
 
 pub struct CacheCleanPipe {
-  action: CacheAction,
+    action: CacheAction,
 }
 
 impl CacheCleanPipe {
-  pub fn new(action: CacheAction) -> Self {
-    Self {
-      action
+    pub fn new(action: CacheAction) -> Self {
+        Self { action }
     }
-  }
 }
 
 // ─── Implementations ─────────────────────────────────────────────────────────
 
 #[async_trait]
 impl Pipe<()> for CacheCleanPipe {
-  async fn run(&mut self) -> Result<(), ExecutionError> {
-    match self.action {
-      CacheAction::Clean => {
-        let _ = PackagesCache::new().clean().await;
-        let _ = RegistryCache::new().clean().await;
-      },
+    async fn run(&mut self) -> Result<(), ExecutionError> {
+        match self.action {
+            CacheAction::Clean => {
+                let _ = PackagesCache::new().clean().await;
+                let _ = RegistryCache::new().clean().await;
+            }
+        }
+
+        Ok(())
     }
-    
-    Ok(())
-  }
 }

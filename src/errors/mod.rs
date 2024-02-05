@@ -1,10 +1,10 @@
-mod package;
 mod cache;
-mod network;
-mod zip;
 mod execution;
+mod network;
+mod package;
+mod zip;
 
 pub use cache::CacheError;
+pub use execution::ExecutionError;
 pub use network::NetworkError;
 pub use zip::ZipError;
-pub use execution::ExecutionError;

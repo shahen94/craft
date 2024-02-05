@@ -20,11 +20,14 @@ pub struct ExtractorPipe {
 }
 
 impl ExtractorPipe {
-    pub fn new(artifacts: &dyn PipeArtifact<Vec<StoredArtifact>>, tx: Sender<ProgressAction>,) -> Self {
+    pub fn new(
+        artifacts: &dyn PipeArtifact<Vec<StoredArtifact>>,
+        tx: Sender<ProgressAction>,
+    ) -> Self {
         Self {
             packages: artifacts.get_artifacts(),
             artifacts: Arc::new(Mutex::new(ExtractArtifacts::new())),
-            tx
+            tx,
         }
     }
 
@@ -63,7 +66,7 @@ impl ExtractorPipe {
 #[async_trait]
 impl Pipe<ExtractArtifacts> for ExtractorPipe {
     async fn run(&mut self) -> Result<ExtractArtifacts, ExecutionError> {
-      let _ = self.tx.send(ProgressAction::new(Phase::Extracting));
+        let _ = self.tx.send(ProgressAction::new(Phase::Extracting));
 
         for artifact in &self.packages {
             CraftLogger::verbose(format!(

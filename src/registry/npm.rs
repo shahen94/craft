@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use crate::{
     contracts::Registry,
     errors::NetworkError,
-    package::{contracts::Version, FullPackage, Package, NpmPackage},
+    package::{contracts::Version, FullPackage, NpmPackage, Package},
 };
 
 const NPM_REGISTRY_URL: &str = "https://registry.npmjs.org";
@@ -25,7 +25,9 @@ impl NpmRegistry {
     async fn get_exact_package(&self, package: &Package) -> Result<NpmPackage, NetworkError> {
         let url = format!(
             "{}/{}/{}",
-            NPM_REGISTRY_URL, package.name, package.raw_version.replace("=", "")
+            NPM_REGISTRY_URL,
+            package.name,
+            package.raw_version.replace("=", "")
         );
 
         let response = self.http.get(&url).send().await?;

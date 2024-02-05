@@ -15,9 +15,7 @@ pub struct ProgressAction {
 
 impl ProgressAction {
     pub fn new(phase: Phase) -> Self {
-        Self {
-            phase,
-        }
+        Self { phase }
     }
 }
 

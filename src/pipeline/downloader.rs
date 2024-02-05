@@ -1,4 +1,7 @@
-use std::{path::PathBuf, sync::{mpsc::Sender, Arc}};
+use std::{
+    path::PathBuf,
+    sync::{mpsc::Sender, Arc},
+};
 
 use async_trait::async_trait;
 use tokio::sync::Mutex;
@@ -27,12 +30,12 @@ pub struct DownloaderPipe<C: PersistentCache<PathBuf>> {
 // ─── Implementation ───────────────────────────────────────────────────────────
 
 impl DownloaderPipe<PackagesCache> {
-    pub fn new(artifacts: &dyn PipeArtifact<Vec<NpmPackage>>, tx: Sender<ProgressAction>,) -> Self {
+    pub fn new(artifacts: &dyn PipeArtifact<Vec<NpmPackage>>, tx: Sender<ProgressAction>) -> Self {
         Self {
             packages: artifacts.get_artifacts(),
             cache: Arc::new(Mutex::new(PackagesCache::new())),
             artifacts: Arc::new(Mutex::new(DownloadArtifacts::new())),
-            tx
+            tx,
         }
     }
 

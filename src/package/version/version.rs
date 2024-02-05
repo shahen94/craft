@@ -3,7 +3,12 @@ use regex::Regex;
 use crate::package::version::{connector::Connector, constants::LINEAR_RANGE_REGEX};
 
 use super::{
-    constants::RANGE_REGEX, constraint::VersionConstraint, contracts::{Satisfies, Version}, field::VersionField, group::VersionGroup, operator::Operator
+    constants::RANGE_REGEX,
+    constraint::VersionConstraint,
+    contracts::{Satisfies, Version},
+    field::VersionField,
+    group::VersionGroup,
+    operator::Operator,
 };
 
 // ─── VersionImpl ─────────────────────────────────────────────────────────────
@@ -59,7 +64,7 @@ impl VersionImpl {
             None => {
                 let constraint = VersionConstraint::parse(version);
 
-                return vec![VersionGroup::new(vec![constraint], Connector::And)]
+                return vec![VersionGroup::new(vec![constraint], Connector::And)];
             }
         };
 
@@ -130,8 +135,7 @@ impl VersionImpl {
             build: None,
         });
 
-        return vec![VersionGroup::new(constraints, Connector::And)]
-
+        return vec![VersionGroup::new(constraints, Connector::And)];
     }
 
     fn parse_range(version: &str) -> Vec<VersionConstraint> {
@@ -308,46 +312,118 @@ mod tests {
         assert_eq!(version.inner.len(), 1);
         assert_eq!(version.inner[0].constraints.len(), 1);
         assert_eq!(version.inner[0].constraints[0].operator, Operator::Equal);
-        assert_eq!(version.inner[0].constraints[0].major, VersionField::Exact(1));
-        assert_eq!(version.inner[0].constraints[0].minor, VersionField::Exact(0));
-        assert_eq!(version.inner[0].constraints[0].patch, VersionField::Exact(0));
+        assert_eq!(
+            version.inner[0].constraints[0].major,
+            VersionField::Exact(1)
+        );
+        assert_eq!(
+            version.inner[0].constraints[0].minor,
+            VersionField::Exact(0)
+        );
+        assert_eq!(
+            version.inner[0].constraints[0].patch,
+            VersionField::Exact(0)
+        );
 
         let version = VersionImpl::new("1.0.0 || 2.0.0");
         assert_eq!(version.inner.len(), 2);
         assert_eq!(version.inner[0].constraints.len(), 1);
         assert_eq!(version.inner[0].constraints[0].operator, Operator::Equal);
-        assert_eq!(version.inner[0].constraints[0].major, VersionField::Exact(1));
-        assert_eq!(version.inner[0].constraints[0].minor, VersionField::Exact(0));
-        assert_eq!(version.inner[0].constraints[0].patch, VersionField::Exact(0));
+        assert_eq!(
+            version.inner[0].constraints[0].major,
+            VersionField::Exact(1)
+        );
+        assert_eq!(
+            version.inner[0].constraints[0].minor,
+            VersionField::Exact(0)
+        );
+        assert_eq!(
+            version.inner[0].constraints[0].patch,
+            VersionField::Exact(0)
+        );
         assert_eq!(version.inner[1].constraints.len(), 1);
         assert_eq!(version.inner[1].constraints[0].operator, Operator::Equal);
-        assert_eq!(version.inner[1].constraints[0].major, VersionField::Exact(2));
-        assert_eq!(version.inner[1].constraints[0].minor, VersionField::Exact(0));
-        assert_eq!(version.inner[1].constraints[0].patch, VersionField::Exact(0));
+        assert_eq!(
+            version.inner[1].constraints[0].major,
+            VersionField::Exact(2)
+        );
+        assert_eq!(
+            version.inner[1].constraints[0].minor,
+            VersionField::Exact(0)
+        );
+        assert_eq!(
+            version.inner[1].constraints[0].patch,
+            VersionField::Exact(0)
+        );
 
         let version = VersionImpl::new(">=1.0.0 <2.0.0");
         assert_eq!(version.inner.len(), 1);
         assert_eq!(version.inner[0].constraints.len(), 2);
-        assert_eq!(version.inner[0].constraints[0].operator, Operator::GreaterThanOrEqual);
-        assert_eq!(version.inner[0].constraints[0].major, VersionField::Exact(1));
-        assert_eq!(version.inner[0].constraints[0].minor, VersionField::Exact(0));
-        assert_eq!(version.inner[0].constraints[0].patch, VersionField::Exact(0));
+        assert_eq!(
+            version.inner[0].constraints[0].operator,
+            Operator::GreaterThanOrEqual
+        );
+        assert_eq!(
+            version.inner[0].constraints[0].major,
+            VersionField::Exact(1)
+        );
+        assert_eq!(
+            version.inner[0].constraints[0].minor,
+            VersionField::Exact(0)
+        );
+        assert_eq!(
+            version.inner[0].constraints[0].patch,
+            VersionField::Exact(0)
+        );
         assert_eq!(version.inner[0].constraints[1].operator, Operator::LessThan);
-        assert_eq!(version.inner[0].constraints[1].major, VersionField::Exact(2));
-        assert_eq!(version.inner[0].constraints[1].minor, VersionField::Exact(0));
-        assert_eq!(version.inner[0].constraints[1].patch, VersionField::Exact(0));
+        assert_eq!(
+            version.inner[0].constraints[1].major,
+            VersionField::Exact(2)
+        );
+        assert_eq!(
+            version.inner[0].constraints[1].minor,
+            VersionField::Exact(0)
+        );
+        assert_eq!(
+            version.inner[0].constraints[1].patch,
+            VersionField::Exact(0)
+        );
 
         let version = VersionImpl::new("1.0.0 - 2.0.0");
         assert_eq!(version.inner.len(), 1);
         assert_eq!(version.inner[0].constraints.len(), 2);
-        assert_eq!(version.inner[0].constraints[0].operator, Operator::GreaterThanOrEqual);
-        assert_eq!(version.inner[0].constraints[0].major, VersionField::Exact(1));
-        assert_eq!(version.inner[0].constraints[0].minor, VersionField::Exact(0));
-        assert_eq!(version.inner[0].constraints[0].patch, VersionField::Exact(0));
-        assert_eq!(version.inner[0].constraints[1].operator, Operator::LessThanOrEqual);
-        assert_eq!(version.inner[0].constraints[1].major, VersionField::Exact(2));
-        assert_eq!(version.inner[0].constraints[1].minor, VersionField::Exact(0));
-        assert_eq!(version.inner[0].constraints[1].patch, VersionField::Exact(0));
+        assert_eq!(
+            version.inner[0].constraints[0].operator,
+            Operator::GreaterThanOrEqual
+        );
+        assert_eq!(
+            version.inner[0].constraints[0].major,
+            VersionField::Exact(1)
+        );
+        assert_eq!(
+            version.inner[0].constraints[0].minor,
+            VersionField::Exact(0)
+        );
+        assert_eq!(
+            version.inner[0].constraints[0].patch,
+            VersionField::Exact(0)
+        );
+        assert_eq!(
+            version.inner[0].constraints[1].operator,
+            Operator::LessThanOrEqual
+        );
+        assert_eq!(
+            version.inner[0].constraints[1].major,
+            VersionField::Exact(2)
+        );
+        assert_eq!(
+            version.inner[0].constraints[1].minor,
+            VersionField::Exact(0)
+        );
+        assert_eq!(
+            version.inner[0].constraints[1].patch,
+            VersionField::Exact(0)
+        );
     }
 
     #[test]
@@ -369,12 +445,8 @@ mod tests {
     }
 
     #[test]
-    fn test_version_satisfies() {
-        
-    }
+    fn test_version_satisfies() {}
 
     #[test]
-    fn test_version_satisfies_range() {
-        
-    }
+    fn test_version_satisfies_range() {}
 }

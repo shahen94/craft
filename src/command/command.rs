@@ -1,13 +1,13 @@
 use clap::Parser;
 
 /// Command line arguments
-/// 
+///
 /// # Example
-/// 
+///
 /// ```
 /// use clap::Parser;
 /// use craft::command::Command;
-/// 
+///
 /// let data = Command::parse();
 /// println!("{:?}", data);
 /// ```
@@ -19,12 +19,12 @@ pub struct Command {
 }
 
 /// Sub commands
-/// 
+///
 /// # Example
 /// ```
 /// use clap::Parser;
 /// use craft::command::{Command, SubCommand};
-/// 
+///
 /// let data = Command::parse();
 /// let command = data.command;
 /// println!("{:?}", command);
@@ -39,16 +39,15 @@ pub enum SubCommand {
     Cache(CacheAction),
 }
 
-
 /// Install sub command
 ///
 /// # Example
 /// ```
 /// use clap::Parser;
 /// use craft::command::{Command, SubCommand, Install};
-/// 
+///
 /// let data = Command::parse();
-/// 
+///
 /// if data.command.is_none() {
 ///    println!("Reading package.json");
 ///     return;

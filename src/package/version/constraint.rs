@@ -206,7 +206,7 @@ mod tests {
         assert_eq!(version.pre_release, None);
         assert_eq!(version.build, None);
     }
-    
+
     #[test]
     fn test_version_constraint_to_string() {
         let version = VersionConstraint {

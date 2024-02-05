@@ -8,5 +8,5 @@ use super::NpmPackage;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct FullPackage {
-  pub versions: HashMap<String, NpmPackage>,
+    pub versions: HashMap<String, NpmPackage>,
 }

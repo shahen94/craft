@@ -1,24 +1,16 @@
 mod cache;
-mod registry;
+mod constants;
 mod logger;
 mod pipe;
-mod constants;
-mod progress;
 mod pipe_artifact;
+mod progress;
+mod registry;
 
-pub use cache::{
-  PersistentCache,
-  InMemoryCache,
-  CacheManager,
-};
+pub use cache::{CacheManager, InMemoryCache, PersistentCache};
 
 pub use constants::CRAFT_VERBOSE_LOGGING;
 pub use logger::Logger;
-pub use registry::Registry;
 pub use pipe::Pipe;
 pub use pipe_artifact::PipeArtifact;
-pub use progress::{
-  Phase,
-  ProgressAction,
-  Progress,
-};
+pub use progress::{Phase, Progress, ProgressAction};
+pub use registry::Registry;

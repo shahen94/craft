@@ -18,7 +18,6 @@ pub trait InMemoryCache<T> {
     async fn set(&mut self, key: &str, value: T) -> ();
 }
 
-
 #[async_trait]
 pub trait CacheManager {
     async fn init(&mut self) -> ();

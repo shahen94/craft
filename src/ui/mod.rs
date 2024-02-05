@@ -1,4 +1,4 @@
-mod progress;
 mod constants;
+mod progress;
 
 pub use progress::UIProgress;

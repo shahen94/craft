@@ -4,5 +4,5 @@ use crate::errors::ExecutionError;
 
 #[async_trait]
 pub trait Pipe<T> {
-  async fn run(&mut self) -> Result<T, ExecutionError>;
+    async fn run(&mut self) -> Result<T, ExecutionError>;
 }

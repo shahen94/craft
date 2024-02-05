@@ -1,5 +1,5 @@
-mod npm;
 mod git;
+mod npm;
 
-pub use npm::NpmRegistry;
 pub use git::GitRegistry;
+pub use npm::NpmRegistry;

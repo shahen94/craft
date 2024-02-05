@@ -16,15 +16,14 @@ pub struct Program;
 
 impl Program {
     pub fn new() -> Self {
-        Self {
-        }
+        Self {}
     }
 
     pub fn start_progress(&self, rx: Receiver<ProgressAction>) -> JoinHandle<()> {
         thread::spawn(move || {
-          let progress = UIProgress::new();
+            let progress = UIProgress::new();
 
-          progress.start(rx);
+            progress.start(rx);
         })
     }
 

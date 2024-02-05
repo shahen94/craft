@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use crate::{
     contracts::Registry,
     errors::NetworkError,
-    package::{contracts::Version, FullPackage, Package, NpmPackage},
+    package::{contracts::Version, FullPackage, NpmPackage, Package},
 };
 
 #[derive(Debug)]
@@ -21,7 +21,7 @@ impl GitRegistry {
 
 impl GitRegistry {
     async fn get_archive(&self, package: &Package) -> Result<FullPackage, NetworkError> {
-      todo!()
+        todo!()
     }
 }
 
