@@ -1,6 +1,7 @@
 # Craft Package Manager for Node
 
 [![Build & Test](https://github.com/shahen94/craft/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/shahen94/craft/actions/workflows/build_and_test.yml)
+[![Formatting](https://github.com/shahen94/craft/actions/workflows/check_format.yml/badge.svg)](https://github.com/shahen94/craft/actions/workflows/check_format.yml)
 
 ### Usage
 ```sh
