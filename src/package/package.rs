@@ -78,3 +78,31 @@ impl Package {
         false
     }
 }
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_package_new() {
+        let package = Package::new("lodash@4.17.21");
+        assert_eq!(package.name, "lodash");
+        assert_eq!(package.version.to_string(), "4.17.21");
+        assert_eq!(package.registry, Registry::Npm);
+        assert_eq!(package.raw_version, "4.17.21");
+
+        let package = Package::new("lodash@latest");
+        assert_eq!(package.name, "lodash");
+        assert_eq!(package.version.to_string(), "*.*.*");
+        assert_eq!(package.registry, Registry::Npm);
+        assert_eq!(package.raw_version, "latest");
+
+        let package = Package::new("lodash@*");
+        assert_eq!(package.name, "lodash");
+        assert_eq!(package.version.to_string(), "*.*.*");
+        assert_eq!(package.registry, Registry::Npm);
+        assert_eq!(package.raw_version, "*");
+    }
+}
