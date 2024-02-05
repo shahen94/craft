@@ -40,3 +40,40 @@ impl ToString for Registry {
         }
     }
 }
+
+
+// ─── Tests ───────────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_is_git() {
+      assert_eq!(Registry::is_git("git+https://github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("git+https://github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("git://github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("git@https://github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("git::github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("git+ssh://https://github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("git+http://https://github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("git+https://https://github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("https://github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("bitbucket/owner/repo"), true);
+      assert_eq!(Registry::is_git("gitlab/owner/repo"), true);
+      assert_eq!(Registry::is_git("ssh:https://github.com/owner/repo"), true);
+      assert_eq!(Registry::is_git("gitea.com/owner/repo"), true);
+
+      assert_eq!(Registry::is_git("1.5.6"), false);
+      assert_eq!(Registry::is_git("*"), false);
+      assert_eq!(Registry::is_git("> 2"), false);
+  }
+
+  #[test]
+  fn test_to_string() {
+      assert_eq!(Registry::Npm.to_string(), "npm");
+      assert_eq!(Registry::Git.to_string(), "git");
+  }
+      
+}
