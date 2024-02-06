@@ -43,7 +43,6 @@ impl Program {
                 let download_artifacts = DownloaderPipe::new(&resolve_artifacts, tx.clone())
                     .run()
                     .await?;
-
                 CraftLogger::verbose_n(3, "Extracting dependencies");
 
                 #[allow(unused_variables)]

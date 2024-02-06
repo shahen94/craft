@@ -288,6 +288,10 @@ impl Version for VersionImpl {
                 VersionField::Exact(_),
                 VersionField::Exact(_),
                 VersionField::Exact(_)
+            ) | (
+                VersionField::Wildcard,
+                VersionField::Wildcard,
+                VersionField::Wildcard
             )
         )
     }
@@ -442,6 +446,9 @@ mod tests {
 
         let version = VersionImpl::new("1.*.*");
         assert!(!version.is_exact());
+
+        let version = VersionImpl::new("latest");
+        assert!(version.is_exact());
     }
 
     #[test]

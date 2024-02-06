@@ -2,7 +2,10 @@ use std::time::Duration;
 
 use indicatif::{MultiProgress, ProgressBar};
 
-use crate::contracts::{Phase, Progress, ProgressAction};
+use crate::{
+    contracts::{Phase, Progress, ProgressAction, CRAFT_VERBOSE_LOGGING},
+    perf::Performance,
+};
 
 use super::constants::{COMPLETED, DOWNLOADING, EXTRACTING, LINKING, RESOLVING};
 
@@ -16,6 +19,8 @@ pub struct UIProgress {
     downloading_spinner: ProgressBar,
     extracting_spinner: ProgressBar,
     linking_spinner: ProgressBar,
+
+    is_only_verbose: bool,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,18 +33,24 @@ impl Default for UIProgress {
         let extracting_spinner = multi_pb.add(ProgressBar::new_spinner());
         let linking_spinner = multi_pb.add(ProgressBar::new_spinner());
 
+        let is_only_verbose = std::env::var(CRAFT_VERBOSE_LOGGING)
+            .unwrap_or("false".to_string())
+            .parse::<bool>()
+            .unwrap_or(false);
+
         UIProgress {
             multi_pb,
             resolving_spinner,
             downloading_spinner,
             extracting_spinner,
             linking_spinner,
+            is_only_verbose,
         }
     }
 }
 
 impl Progress for UIProgress {
-    fn set_phase(&self, phase: Phase) {
+    fn set_phase(&self, phase: Phase, took: u128) {
         match phase {
             Phase::Resolving => {
                 self.resolving_spinner
@@ -50,7 +61,7 @@ impl Progress for UIProgress {
             Phase::Downloading => {
                 self.resolving_spinner.finish();
                 self.resolving_spinner
-                    .set_message(format!("{} Resolved", COMPLETED));
+                    .set_message(format!("{} Resolved in {}ms", COMPLETED, took));
                 self.downloading_spinner
                     .set_message(format!("{} Downloading ...", DOWNLOADING));
                 self.downloading_spinner
@@ -59,7 +70,7 @@ impl Progress for UIProgress {
             Phase::Extracting => {
                 self.downloading_spinner.finish();
                 self.downloading_spinner
-                    .set_message(format!("{} Downloaded", COMPLETED));
+                    .set_message(format!("{} Downloaded in {}ms", COMPLETED, took));
                 self.extracting_spinner
                     .set_message(format!("{} Extracting ...", EXTRACTING));
                 self.extracting_spinner
@@ -68,7 +79,7 @@ impl Progress for UIProgress {
             Phase::Linking => {
                 self.extracting_spinner.finish();
                 self.extracting_spinner
-                    .set_message(format!("{} Extracted", COMPLETED));
+                    .set_message(format!("{} Extracted in {}ms", COMPLETED, took));
                 self.linking_spinner
                     .set_message(format!("{} Linking ...", LINKING));
                 self.linking_spinner
@@ -84,12 +95,17 @@ impl Progress for UIProgress {
         self.downloading_spinner.finish();
         self.extracting_spinner.finish();
         self.linking_spinner.finish();
-        // self.multi_pb.clear().unwrap();
     }
 
     fn start(&self, rx: std::sync::mpsc::Receiver<ProgressAction>) {
+        let mut performance = Performance::default();
+
         while let Ok(action) = rx.recv() {
-            self.set_phase(action.phase);
+            let took = performance.elapsed();
+            performance.reset();
+            if !self.is_only_verbose {
+                self.set_phase(action.phase, took);
+            }
         }
         self.finish();
     }

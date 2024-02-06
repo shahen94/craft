@@ -8,5 +8,11 @@ async fn main() {
 
     let mut program = Program;
 
-    program.execute(args).await.unwrap();
+    match program.execute(args).await {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{}", e);
+            std::process::exit(1);
+        }
+    };
 }
