@@ -61,6 +61,7 @@ impl ExtractArtifacts {
         self.tmp_cache.insert(name, item);
     }
 
+    #[cfg(test)]
     pub fn get(&self, package_name: &str) -> Option<&ExtractArtifactItem> {
         self.tmp_cache.get(package_name)
     }

@@ -6,7 +6,6 @@ mod registry;
 mod version;
 
 pub use full_package::FullPackage;
-pub use git_package::GitPackage;
 pub use npm_package::NpmPackage;
 pub use pkg::Package;
 pub use version::contracts;

@@ -6,7 +6,7 @@ mod pipe_artifact;
 mod progress;
 mod registry;
 
-pub use cache::{CacheManager, InMemoryCache, PersistentCache};
+pub use cache::PersistentCache;
 
 pub use constants::CRAFT_VERBOSE_LOGGING;
 pub use logger::Logger;
