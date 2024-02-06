@@ -110,6 +110,8 @@ impl Pipe<ResolveArtifacts> for ResolverPipe<RegistryCache> {
             self.package
         ));
 
+        self.cache.init().await.unwrap();
+
         match self.resolve().await {
             Ok(_) => Ok(self.artifacts.clone()),
             Err(e) => Err(ExecutionError::JobExecutionFailed(
