@@ -1,3 +1,3 @@
-mod logger;
+mod craft_logger;
 
-pub use logger::CraftLogger;
+pub use craft_logger::CraftLogger;

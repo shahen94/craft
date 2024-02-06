@@ -5,9 +5,9 @@ use tokio::io::AsyncWriteExt;
 
 use crate::errors::NetworkError;
 
-pub struct Network;
+pub struct Http;
 
-impl Network {
+impl Http {
     pub async fn download_file(url: &str, path: &PathBuf) -> Result<(), NetworkError> {
         let mut response = reqwest::get(url).await.unwrap();
 

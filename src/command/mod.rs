@@ -1,3 +1,3 @@
-mod command;
+mod args;
 
-pub use command::{CacheAction, Command, Install, SubCommand};
+pub use args::{CacheAction, Command, Install, SubCommand};

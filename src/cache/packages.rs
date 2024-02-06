@@ -17,7 +17,19 @@ pub struct PackagesCache {
 // ───────────────────────────────────────────────────────────────────────────────
 
 impl PackagesCache {
-    pub fn new() -> Self {
+    pub fn get_cache_directory(&self) -> &PathBuf {
+        &self.directory
+    }
+
+    pub fn to_path_buf(&self, key: &str) -> PathBuf {
+        self.directory.join(key)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+impl Default for PackagesCache {
+    fn default() -> Self {
         let directory = {
             let mut home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
             home.push_str(PACKAGES_CACHE_FOLDER);
@@ -30,14 +42,6 @@ impl PackagesCache {
             cache: HashMap::new(),
         }
     }
-
-    pub fn get_cache_directory(&self) -> &PathBuf {
-        &self.directory
-    }
-
-    pub fn to_path_buf(&self, key: &str) -> PathBuf {
-        self.directory.join(key)
-    }
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -48,7 +52,7 @@ impl PersistentCache<PathBuf> for PackagesCache {
         if !self.directory.exists() {
             tokio::fs::create_dir_all(&self.directory)
                 .await
-                .map_err(|err| CacheError::FileSystemError(err))?;
+                .map_err(CacheError::FileSystemError)?;
 
             return Ok(());
         }
@@ -81,7 +85,7 @@ impl PersistentCache<PathBuf> for PackagesCache {
         if self.directory.exists() {
             tokio::fs::remove_dir_all(&self.directory)
                 .await
-                .map_err(|err| CacheError::FileSystemError(err))?;
+                .map_err(CacheError::FileSystemError)?;
         }
 
         Ok(())

@@ -67,7 +67,7 @@ mod tests {
         assert_eq!("<".parse::<Operator>().unwrap(), Operator::LessThan);
         assert_eq!("<=".parse::<Operator>().unwrap(), Operator::LessThanOrEqual);
         assert_eq!("=".parse::<Operator>().unwrap(), Operator::Equal);
-        assert_eq!("".parse::<Operator>().is_err(), true);
+        assert!("".parse::<Operator>().is_err());
     }
 
     #[test]

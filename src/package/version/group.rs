@@ -92,9 +92,9 @@ mod tests {
             Connector::And,
         );
 
-        assert_eq!(group.satisfies("1.0.0"), false);
-        assert_eq!(group.satisfies("2.0.0"), false);
-        assert_eq!(group.satisfies("3.0.0"), false);
+        assert!(!group.satisfies("1.0.0"));
+        assert!(!group.satisfies("2.0.0"));
+        assert!(!group.satisfies("3.0.0"));
 
         let group = VersionGroup::new(
             vec![
@@ -104,8 +104,8 @@ mod tests {
             Connector::Or,
         );
 
-        assert_eq!(group.satisfies("1.0.0"), true);
-        assert_eq!(group.satisfies("2.0.0"), true);
-        assert_eq!(group.satisfies("3.0.0"), false);
+        assert!(group.satisfies("1.0.0"));
+        assert!(group.satisfies("2.0.0"));
+        assert!(!group.satisfies("3.0.0"));
     }
 }

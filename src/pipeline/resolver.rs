@@ -35,7 +35,7 @@ impl ResolverPipe<RegistryCache> {
     pub fn new(package: String, tx: Sender<ProgressAction>) -> Self {
         Self {
             package,
-            cache: RegistryCache::new(),
+            cache: RegistryCache::default(),
             npm_registry: NpmRegistry::new(),
             git_registry: GitRegistry::new(),
             artifacts: ResolveArtifacts::new(),
@@ -51,7 +51,7 @@ impl ResolverPipe<RegistryCache> {
 
         let cached_pkg = self.cache.get(&artifact_key).await;
 
-        if let Some(_) = self.artifacts.get(&artifact_key) {
+        if self.artifacts.get(&artifact_key).is_some() {
             CraftLogger::verbose(format!(
                 "Package found in artifacts: {}",
                 package.to_string()
@@ -65,7 +65,7 @@ impl ResolverPipe<RegistryCache> {
             return Ok(());
         }
 
-        let remote_package = self.npm_registry.fetch(&package).await?;
+        let remote_package = self.npm_registry.fetch(package).await?;
 
         let pkg_cache_key = remote_package.to_string();
 

@@ -39,8 +39,8 @@ impl VersionConstraint {
         let semver_regex = regex::Regex::new(SEMVER_REGEX).unwrap();
 
         let captures = semver_regex
-            .captures(&version.trim())
-            .expect(format!("Invalid version: {}", version).as_str());
+            .captures(version.trim())
+            .unwrap_or_else(|| panic!("Invalid version: {}", version));
 
         if let Some(symbol_value) = captures.name("operator") {
             operator = symbol_value.as_str().parse::<Operator>().unwrap();
@@ -104,7 +104,7 @@ impl VersionConstraint {
 
     fn satisfies_gte(&self, version: &str) -> bool {
         // Is Equal
-        if self.satisfies_equal(&version) {
+        if self.satisfies_equal(version) {
             return true;
         }
 
@@ -139,7 +139,7 @@ impl VersionConstraint {
     }
 
     fn satisfies_gt(&self, version: &str) -> bool {
-        if self.satisfies_equal(&version) {
+        if self.satisfies_equal(version) {
             return false;
         }
 
@@ -171,7 +171,7 @@ impl VersionConstraint {
     }
 
     fn satisfies_lte(&self, version: &str) -> bool {
-        if self.satisfies_equal(&version) {
+        if self.satisfies_equal(version) {
             return true;
         }
 
@@ -203,7 +203,7 @@ impl VersionConstraint {
     }
 
     fn satisfies_lt(&self, version: &str) -> bool {
-        if self.satisfies_equal(&version) {
+        if self.satisfies_equal(version) {
             return false;
         }
         let version = VersionConstraint::parse(version);
@@ -379,36 +379,36 @@ mod tests {
     #[test]
     fn test_satisfies() {
         let version = VersionConstraint::parse("1.0.0");
-        assert_eq!(version.satisfies("1.0.0"), true);
-        assert_eq!(version.satisfies("1.0.1"), false);
-        assert_eq!(version.satisfies("1.1.0"), false);
-        assert_eq!(version.satisfies("2.0.0"), false);
+        assert!(version.satisfies("1.0.0"));
+        assert!(!version.satisfies("1.0.1"));
+        assert!(!version.satisfies("1.1.0"));
+        assert!(!version.satisfies("2.0.0"));
 
         let version = VersionConstraint::parse("=1.0.0");
-        assert_eq!(version.satisfies("1.0.0"), true);
-        assert_eq!(version.satisfies("1.0.1"), false);
-        assert_eq!(version.satisfies("1.1.0"), false);
-        assert_eq!(version.satisfies("2.0.0"), false);
+        assert!(version.satisfies("1.0.0"));
+        assert!(!version.satisfies("1.0.1"));
+        assert!(!version.satisfies("1.1.0"));
+        assert!(!version.satisfies("2.0.0"));
 
         let version = VersionConstraint::parse("^1.0.0");
-        assert_eq!(version.satisfies("1.0.0"), true);
-        assert_eq!(version.satisfies("1.0.1"), true);
-        assert_eq!(version.satisfies("1.1.0"), true);
-        assert_eq!(version.satisfies("2.0.0"), false);
+        assert!(version.satisfies("1.0.0"));
+        assert!(version.satisfies("1.0.1"));
+        assert!(version.satisfies("1.1.0"));
+        assert!(!version.satisfies("2.0.0"));
 
         let version = VersionConstraint::parse("~1.0.0");
-        assert_eq!(version.satisfies("1.0.0"), true);
-        assert_eq!(version.satisfies("1.0.1"), true);
-        assert_eq!(version.satisfies("1.1.0"), false);
-        assert_eq!(version.satisfies("2.0.0"), false);
+        assert!(version.satisfies("1.0.0"));
+        assert!(version.satisfies("1.0.1"));
+        assert!(!version.satisfies("1.1.0"));
+        assert!(!version.satisfies("2.0.0"));
 
         let version = VersionConstraint::parse("1.0.0-alpha");
-        assert_eq!(version.satisfies("1.0.0-alpha"), true);
-        assert_eq!(version.satisfies("1.0.0-beta"), false);
-        assert_eq!(version.satisfies("1.0.0"), false);
+        assert!(version.satisfies("1.0.0-alpha"));
+        assert!(!version.satisfies("1.0.0-beta"));
+        assert!(!version.satisfies("1.0.0"));
 
         let version = VersionConstraint::parse("1.0.0+build");
-        assert_eq!(version.satisfies("1.0.0+build"), true);
-        assert_eq!(version.satisfies("1.0.0"), false);
+        assert!(version.satisfies("1.0.0+build"));
+        assert!(!version.satisfies("1.0.0"));
     }
 }

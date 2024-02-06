@@ -6,6 +6,7 @@ use crate::{cache::TMP_CACHE_FOLDER, contracts::PipeArtifact, package::NpmPackag
 
 #[derive(Debug, Clone)]
 pub struct ExtractArtifacts {
+    #[allow(dead_code)]
     tmp_cache_folder: PathBuf,
     tmp_cache: HashMap<String, ExtractArtifactItem>,
 }
@@ -14,7 +15,9 @@ pub struct ExtractArtifacts {
 
 #[derive(Debug, Clone)]
 pub struct ExtractArtifactItem {
+    #[allow(dead_code)]
     package: NpmPackage,
+    #[allow(dead_code)]
     unzip_at: PathBuf,
 }
 
@@ -39,6 +42,7 @@ impl ExtractArtifacts {
         }
     }
 
+    #[allow(dead_code)]
     pub fn to_artifact(package: NpmPackage, extracted_at: PathBuf) -> ExtractArtifactItem {
         ExtractArtifactItem::new(package, extracted_at)
     }

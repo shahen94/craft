@@ -3,14 +3,13 @@ use async_trait::async_trait;
 use crate::{
     contracts::Registry,
     errors::NetworkError,
-    package::{
-        contracts::{Satisfies, Version},
-        FullPackage, NpmPackage, Package,
-    },
+    package::{contracts::Satisfies, FullPackage, NpmPackage, Package},
 };
 
+#[allow(unused_variables)]
 #[derive(Debug)]
 pub struct GitRegistry {
+    #[allow(dead_code)]
     http: reqwest::Client,
 }
 
@@ -23,7 +22,7 @@ impl GitRegistry {
 }
 
 impl GitRegistry {
-    async fn get_archive(&self, package: &Package) -> Result<FullPackage, NetworkError> {
+    async fn get_archive(&self, _package: &Package) -> Result<FullPackage, NetworkError> {
         todo!()
     }
 }
@@ -31,10 +30,10 @@ impl GitRegistry {
 #[async_trait]
 impl Registry for GitRegistry {
     async fn fetch(&self, package: &Package) -> Result<NpmPackage, NetworkError> {
-        let pkg = self.get_archive(&package).await?;
+        let pkg = self.get_archive(package).await?;
 
         for (version, remote_package) in pkg.versions.iter() {
-            if package.version.satisfies(&version) {
+            if package.version.satisfies(version) {
                 return Ok(remote_package.clone());
             }
         }

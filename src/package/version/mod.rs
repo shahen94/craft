@@ -5,6 +5,6 @@ pub mod contracts;
 mod field;
 mod group;
 mod operator;
-mod version;
+mod pkg_version;
 
-pub use version::VersionImpl;
+pub use pkg_version::VersionImpl;

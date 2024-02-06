@@ -20,7 +20,6 @@ impl ProgressAction {
 }
 
 pub trait Progress {
-    fn new() -> Self;
     fn start(&self, rx: Receiver<ProgressAction>);
     fn set_phase(&self, phase: Phase);
     fn finish(&self);

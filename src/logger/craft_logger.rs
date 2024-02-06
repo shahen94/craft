@@ -12,9 +12,7 @@ pub struct CraftLogger;
 impl CraftLogger {
     pub fn is_verbose() -> bool {
         let verbose = std::env::var(CRAFT_VERBOSE_LOGGING).unwrap_or("false".to_string());
-        let verbose = verbose.parse::<bool>().unwrap_or(false);
-
-        verbose
+        verbose.parse::<bool>().unwrap_or(false)
     }
 
     pub fn verbose<S: AsRef<str>>(message: S) {

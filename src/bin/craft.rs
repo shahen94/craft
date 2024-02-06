@@ -3,10 +3,10 @@ use craft::command::Command;
 use craft::program::Program;
 
 #[tokio::main]
-async fn main() -> () {
+async fn main() {
     let args = Command::parse();
 
-    let mut program = Program::new();
+    let mut program = Program;
 
     program.execute(args).await.unwrap();
 }

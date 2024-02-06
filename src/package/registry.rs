@@ -49,33 +49,26 @@ mod tests {
 
     #[test]
     fn test_is_git() {
-        assert_eq!(Registry::is_git("git+https://github.com/owner/repo"), true);
-        assert_eq!(Registry::is_git("git+https://github.com/owner/repo"), true);
-        assert_eq!(Registry::is_git("git://github.com/owner/repo"), true);
-        assert_eq!(Registry::is_git("git@https://github.com/owner/repo"), true);
-        assert_eq!(Registry::is_git("git::github.com/owner/repo"), true);
-        assert_eq!(
-            Registry::is_git("git+ssh://https://github.com/owner/repo"),
-            true
-        );
-        assert_eq!(
-            Registry::is_git("git+http://https://github.com/owner/repo"),
-            true
-        );
-        assert_eq!(
-            Registry::is_git("git+https://https://github.com/owner/repo"),
-            true
-        );
-        assert_eq!(Registry::is_git("https://github.com/owner/repo"), true);
-        assert_eq!(Registry::is_git("github.com/owner/repo"), true);
-        assert_eq!(Registry::is_git("bitbucket/owner/repo"), true);
-        assert_eq!(Registry::is_git("gitlab/owner/repo"), true);
-        assert_eq!(Registry::is_git("ssh:https://github.com/owner/repo"), true);
-        assert_eq!(Registry::is_git("gitea.com/owner/repo"), true);
+        assert!(Registry::is_git("git+https://github.com/owner/repo"));
+        assert!(Registry::is_git("git+https://github.com/owner/repo"));
+        assert!(Registry::is_git("git://github.com/owner/repo"));
+        assert!(Registry::is_git("git@https://github.com/owner/repo"));
+        assert!(Registry::is_git("git::github.com/owner/repo"));
+        assert!(Registry::is_git("git+ssh://https://github.com/owner/repo"),);
+        assert!(Registry::is_git("git+http://https://github.com/owner/repo"),);
+        assert!(Registry::is_git(
+            "git+https://https://github.com/owner/repo"
+        ),);
+        assert!(Registry::is_git("https://github.com/owner/repo"));
+        assert!(Registry::is_git("github.com/owner/repo"));
+        assert!(Registry::is_git("bitbucket/owner/repo"));
+        assert!(Registry::is_git("gitlab/owner/repo"));
+        assert!(Registry::is_git("ssh:https://github.com/owner/repo"));
+        assert!(Registry::is_git("gitea.com/owner/repo"));
 
-        assert_eq!(Registry::is_git("1.5.6"), false);
-        assert_eq!(Registry::is_git("*"), false);
-        assert_eq!(Registry::is_git("> 2"), false);
+        assert!(!Registry::is_git("1.5.6"));
+        assert!(!Registry::is_git("*"));
+        assert!(!Registry::is_git("> 2"));
     }
 
     #[test]

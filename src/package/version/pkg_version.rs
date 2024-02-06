@@ -42,8 +42,8 @@ impl VersionImpl {
 
             for part in parts {
                 // let mut constraints = vec![];
-                if part.contains(">") || part.contains("<") {
-                    constraints.append(&mut Self::parse_range(&part));
+                if part.contains('>') || part.contains('<') {
+                    constraints.append(&mut Self::parse_range(part));
                 } else {
                     constraints.push(VersionConstraint::parse(part));
                 }
@@ -54,8 +54,8 @@ impl VersionImpl {
             return groups;
         }
 
-        if version.contains(">") || version.contains("<") {
-            let constraints = Self::parse_range(&version);
+        if version.contains('>') || version.contains('<') {
+            let constraints = Self::parse_range(version);
 
             return vec![VersionGroup::new(constraints, Connector::And)];
         }
@@ -136,12 +136,12 @@ impl VersionImpl {
             build: None,
         });
 
-        return vec![VersionGroup::new(constraints, Connector::And)];
+        vec![VersionGroup::new(constraints, Connector::And)]
     }
 
     fn parse_range(version: &str) -> Vec<VersionConstraint> {
-        if version.contains("-") {
-            let parts = version.split("-").collect::<Vec<_>>();
+        if version.contains('-') {
+            let parts = version.split('-').collect::<Vec<_>>();
             let mut constraints = vec![];
 
             for part in parts {
@@ -164,8 +164,8 @@ impl VersionImpl {
         let regex = Regex::new(RANGE_REGEX).unwrap();
 
         let captures = regex
-            .captures(&version)
-            .expect(format!("Invalid version: {}", version).as_str());
+            .captures(version)
+            .unwrap_or_else(|| panic!("Invalid version: {}", version));
 
         if let Some(start_operator_value) = captures.name("start_operator") {
             start_operator = start_operator_value.as_str().parse::<Operator>().unwrap();
@@ -260,7 +260,7 @@ impl Version for VersionImpl {
             "" => "*",
             version => version,
         };
-        let inner = Self::parse_constraints(&version);
+        let inner = Self::parse_constraints(version);
 
         Self { inner }
     }
@@ -282,10 +282,14 @@ impl Version for VersionImpl {
             return false;
         }
 
-        match (&constraint.major, &constraint.minor, &constraint.patch) {
-            (VersionField::Exact(_), VersionField::Exact(_), VersionField::Exact(_)) => true,
-            _ => false,
-        }
+        matches!(
+            (&constraint.major, &constraint.minor, &constraint.patch),
+            (
+                VersionField::Exact(_),
+                VersionField::Exact(_),
+                VersionField::Exact(_)
+            )
+        )
     }
 }
 
@@ -425,47 +429,47 @@ mod tests {
     #[test]
     fn test_version_is_exact() {
         let version = VersionImpl::new("1.0.0");
-        assert_eq!(version.is_exact(), true);
+        assert!(version.is_exact());
 
         let version = VersionImpl::new("1.0.0 || 2.0.0");
-        assert_eq!(version.is_exact(), false);
+        assert!(!version.is_exact());
 
         let version = VersionImpl::new(">=1.0.0 <2.0.0");
-        assert_eq!(version.is_exact(), false);
+        assert!(!version.is_exact());
 
         let version = VersionImpl::new("1.0.0 - 2.0.0");
-        assert_eq!(version.is_exact(), false);
+        assert!(!version.is_exact());
 
         let version = VersionImpl::new("1.*.*");
-        assert_eq!(version.is_exact(), false);
+        assert!(!version.is_exact());
     }
 
     #[test]
     fn test_version_satisfies() {
         let version = VersionImpl::new("1.0.0");
-        assert_eq!(version.satisfies("1.0.0"), true);
-        assert_eq!(version.satisfies("1.0.1"), false);
-        assert_eq!(version.satisfies("1.1.0"), false);
-        assert_eq!(version.satisfies("2.0.0"), false);
+        assert!(version.satisfies("1.0.0"));
+        assert!(!version.satisfies("1.0.1"));
+        assert!(!version.satisfies("1.1.0"));
+        assert!(!version.satisfies("2.0.0"));
 
         let version = VersionImpl::new("1.0.0 || 2.0.0");
-        assert_eq!(version.satisfies("1.0.0"), true);
-        assert_eq!(version.satisfies("2.0.0"), true);
-        assert_eq!(version.satisfies("3.0.0"), false);
+        assert!(version.satisfies("1.0.0"));
+        assert!(version.satisfies("2.0.0"));
+        assert!(!version.satisfies("3.0.0"));
 
         let version = VersionImpl::new(">=1.0.0 <2.0.0");
-        assert_eq!(version.satisfies("1.0.0"), true);
-        assert_eq!(version.satisfies("1.0.1"), true);
-        assert_eq!(version.satisfies("1.1.0"), true);
-        assert_eq!(version.satisfies("2.0.0"), false);
-        assert_eq!(version.satisfies("3.0.0"), false);
+        assert!(version.satisfies("1.0.0"));
+        assert!(version.satisfies("1.0.1"));
+        assert!(version.satisfies("1.1.0"));
+        assert!(!version.satisfies("2.0.0"));
+        assert!(!version.satisfies("3.0.0"));
 
         let version = VersionImpl::new("1.0.0 - 2.0.0");
-        assert_eq!(version.satisfies("1.0.0"), true);
-        assert_eq!(version.satisfies("1.0.1"), true);
-        assert_eq!(version.satisfies("1.1.0"), true);
-        assert_eq!(version.satisfies("2.0.0"), true);
-        assert_eq!(version.satisfies("3.0.0"), false);
+        assert!(version.satisfies("1.0.0"));
+        assert!(version.satisfies("1.0.1"));
+        assert!(version.satisfies("1.1.0"));
+        assert!(version.satisfies("2.0.0"));
+        assert!(!version.satisfies("3.0.0"));
     }
 
     #[test]

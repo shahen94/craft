@@ -30,7 +30,7 @@ impl NpmRegistry {
             "{}/{}/{}",
             NPM_REGISTRY_URL,
             package.name,
-            package.raw_version.replace("=", "")
+            package.raw_version.replace('=', "")
         );
 
         let response = self.http.get(&url).send().await?;
@@ -68,15 +68,15 @@ impl NpmRegistry {
 impl Registry for NpmRegistry {
     async fn fetch(&self, package: &Package) -> Result<NpmPackage, NetworkError> {
         if package.version.is_exact() {
-            let pkg = self.get_exact_package(&package).await?;
+            let pkg = self.get_exact_package(package).await?;
 
             return Ok(pkg);
         }
 
-        let pkg = self.get_full_package(&package).await?;
+        let pkg = self.get_full_package(package).await?;
 
         for (version, remote_package) in pkg.versions.iter() {
-            if package.version.satisfies(&version) {
+            if package.version.satisfies(version) {
                 return Ok(remote_package.clone());
             }
         }

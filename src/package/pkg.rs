@@ -59,16 +59,12 @@ impl Package {
                     Registry::Git => VersionImpl::new("*"),
                 };
 
-                return Self {
-                    name: if package.starts_with("@") {
-                        format!("{}", parts[1])
-                    } else {
-                        parts[1].to_string()
-                    },
+                Self {
+                    name: parts[1].to_string(),
                     registry,
                     version,
                     raw_version: parts[0].to_string(),
-                };
+                }
             }
             _ => panic!("Invalid package name: {}", package),
         }

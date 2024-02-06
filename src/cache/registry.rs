@@ -16,7 +16,19 @@ pub struct RegistryCache {
 // ───────────────────────────────────────────────────────────────────────────────
 
 impl RegistryCache {
-    pub fn new() -> Self {
+    pub async fn save(&self) -> Result<(), CacheError> {
+        let cache_file = File::create(self.directory.join(REGISTRY_CACHE_FILE)).unwrap();
+
+        serde_json::to_writer(cache_file, &self.cache).unwrap();
+
+        Ok(())
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+impl Default for RegistryCache {
+    fn default() -> Self {
         let directory = {
             let mut home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
             home.push_str(REGISTRY_CACHE_FOLDER);
@@ -29,14 +41,6 @@ impl RegistryCache {
             cache: HashMap::new(),
         }
     }
-
-    pub async fn save(&self) -> Result<(), CacheError> {
-        let cache_file = File::create(self.directory.join(REGISTRY_CACHE_FILE)).unwrap();
-
-        serde_json::to_writer(cache_file, &self.cache).unwrap();
-
-        Ok(())
-    }
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -47,10 +51,10 @@ impl PersistentCache<NpmPackage> for RegistryCache {
         if !self.directory.exists() {
             tokio::fs::create_dir_all(&self.directory)
                 .await
-                .map_err(|err| CacheError::FileSystemError(err))?;
+                .map_err(CacheError::FileSystemError)?;
             tokio::fs::File::create(self.directory.join(REGISTRY_CACHE_FILE))
                 .await
-                .map_err(|err| CacheError::FileSystemError(err))?;
+                .map_err(CacheError::FileSystemError)?;
             return Ok(());
         }
 
@@ -72,7 +76,7 @@ impl PersistentCache<NpmPackage> for RegistryCache {
         if self.directory.exists() {
             tokio::fs::remove_dir_all(&self.directory)
                 .await
-                .map_err(|err| CacheError::FileSystemError(err))?;
+                .map_err(CacheError::FileSystemError)?;
         }
 
         Ok(())

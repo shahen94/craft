@@ -20,8 +20,8 @@ pub struct UIProgress {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-impl Progress for UIProgress {
-    fn new() -> Self {
+impl Default for UIProgress {
+    fn default() -> Self {
         let multi_pb = MultiProgress::new();
         let resolving_spinner = multi_pb.add(ProgressBar::new_spinner());
         let downloading_spinner = multi_pb.add(ProgressBar::new_spinner());
@@ -36,7 +36,9 @@ impl Progress for UIProgress {
             linking_spinner,
         }
     }
+}
 
+impl Progress for UIProgress {
     fn set_phase(&self, phase: Phase) {
         match phase {
             Phase::Resolving => {

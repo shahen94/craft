@@ -1,3 +1,3 @@
-mod network;
+mod http;
 
-pub use network::Network;
+pub use http::Http;

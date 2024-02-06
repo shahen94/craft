@@ -1,4 +1,4 @@
-use super::{constraint::VersionConstraint, contracts::Satisfies};
+use super::contracts::Satisfies;
 
 // ─── VersionField ────────────────────────────────────────────────────────────
 
@@ -109,17 +109,17 @@ mod tests {
     #[test]
     fn test_version_field_satisfies() {
         let version_field = VersionField::Exact(1);
-        assert_eq!(version_field.satisfies("1"), true);
-        assert_eq!(version_field.satisfies("2"), false);
-        assert_eq!(version_field.satisfies("*"), true);
-        assert_eq!(version_field.satisfies("x"), true);
-        assert_eq!(version_field.satisfies("latest"), true);
+        assert!(version_field.satisfies("1"));
+        assert!(!version_field.satisfies("2"));
+        assert!(version_field.satisfies("*"));
+        assert!(version_field.satisfies("x"));
+        assert!(version_field.satisfies("latest"));
 
         let version_field = VersionField::Wildcard;
-        assert_eq!(version_field.satisfies("1"), true);
-        assert_eq!(version_field.satisfies("2"), true);
-        assert_eq!(version_field.satisfies("*"), true);
-        assert_eq!(version_field.satisfies("x"), true);
-        assert_eq!(version_field.satisfies("latest"), true);
+        assert!(version_field.satisfies("1"));
+        assert!(version_field.satisfies("2"));
+        assert!(version_field.satisfies("*"));
+        assert!(version_field.satisfies("x"));
+        assert!(version_field.satisfies("latest"));
     }
 }

@@ -1,3 +1,3 @@
-mod program;
+mod craft;
 
-pub use program::Program;
+pub use craft::Program;

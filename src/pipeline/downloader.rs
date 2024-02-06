@@ -11,7 +11,7 @@ use crate::{
     contracts::{PersistentCache, Phase, Pipe, PipeArtifact, ProgressAction},
     errors::ExecutionError,
     logger::CraftLogger,
-    network::Network,
+    network::Http,
     package::NpmPackage,
 };
 
@@ -33,7 +33,7 @@ impl DownloaderPipe<PackagesCache> {
     pub fn new(artifacts: &dyn PipeArtifact<Vec<NpmPackage>>, tx: Sender<ProgressAction>) -> Self {
         Self {
             packages: artifacts.get_artifacts(),
-            cache: Arc::new(Mutex::new(PackagesCache::new())),
+            cache: Arc::new(Mutex::new(PackagesCache::default())),
             artifacts: Arc::new(Mutex::new(DownloadArtifacts::new())),
             tx,
         }
@@ -67,9 +67,7 @@ impl DownloaderPipe<PackagesCache> {
                 .get_cache_directory()
                 .join(pkg.to_string());
 
-            Network::download_file(&pkg.dist.tarball, path)
-                .await
-                .unwrap();
+            Http::download_file(&pkg.dist.tarball, path).await.unwrap();
 
             artifacts.lock().await.insert(
                 pkg.to_string(),
@@ -92,7 +90,7 @@ impl Pipe<DownloadArtifacts> for DownloaderPipe<PackagesCache> {
 
         let _ = tokio::join! {
           async {
-            CraftLogger::verbose("Downloading packages".to_string());
+            CraftLogger::verbose("Downloading packages");
             for pkg in self.packages.iter() {
 
               CraftLogger::verbose(format!("Downloading package: {}", pkg.to_string()));

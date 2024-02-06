@@ -15,13 +15,9 @@ use crate::{
 pub struct Program;
 
 impl Program {
-    pub fn new() -> Self {
-        Self {}
-    }
-
     pub fn start_progress(&self, rx: Receiver<ProgressAction>) -> JoinHandle<()> {
         thread::spawn(move || {
-            let progress = UIProgress::new();
+            let progress = UIProgress::default();
 
             progress.start(rx);
         })
@@ -49,6 +45,8 @@ impl Program {
                     .await?;
 
                 CraftLogger::verbose_n(3, "Extracting dependencies");
+
+                #[allow(unused_variables)]
                 let extracted_artifacts = ExtractorPipe::new(&download_artifacts, tx.clone())
                     .run()
                     .await?;
@@ -58,13 +56,19 @@ impl Program {
 
                 drop(tx);
                 ui_thread.join().unwrap();
-                return Ok(());
+                Ok(())
             }
             SubCommand::Cache(args) => {
                 let _ = CacheCleanPipe::new(args).run().await;
 
-                return Ok(());
+                Ok(())
             }
         }
+    }
+}
+
+impl Default for Program {
+    fn default() -> Self {
+        Self
     }
 }

@@ -24,8 +24,8 @@ impl Pipe<()> for CacheCleanPipe {
     async fn run(&mut self) -> Result<(), ExecutionError> {
         match self.action {
             CacheAction::Clean => {
-                let _ = PackagesCache::new().clean().await;
-                let _ = RegistryCache::new().clean().await;
+                let _ = PackagesCache::default().clean().await;
+                let _ = RegistryCache::default().clean().await;
             }
         }
 
