@@ -1,5 +1,10 @@
-use std::{collections::HashMap, env, path::PathBuf};
+use std::{
+    collections::HashMap,
+    env,
+    path::{Path, PathBuf},
+};
 
+use async_recursion::async_recursion;
 use async_trait::async_trait;
 
 use crate::{contracts::PersistentCache, errors::CacheError};
@@ -17,6 +22,40 @@ pub struct PackagesCache {
 // ───────────────────────────────────────────────────────────────────────────────
 
 impl PackagesCache {
+    #[async_recursion]
+    pub async fn read_cache_directory(dir: &Path) -> Result<HashMap<String, bool>, CacheError> {
+        let mut cache = HashMap::new();
+
+        let mut entries = tokio::fs::read_dir(dir).await?;
+
+        while let Some(entry) = entries.next_entry().await? {
+            if entry.file_type().await?.is_dir() {
+                let dirname = entry
+                    .file_name()
+                    .into_string()
+                    .map_err(|_| CacheError::CacheError)?;
+
+                let p = dir.join(&dirname);
+                let nested_cache = Self::read_cache_directory(&p).await?;
+
+                for (k, v) in nested_cache {
+                    let key = format!("{}/{}", dirname, k);
+                    cache.insert(key, v);
+                }
+            }
+
+            cache.insert(
+                entry
+                    .file_name()
+                    .into_string()
+                    .map_err(|_| CacheError::CacheError)?,
+                true,
+            );
+        }
+
+        Ok(cache)
+    }
+
     pub fn get_cache_directory(&self) -> &PathBuf {
         &self.directory
     }
@@ -57,26 +96,7 @@ impl PersistentCache<PathBuf> for PackagesCache {
             return Ok(());
         }
 
-        // We need to ls the directory and populate the cache
-
-        let mut cache = HashMap::new();
-
-        let mut entries = tokio::fs::read_dir(&self.directory).await?;
-
-        while let Ok(entry) = entries.next_entry().await {
-            let entry = match entry {
-                Some(entry) => entry,
-                None => break,
-            };
-            let path = entry.path();
-
-            if path.is_file() {
-                let file_name = path.file_name().unwrap().to_str().unwrap().to_string();
-                cache.insert(file_name, true);
-            }
-        }
-
-        self.cache = cache;
+        self.cache = Self::read_cache_directory(&self.directory).await?;
 
         Ok(())
     }

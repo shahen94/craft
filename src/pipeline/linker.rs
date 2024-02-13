@@ -7,6 +7,7 @@ use crate::{
     errors::ExecutionError,
 };
 
+#[derive(Debug)]
 pub struct LinkerPipe {
     tx: Sender<ProgressAction>,
 }

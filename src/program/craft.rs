@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     command::{Command, SubCommand},
-    contracts::{Pipe, Progress, ProgressAction},
+    contracts::{Pipe, PipeArtifact, Progress, ProgressAction},
     errors::ExecutionError,
     logger::CraftLogger,
     pipeline::{CacheCleanPipe, DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
@@ -38,11 +38,20 @@ impl Program {
 
                 CraftLogger::verbose_n(3, "Resolving dependencies");
                 let resolve_artifacts = ResolverPipe::new(args.package, tx.clone()).run().await?;
+                CraftLogger::verbose_n(
+                    3,
+                    format!("Resolved: {:?}", resolve_artifacts.get_artifacts().len()),
+                );
 
                 CraftLogger::verbose_n(3, "Downloading dependencies");
                 let download_artifacts = DownloaderPipe::new(&resolve_artifacts, tx.clone())
                     .run()
                     .await?;
+
+                CraftLogger::verbose_n(
+                    3,
+                    format!("Downloaded {:?}", download_artifacts.get_artifacts().len()),
+                );
                 CraftLogger::verbose_n(3, "Extracting dependencies");
 
                 #[allow(unused_variables)]
@@ -50,8 +59,14 @@ impl Program {
                     .run()
                     .await?;
 
+                CraftLogger::verbose_n(
+                    3,
+                    format!("Extracted {:?}", extracted_artifacts.get_artifacts().len()),
+                );
                 CraftLogger::verbose_n(3, "Linking dependencies");
                 LinkerPipe::new(tx.clone()).run().await?;
+
+                ExtractorPipe::cleanup().await;
 
                 drop(tx);
                 ui_thread.join().unwrap();

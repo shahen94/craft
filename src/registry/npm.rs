@@ -30,7 +30,7 @@ impl NpmRegistry {
             "{}/{}/{}",
             NPM_REGISTRY_URL,
             package.name,
-            package.raw_version.replace('=', "")
+            package.raw_version.replace('=', "").replace('*', "latest")
         );
 
         let response = self.http.get(&url).send().await?;

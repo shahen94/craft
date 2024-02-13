@@ -1,5 +1,5 @@
 use std::{
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{mpsc::Sender, Arc},
 };
 
@@ -39,6 +39,10 @@ impl DownloaderPipe<PackagesCache> {
         }
     }
 
+    async fn prepare_pkg_for_download(download_path: &Path) -> Result<(), std::io::Error> {
+        tokio::fs::create_dir_all(download_path.parent().unwrap()).await
+    }
+
     pub async fn download_pkg(&self, package: &NpmPackage) -> Result<(), ExecutionError> {
         let pkg = package.clone();
 
@@ -67,6 +71,9 @@ impl DownloaderPipe<PackagesCache> {
                 .get_cache_directory()
                 .join(pkg.to_string());
 
+            if pkg.contains_org() {
+                Self::prepare_pkg_for_download(path).await.unwrap();
+            }
             Http::download_file(&pkg.dist.tarball, path).await.unwrap();
 
             artifacts.lock().await.insert(

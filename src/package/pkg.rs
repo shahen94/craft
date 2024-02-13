@@ -1,8 +1,7 @@
-use crate::logger::CraftLogger;
-
 use super::{
     registry::Registry,
     version::{contracts::Version, VersionImpl},
+    NpmPackage,
 };
 
 // ─── Package ───────────────────────────────────────────────────────────────────
@@ -35,8 +34,6 @@ impl Package {
     }
 
     pub fn new(package: &str) -> Self {
-        CraftLogger::verbose(format!("Parsing package: {}", package));
-
         let parts = package.rsplitn(2, '@').collect::<Vec<_>>();
 
         match parts.len() {
@@ -67,6 +64,17 @@ impl Package {
                 }
             }
             _ => panic!("Invalid package name: {}", package),
+        }
+    }
+}
+
+impl From<NpmPackage> for Package {
+    fn from(pkg: NpmPackage) -> Self {
+        Self {
+            name: pkg.name,
+            version: VersionImpl::new(&pkg.version),
+            registry: Registry::Npm,
+            raw_version: pkg.version,
         }
     }
 }

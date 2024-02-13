@@ -48,3 +48,9 @@ impl ToString for NpmPackage {
         format!("{}@{}", self.name, self.version)
     }
 }
+
+impl NpmPackage {
+    pub fn contains_org(&self) -> bool {
+        self.name.contains('/')
+    }
+}

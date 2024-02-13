@@ -31,6 +31,15 @@ impl ExtractorPipe {
         }
     }
 
+    pub async fn cleanup() {
+        let tmp_folder = ExtractArtifacts::get_tmp_folder();
+
+        if tmp_folder.exists() {
+            CraftLogger::verbose("Cleaning up temporary cache folder");
+            tokio::fs::remove_dir_all(&tmp_folder).await.unwrap();
+        }
+    }
+
     pub async fn unzip_archive(&self, artifact: &StoredArtifact) -> Result<(), ZipError> {
         let artifact_s = artifact.clone();
 
@@ -74,13 +83,6 @@ impl Pipe<ExtractArtifacts> for ExtractorPipe {
                 artifact.package.to_string()
             ));
             self.unzip_archive(artifact).await.unwrap();
-        }
-
-        let tmp_folder = ExtractArtifacts::get_tmp_folder();
-
-        if tmp_folder.exists() {
-            CraftLogger::verbose("Cleaning up temporary cache folder");
-            tokio::fs::remove_dir_all(&tmp_folder).await.unwrap();
         }
 
         Ok(self.artifacts.lock().await.clone())

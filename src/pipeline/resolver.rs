@@ -65,12 +65,13 @@ impl ResolverPipe<RegistryCache> {
             return Ok(());
         }
 
-        let remote_package = self.npm_registry.fetch(package).await?;
+        let remote_package = self.npm_registry.fetch(package).await.unwrap();
 
         let pkg_cache_key = remote_package.to_string();
 
         self.artifacts
             .insert(pkg_cache_key.clone(), remote_package.clone());
+
         self.cache.set(&pkg_cache_key, remote_package.clone()).await;
 
         for (name, version) in &remote_package.dependencies {
