@@ -4,11 +4,11 @@ use std::{
 };
 
 use crate::{
+    actors::{CacheCleanActor, InstallActor},
     command::{Command, SubCommand},
-    contracts::{Pipe, PipeArtifact, Progress, ProgressAction},
+    contracts::{Actor, Progress, ProgressAction},
     errors::ExecutionError,
-    logger::CraftLogger,
-    pipeline::{CacheCleanPipe, DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
+    package::PackageJson,
     ui::UIProgress,
 };
 
@@ -23,57 +23,36 @@ impl Program {
         })
     }
 
+    fn read_package_json(&self) -> PackageJson {
+        std::fs::read_to_string("package.json").unwrap().into()
+    }
+
     pub async fn execute(&mut self, args: Command) -> Result<(), ExecutionError> {
         if args.command.is_none() {
-            todo!("Read package.json and install dependencies");
+            let json = self.read_package_json();
+
+            let dependencies = json.dependencies;
+
+            let mut packages = vec![];
+
+            for (name, version) in dependencies {
+                packages.push(format!("{}@{}", name, version));
+            }
+
+            InstallActor::new(packages).start().await.unwrap();
+
+            return Ok(());
         }
 
         let command = args.command.unwrap();
 
         match command {
             SubCommand::Install(args) => {
-                let (tx, rx) = std::sync::mpsc::channel();
-
-                let ui_thread = self.start_progress(rx);
-
-                CraftLogger::verbose_n(3, "Resolving dependencies");
-                let resolve_artifacts = ResolverPipe::new(args.package, tx.clone()).run().await?;
-                CraftLogger::verbose_n(
-                    3,
-                    format!("Resolved: {:?}", resolve_artifacts.get_artifacts().len()),
-                );
-
-                CraftLogger::verbose_n(3, "Downloading dependencies");
-                let download_artifacts = DownloaderPipe::new(&resolve_artifacts, tx.clone())
-                    .run()
-                    .await?;
-
-                CraftLogger::verbose_n(
-                    3,
-                    format!("Downloaded {:?}", download_artifacts.get_artifacts().len()),
-                );
-                CraftLogger::verbose_n(3, "Extracting dependencies");
-
-                #[allow(unused_variables)]
-                let extracted_artifacts = ExtractorPipe::new(&download_artifacts, tx.clone())
-                    .run()
-                    .await?;
-
-                CraftLogger::verbose_n(
-                    3,
-                    format!("Extracted {:?}", extracted_artifacts.get_artifacts().len()),
-                );
-                CraftLogger::verbose_n(3, "Linking dependencies");
-                LinkerPipe::new(tx.clone()).run().await?;
-
-                ExtractorPipe::cleanup().await;
-
-                drop(tx);
-                ui_thread.join().unwrap();
+                InstallActor::new(vec![args.package]).start().await.unwrap();
                 Ok(())
             }
             SubCommand::Cache(args) => {
-                let _ = CacheCleanPipe::new(args).run().await;
+                CacheCleanActor::new(args).start().await;
 
                 Ok(())
             }

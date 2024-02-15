@@ -1,15 +1,26 @@
+define log
+	@echo "\n\n\n"
+	@echo  "\033[31m $1"
+endef
+
 .PHONY: build
 build:
-	cargo build --bin craft --release
+	$(call log, "Building craft")
+	@cargo build --bin craft --release
 
 clean:
 	cargo clean
 
 test:
-	cargo test $(ARGS)
+	$(call log, "Running tests")
+	@cargo test $(ARGS)
+
+test-all: fmt test lint
 
 lint:
-	cargo clippy --all-targets --all-features -- -D warnings
+	$(call log, "Running clippy")
+	@cargo clippy --all-targets --all-features -- -D warnings
 
 fmt:
-	cargo fmt --all
+	$(call log, "Running fmt")
+	@cargo fmt --all

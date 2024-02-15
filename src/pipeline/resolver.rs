@@ -17,7 +17,7 @@ use super::artifacts::ResolveArtifacts;
 
 #[derive(Debug)]
 pub struct ResolverPipe<C: PersistentCache<NpmPackage>> {
-    package: String,
+    packages: Vec<String>,
     cache: C,
     npm_registry: NpmRegistry,
 
@@ -32,9 +32,9 @@ pub struct ResolverPipe<C: PersistentCache<NpmPackage>> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 impl ResolverPipe<RegistryCache> {
-    pub fn new(package: String, tx: Sender<ProgressAction>) -> Self {
+    pub fn new(packages: Vec<String>, tx: Sender<ProgressAction>) -> Self {
         Self {
-            package,
+            packages,
             cache: RegistryCache::default(),
             npm_registry: NpmRegistry::new(),
             git_registry: GitRegistry::new(),
@@ -93,11 +93,13 @@ impl ResolverPipe<RegistryCache> {
     }
 
     pub async fn resolve(&mut self) -> Result<(), NetworkError> {
-        let package = Package::new(&self.package);
-
         let _ = self.tx.send(ProgressAction::new(Phase::Resolving));
 
-        self.resolve_pkg(&package).await?;
+        for pkg in self.packages.clone() {
+            let package = Package::new(pkg.as_str());
+
+            self.resolve_pkg(&package).await?;
+        }
 
         Ok(())
     }
@@ -106,11 +108,6 @@ impl ResolverPipe<RegistryCache> {
 #[async_trait]
 impl Pipe<ResolveArtifacts> for ResolverPipe<RegistryCache> {
     async fn run(&mut self) -> Result<ResolveArtifacts, ExecutionError> {
-        CraftLogger::verbose(format!(
-            "Resolving package and dependencies for: {}",
-            self.package
-        ));
-
         self.cache.init().await.unwrap();
 
         match self.resolve().await {

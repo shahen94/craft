@@ -11,6 +11,16 @@ use super::{
     operator::Operator,
 };
 
+trait ContainsRangeChar {
+    fn contains_range_char(&self) -> bool;
+}
+
+impl ContainsRangeChar for str {
+    fn contains_range_char(&self) -> bool {
+        self.contains('>') || self.contains('<')
+    }
+}
+
 // ─── VersionImpl ─────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
@@ -42,7 +52,7 @@ impl VersionImpl {
 
             for part in parts {
                 // let mut constraints = vec![];
-                if part.contains('>') || part.contains('<') {
+                if part.contains_range_char() {
                     constraints.append(&mut Self::parse_range(part));
                 } else {
                     constraints.push(VersionConstraint::parse(part));
@@ -54,7 +64,7 @@ impl VersionImpl {
             return groups;
         }
 
-        if version.contains('>') || version.contains('<') {
+        if version.contains_range_char() {
             let constraints = Self::parse_range(version);
 
             return vec![VersionGroup::new(constraints, Connector::And)];
