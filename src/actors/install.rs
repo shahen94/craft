@@ -51,12 +51,6 @@ impl Actor<PipeResult> for InstallActor {
             format!("Resolved: {:?}", resolve_artifacts.get_artifacts().len()),
         );
 
-        LockFile::sync(
-            resolve_artifacts.get_artifacts(),
-            env::current_dir().unwrap(),
-        )
-        .await;
-
         CraftLogger::verbose_n(3, "Downloading dependencies");
         let download_artifacts = DownloaderPipe::new(&resolve_artifacts, tx.clone())
             .run()
@@ -78,7 +72,19 @@ impl Actor<PipeResult> for InstallActor {
             format!("Extracted {:?}", extracted_artifacts.get_artifacts().len()),
         );
         CraftLogger::verbose_n(3, "Linking dependencies");
-        LinkerPipe::new(tx.clone()).run().await?;
+        LinkerPipe::new(
+            tx.clone(),
+            resolve_artifacts.get_artifacts(),
+            extracted_artifacts.get_artifacts(),
+        )
+        .run()
+        .await?;
+
+        LockFile::sync(
+            resolve_artifacts.get_artifacts(),
+            env::current_dir().unwrap(),
+        )
+        .await;
 
         ExtractorPipe::cleanup().await;
 
