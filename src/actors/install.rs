@@ -42,6 +42,8 @@ impl Actor<PipeResult> for InstallActor {
 
         let ui_thread = self.start_progress(rx);
 
+        // ─── Start Resolving ─────────────────────────
+
         CraftLogger::verbose_n(3, "Resolving dependencies");
         let resolve_artifacts = ResolverPipe::new(self.packages.clone(), tx.clone())
             .run()
@@ -50,6 +52,8 @@ impl Actor<PipeResult> for InstallActor {
             3,
             format!("Resolved: {:?}", resolve_artifacts.get_artifacts().len()),
         );
+
+        // ─── Start Downloading ──────────────────────
 
         CraftLogger::verbose_n(3, "Downloading dependencies");
         let download_artifacts = DownloaderPipe::new(&resolve_artifacts, tx.clone())
@@ -60,9 +64,10 @@ impl Actor<PipeResult> for InstallActor {
             3,
             format!("Downloaded {:?}", download_artifacts.get_artifacts().len()),
         );
-        CraftLogger::verbose_n(3, "Extracting dependencies");
 
-        #[allow(unused_variables)]
+        // ─── Start Extracting ───────────────────────
+
+        CraftLogger::verbose_n(3, "Extracting dependencies");
         let extracted_artifacts = ExtractorPipe::new(&download_artifacts, tx.clone())
             .run()
             .await?;
@@ -71,6 +76,9 @@ impl Actor<PipeResult> for InstallActor {
             3,
             format!("Extracted {:?}", extracted_artifacts.get_artifacts().len()),
         );
+
+        // ─── Start Linking ──────────────────────────
+
         CraftLogger::verbose_n(3, "Linking dependencies");
         LinkerPipe::new(
             tx.clone(),
@@ -80,11 +88,15 @@ impl Actor<PipeResult> for InstallActor {
         .run()
         .await?;
 
+        // ─── Sync Lock File ────────────────────────
+
         LockFile::sync(
             resolve_artifacts.get_artifacts(),
             env::current_dir().unwrap(),
         )
         .await;
+
+        // ─── Cleanup ────────────────────────────────
 
         ExtractorPipe::cleanup().await;
 

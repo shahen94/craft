@@ -15,7 +15,7 @@ use crate::{
     package::NpmPackage,
 };
 
-use super::artifacts::DownloadArtifacts;
+use super::artifacts::{DownloadArtifacts, ResolvedItem};
 
 // ─── DownloaderPipe ─────────────────────────────────────────────────────────────
 
@@ -30,9 +30,9 @@ pub struct DownloaderPipe<C: PersistentCache<PathBuf>> {
 // ─── Implementation ───────────────────────────────────────────────────────────
 
 impl DownloaderPipe<PackagesCache> {
-    pub fn new(artifacts: &dyn PipeArtifact<Vec<NpmPackage>>, tx: Sender<ProgressAction>) -> Self {
+    pub fn new(artifacts: &dyn PipeArtifact<Vec<ResolvedItem>>, tx: Sender<ProgressAction>) -> Self {
         Self {
-            packages: artifacts.get_artifacts(),
+            packages: artifacts.get_artifacts().iter().map(|item| item.package.clone()).collect(),
             cache: Arc::new(Mutex::new(PackagesCache::default())),
             artifacts: Arc::new(Mutex::new(DownloadArtifacts::new())),
             tx,

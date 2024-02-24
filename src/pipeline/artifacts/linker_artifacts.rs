@@ -1,27 +1,18 @@
 use std::path::PathBuf;
 
+
 // ─────────────────────────────────────────────────────────────────────────────
 
-#[derive(Debug, Default)]
-pub struct LinkerArtifacts {
-    pub artifacts: Vec<LinkArtifactItem>,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LinkArtifactItem {
-    pub path: PathBuf,
+    pub to: PathBuf,
+    pub from: PathBuf,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 impl LinkArtifactItem {
-    pub fn new(path: PathBuf) -> Self {
-        Self { path }
-    }
-}
-
-impl LinkerArtifacts {
-    pub fn add(&mut self, path: PathBuf) {
-        self.artifacts.push(LinkArtifactItem::new(path));
+    pub fn new(from: PathBuf, to: PathBuf) -> Self {
+        Self { from, to }
     }
 }

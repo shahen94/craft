@@ -10,6 +10,7 @@ mod perf;
 mod registry;
 mod tar;
 mod ui;
+mod fs;
 
 mod pipeline;
 

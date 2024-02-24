@@ -1,8 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
-
-use crate::{contracts::LOCK_FILE_NAME, package::NpmPackage};
+use crate::{contracts::LOCK_FILE_NAME, package::NpmPackage, pipeline::ResolvedItem};
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct LockFile {
@@ -25,7 +24,7 @@ impl LockFile {
         lock_file
     }
 
-    pub async fn sync(package: Vec<NpmPackage>, path: PathBuf) {
+    pub async fn sync(package: Vec<ResolvedItem>, path: PathBuf) {
         let file_path = path.join(LOCK_FILE_NAME);
 
         if file_path.exists() {

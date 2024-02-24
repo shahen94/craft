@@ -6,7 +6,25 @@ use crate::{contracts::PipeArtifact, package::NpmPackage};
 
 #[derive(Debug, Clone)]
 pub struct ResolveArtifacts {
-    packages: HashMap<String, NpmPackage>,
+    packages: HashMap<String, ResolvedItem>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ResolvedItem {
+    pub package: NpmPackage,
+    pub parent: Option<String>,
+}
+
+// --------------------------------------------------------------------------------
+
+impl ResolvedItem {
+    pub fn new(package: NpmPackage, parent: Option<String>) -> Self {
+        Self { package, parent }
+    }
+
+    pub fn with_no_parent(package: NpmPackage) -> Self {
+        Self::new(package, None)
+    }
 }
 
 // --------------------------------------------------------------------------------
@@ -18,19 +36,19 @@ impl ResolveArtifacts {
         }
     }
 
-    pub fn get(&self, key: &str) -> Option<&NpmPackage> {
+    pub fn get(&self, key: &str) -> Option<&ResolvedItem> {
         self.packages.get(key)
     }
 
-    pub fn insert(&mut self, key: String, value: NpmPackage) {
+    pub fn insert(&mut self, key: String, value: ResolvedItem) {
         self.packages.insert(key, value);
     }
 }
 
 // --------------------------------------------------------------------------------
 
-impl PipeArtifact<Vec<NpmPackage>> for ResolveArtifacts {
-    fn get_artifacts(&self) -> Vec<NpmPackage> {
+impl PipeArtifact<Vec<ResolvedItem>> for ResolveArtifacts {
+    fn get_artifacts(&self) -> Vec<ResolvedItem> {
         self.packages.values().cloned().collect()
     }
 }
@@ -58,9 +76,9 @@ mod tests {
             "#,
         )
         .unwrap();
-        resolve_artifacts.insert("package".to_string(), package);
+        resolve_artifacts.insert("package".to_string(), ResolvedItem::with_no_parent(package));
 
-        assert_eq!(resolve_artifacts.get("package").unwrap().version, "1.0.0");
+        assert_eq!(resolve_artifacts.get("package").unwrap().package.version, "1.0.0");
     }
 
     #[test]
@@ -80,7 +98,7 @@ mod tests {
             "#,
         )
         .unwrap();
-        resolve_artifacts.insert("package".to_string(), package);
+        resolve_artifacts.insert("package".to_string(), ResolvedItem::with_no_parent(package));
 
         assert_eq!(resolve_artifacts.get_artifacts().len(), 1);
     }
