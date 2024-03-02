@@ -2,13 +2,17 @@ use std::{collections::HashMap, env, path::PathBuf};
 
 use crate::{cache::TMP_CACHE_FOLDER, contracts::PipeArtifact, package::NpmPackage};
 
+// ─────────────────────────────────────────────────────────────────────────────
+
+pub type ExtractArtifactsMap = HashMap<String, ExtractArtifactItem>;
+
 // ─── ExtractArtifacts ─────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
 pub struct ExtractArtifacts {
     #[allow(dead_code)]
     tmp_cache_folder: PathBuf,
-    tmp_cache: HashMap<String, ExtractArtifactItem>,
+    tmp_cache: ExtractArtifactsMap,
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -16,9 +20,9 @@ pub struct ExtractArtifacts {
 #[derive(Debug, Clone)]
 pub struct ExtractArtifactItem {
     #[allow(dead_code)]
-    package: NpmPackage,
+    pub package: NpmPackage,
     #[allow(dead_code)]
-    unzip_at: PathBuf,
+    pub unzip_at: PathBuf,
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -55,7 +59,7 @@ impl ExtractArtifacts {
     }
 
     pub fn add(&mut self, package: NpmPackage, unzip_at: PathBuf) {
-        let name = package.name.clone();
+        let name = format!("{}@{}", package.name.clone(), package.version.clone());
         let item = ExtractArtifactItem::new(package.clone(), unzip_at);
 
         self.tmp_cache.insert(name, item);
@@ -69,9 +73,9 @@ impl ExtractArtifacts {
 
 // ───────────────────────────────────────────────────────────────────────────────
 
-impl PipeArtifact<Vec<ExtractArtifactItem>> for ExtractArtifacts {
-    fn get_artifacts(&self) -> Vec<ExtractArtifactItem> {
-        self.tmp_cache.values().cloned().collect()
+impl PipeArtifact<ExtractArtifactsMap> for ExtractArtifacts {
+    fn get_artifacts(&self) -> ExtractArtifactsMap {
+        self.tmp_cache.clone()
     }
 }
 
@@ -101,7 +105,11 @@ mod tests {
         extract_artifacts.add(package.clone(), PathBuf::from("/tmp/package"));
 
         assert_eq!(
-            extract_artifacts.get("package").unwrap().package.version,
+            extract_artifacts
+                .get("package@1.0.0")
+                .unwrap()
+                .package
+                .version,
             "1.0.0"
         );
     }

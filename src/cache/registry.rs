@@ -16,7 +16,7 @@ pub struct RegistryCache {
 // ───────────────────────────────────────────────────────────────────────────────
 
 impl RegistryCache {
-    pub async fn save(&self) -> Result<(), CacheError> {
+    pub async fn persist(&self) -> Result<(), CacheError> {
         let cache_file = File::create(self.directory.join(REGISTRY_CACHE_FILE)).unwrap();
 
         serde_json::to_writer(cache_file, &self.cache).unwrap();

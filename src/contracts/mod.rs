@@ -10,7 +10,7 @@ mod registry;
 pub use cache::PersistentCache;
 
 pub use actor::Actor;
-pub use constants::{CRAFT_VERBOSE_LOGGING, LOCK_FILE_NAME};
+pub use constants::CRAFT_VERBOSE_LOGGING;
 pub use logger::Logger;
 pub use pipe::Pipe;
 pub use pipe_artifact::PipeArtifact;

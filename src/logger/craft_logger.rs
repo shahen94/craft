@@ -35,18 +35,22 @@ impl CraftLogger {
 
 impl Logger for CraftLogger {
     fn log<S: AsRef<str>>(message: S) {
-        println!("{}", message.as_ref().green());
+        let prefix = "[LOG]:".green().bold();
+        println!("{} {}", prefix, message.as_ref().green());
     }
 
     fn info<S: AsRef<str>>(message: S) {
-        println!("{}", message.as_ref().blue());
+        let prefix = "[INFO]:".green().bold();
+        println!("{} {}", prefix, message.as_ref().blue());
     }
 
     fn error<S: AsRef<str>>(message: S) {
-        println!("{}", message.as_ref().red());
+        let prefix = "[ERROR]:".red().bold();
+        println!("{} {}", prefix, message.as_ref().red());
     }
 
     fn warn<S: AsRef<str>>(message: S) {
-        println!("{}", message.as_ref().yellow());
+        let prefix = "[WARN]:".yellow().bold();
+        println!("{} {}", prefix, message.as_ref().yellow());
     }
 }

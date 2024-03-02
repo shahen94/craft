@@ -11,7 +11,7 @@ use crate::package::{NpmPackage, Package};
 use crate::registry::GitRegistry;
 use crate::registry::NpmRegistry;
 
-use super::artifacts::ResolveArtifacts;
+use super::artifacts::{ResolveArtifacts, ResolvedItem};
 
 // ─── ResolverPipe ────────────────────────────────────────────────────────────
 
@@ -44,7 +44,11 @@ impl ResolverPipe<RegistryCache> {
     }
 
     #[async_recursion]
-    async fn resolve_pkg(&mut self, package: &Package) -> Result<(), NetworkError> {
+    async fn resolve_pkg(
+        &mut self,
+        package: &Package,
+        parent: Option<String>,
+    ) -> Result<(), NetworkError> {
         CraftLogger::verbose(format!("Resolving package: {}", package.to_string()));
 
         let artifact_key = package.to_string();
@@ -61,7 +65,8 @@ impl ResolverPipe<RegistryCache> {
 
         if let Some(pkg) = cached_pkg {
             CraftLogger::verbose(format!("Package found in cache: {}", package.to_string()));
-            self.artifacts.insert(artifact_key.clone(), pkg.clone());
+            self.artifacts
+                .insert(artifact_key.clone(), ResolvedItem::new(pkg.clone(), parent));
             return Ok(());
         }
 
@@ -69,8 +74,10 @@ impl ResolverPipe<RegistryCache> {
 
         let pkg_cache_key = remote_package.to_string();
 
-        self.artifacts
-            .insert(pkg_cache_key.clone(), remote_package.clone());
+        self.artifacts.insert(
+            pkg_cache_key.clone(),
+            ResolvedItem::new(remote_package.clone(), parent.clone()),
+        );
 
         self.cache.set(&pkg_cache_key, remote_package.clone()).await;
 
@@ -79,10 +86,15 @@ impl ResolverPipe<RegistryCache> {
 
             let package = Package::new(pkg.as_str());
 
-            self.resolve_pkg(&package).await?;
+            let parent = if let Some(ref p) = parent {
+                Some(format!("{}/{}", p, remote_package.name))
+            } else {
+                Some(remote_package.name.clone())
+            };
+            self.resolve_pkg(&package, parent).await?;
         }
 
-        match self.cache.save().await {
+        match self.cache.persist().await {
             Ok(_) => (),
             Err(e) => {
                 println!("Failed to save registry: {}", e);
@@ -98,7 +110,7 @@ impl ResolverPipe<RegistryCache> {
         for pkg in self.packages.clone() {
             let package = Package::new(pkg.as_str());
 
-            self.resolve_pkg(&package).await?;
+            self.resolve_pkg(&package, None).await?;
         }
 
         Ok(())

@@ -2,7 +2,7 @@ mod actors;
 mod cache;
 mod contracts;
 mod errors;
-mod lock;
+mod fs;
 mod logger;
 mod network;
 mod package;
