@@ -5,5 +5,5 @@ mod resolve_artifacts;
 
 pub use download_artifacts::{DownloadArtifacts, StoredArtifact};
 pub use extract_artifacts::{ExtractArtifacts, ExtractArtifactsMap};
-pub use resolve_artifacts::{ResolveArtifacts, ResolvedItem};
 pub use linker_artifacts::LinkArtifactItem;
+pub use resolve_artifacts::{ResolveArtifacts, ResolvedItem};

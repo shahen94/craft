@@ -22,6 +22,7 @@ impl ResolvedItem {
         Self { package, parent }
     }
 
+    #[cfg(test)]
     pub fn with_no_parent(package: NpmPackage) -> Self {
         Self::new(package, None)
     }
@@ -78,7 +79,10 @@ mod tests {
         .unwrap();
         resolve_artifacts.insert("package".to_string(), ResolvedItem::with_no_parent(package));
 
-        assert_eq!(resolve_artifacts.get("package").unwrap().package.version, "1.0.0");
+        assert_eq!(
+            resolve_artifacts.get("package").unwrap().package.version,
+            "1.0.0"
+        );
     }
 
     #[test]

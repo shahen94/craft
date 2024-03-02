@@ -54,9 +54,9 @@ impl LinkerPipe {
             }
 
             let from = self.extracted.get(&pkg.to_string()).unwrap().clone();
-            let to = NODE_MODULES.join(&pkg.name);
+
             let to = if let Some(parent) = parent {
-                let path_vec = parent.split("/").collect::<Vec<&str>>();
+                let path_vec = parent.split('/').collect::<Vec<&str>>();
                 let mut path = PathBuf::new();
 
                 for p in path_vec {

@@ -44,7 +44,11 @@ impl ResolverPipe<RegistryCache> {
     }
 
     #[async_recursion]
-    async fn resolve_pkg(&mut self, package: &Package, parent: Option<String>) -> Result<(), NetworkError> {
+    async fn resolve_pkg(
+        &mut self,
+        package: &Package,
+        parent: Option<String>,
+    ) -> Result<(), NetworkError> {
         CraftLogger::verbose(format!("Resolving package: {}", package.to_string()));
 
         let artifact_key = package.to_string();
@@ -61,7 +65,8 @@ impl ResolverPipe<RegistryCache> {
 
         if let Some(pkg) = cached_pkg {
             CraftLogger::verbose(format!("Package found in cache: {}", package.to_string()));
-            self.artifacts.insert(artifact_key.clone(), ResolvedItem::new(pkg.clone(), parent));
+            self.artifacts
+                .insert(artifact_key.clone(), ResolvedItem::new(pkg.clone(), parent));
             return Ok(());
         }
 
@@ -69,8 +74,10 @@ impl ResolverPipe<RegistryCache> {
 
         let pkg_cache_key = remote_package.to_string();
 
-        self.artifacts
-            .insert(pkg_cache_key.clone(), ResolvedItem::new(remote_package.clone(), parent.clone()));
+        self.artifacts.insert(
+            pkg_cache_key.clone(),
+            ResolvedItem::new(remote_package.clone(), parent.clone()),
+        );
 
         self.cache.set(&pkg_cache_key, remote_package.clone()).await;
 

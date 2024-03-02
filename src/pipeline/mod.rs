@@ -12,4 +12,3 @@ pub use extractor::ExtractorPipe;
 pub use linker::LinkerPipe;
 
 pub use cache_clean::CacheCleanPipe;
-pub use artifacts::ResolvedItem;

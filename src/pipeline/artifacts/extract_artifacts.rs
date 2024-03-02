@@ -105,7 +105,11 @@ mod tests {
         extract_artifacts.add(package.clone(), PathBuf::from("/tmp/package"));
 
         assert_eq!(
-            extract_artifacts.get("package").unwrap().package.version,
+            extract_artifacts
+                .get("package@1.0.0")
+                .unwrap()
+                .package
+                .version,
             "1.0.0"
         );
     }

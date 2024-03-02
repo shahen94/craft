@@ -1,5 +1,4 @@
 use std::{
-    env,
     sync::mpsc::Receiver,
     thread::{self, JoinHandle},
 };
@@ -9,7 +8,6 @@ use async_trait::async_trait;
 use crate::{
     contracts::{Actor, Pipe, PipeArtifact, Progress, ProgressAction},
     errors::ExecutionError,
-    lock::LockFile,
     logger::CraftLogger,
     pipeline::{DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
     ui::UIProgress,
@@ -89,12 +87,7 @@ impl Actor<PipeResult> for InstallActor {
         .await?;
 
         // ─── Sync Lock File ────────────────────────
-
-        LockFile::sync(
-            resolve_artifacts.get_artifacts(),
-            env::current_dir().unwrap(),
-        )
-        .await;
+        // TODO: Sync lock file
 
         // ─── Cleanup ────────────────────────────────
 
