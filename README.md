@@ -15,3 +15,4 @@ $ craft install react@latest
 - [ ] Use Symlinks for linking
 - [ ] Workspaces support
 - [ ] Hook support
+- [ ] Lockfile support
