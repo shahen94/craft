@@ -21,24 +21,42 @@ fn copy_recursive(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let from_meta = fs::metadata(from)?;
 
-    if from_meta.is_dir() {
-        let dir_entries = fs::read_dir(from)?;
-
-        for entry in dir_entries {
-            let entry = entry?;
-            let entry_path = entry.path();
-            let entry_name = entry.file_name().into_string().unwrap(); // Convert OsString to String
-
-            let dest_path = to.join(&entry_name);
-
-            if entry_path.is_dir() {
-                fs::create_dir_all(&dest_path)?;
-                copy_recursive(&entry_path, &dest_path, options)?;
-            } else {
-                fs_extra::copy_items(&[entry_path], to, options)?;
-            }
+    if options.overwrite {
+        if to.exists() {
+            fs::remove_dir_all(to)?;
         }
     }
 
+    if from_meta.is_dir() {
+       symlink_dir(&from, &to)?;
+    }
+
+    Ok(())
+}
+
+
+
+#[cfg(unix)]
+pub fn symlink_dir<P: AsRef<Path>, U: AsRef<Path>>(from: P, to: U) -> std::io::Result<()> {
+    std::os::unix::fs::symlink(from, to)?;
+    Ok(())
+}
+
+#[cfg(windows)]
+pub fn symlink_dir<P: AsRef<Path>, U: AsRef<Path>>(from: P, to: U) -> std::io::Result<()> {
+    use std::os::windows::fs::symlink_dir;
+    symlink_dir(from, to)?;
+    Ok(())
+}
+
+#[cfg(windows)]
+pub fn remove_symlink_dir<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
+    std::fs::remove_dir(path)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+pub fn remove_symlink_dir<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
+    std::fs::remove_file(path)?;
     Ok(())
 }

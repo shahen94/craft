@@ -31,7 +31,12 @@ impl ExtractorPipe {
         }
     }
 
+    // Skip because we now simlink the extracted files
     pub async fn cleanup() {
+        return;
+
+
+        // Skip because we now simlink the extracted files
         let tmp_folder = ExtractArtifacts::get_tmp_folder();
 
         if tmp_folder.exists() {

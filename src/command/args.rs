@@ -15,8 +15,18 @@ use clap::Parser;
 #[command(author, version, about, long_about = None)]
 pub struct Command {
     #[clap(subcommand)]
-    pub command: Option<SubCommand>,
+    pub command: SubCommand,
 }
+
+impl Command {
+    pub fn is_install_without_args(&self) -> bool {
+            if let SubCommand::Install(install) = self.command.clone() {
+                return install.package.is_none()
+        }
+        false
+    }
+}
+
 
 /// Sub commands
 ///
@@ -33,7 +43,8 @@ pub struct Command {
 pub enum SubCommand {
     #[clap(name = "install")]
     Install(Install),
-
+    #[clap(name = "run")]
+    Run(Run),
     #[clap(name = "cache")]
     #[clap(subcommand)]
     Cache(CacheAction),
@@ -48,11 +59,11 @@ pub enum SubCommand {
 ///
 /// let data = Command::parse();
 ///
-/// if data.command.is_none() {
+/// if data.is_install_without_args() {
 ///    println!("Reading package.json");
 ///     return;
 /// }
-/// let command = data.command.unwrap();
+/// let command = data.command;
 /// let install = match command {
 ///  SubCommand::Install(install) => install,
 /// _ => panic!("Invalid command")
@@ -60,7 +71,13 @@ pub enum SubCommand {
 #[derive(Debug, Parser, Clone)]
 pub struct Install {
     #[clap(name = "package")]
-    pub package: String,
+    pub package: Option<String>,
+    pub global: Option<bool>
+}
+
+#[derive(Debug, Parser, Clone)]
+pub struct Run {
+    pub script: String,
 }
 
 #[derive(Debug, Parser, Clone)]

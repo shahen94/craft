@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use std::{collections::HashMap, env, fs::File, path::PathBuf};
+use std::{collections::HashMap, fs::File, path::PathBuf};
 use homedir::my_home;
 use crate::{contracts::PersistentCache, errors::CacheError, package::NpmPackage};
 

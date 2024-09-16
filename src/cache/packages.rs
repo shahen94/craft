@@ -1,6 +1,5 @@
 use std::{
     collections::HashMap,
-    env,
     path::{Path, PathBuf},
 };
 
@@ -72,7 +71,7 @@ impl Default for PackagesCache {
         let directory = {
             let home = my_home().unwrap().unwrap().join(PACKAGES_CACHE_FOLDER);
 
-            PathBuf::from(home)
+            home
         };
 
         Self {

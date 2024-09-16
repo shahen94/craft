@@ -11,6 +11,9 @@ use crate::{
     package::PackageJson,
     ui::UIProgress,
 };
+use crate::actors::RunActor;
+use crate::contracts::Logger;
+use crate::logger::CraftLogger;
 
 pub struct Program;
 
@@ -23,13 +26,14 @@ impl Program {
         })
     }
 
-    fn read_package_json(&self) -> PackageJson {
-        std::fs::read_to_string("package.json").unwrap().into()
+    fn read_package_json(&self) -> Result<PackageJson, ExecutionError> {
+        std::fs::read_to_string("package.json").map(|e|e.into()).map_err(|_|
+            ExecutionError::PackageJsonNotFound)
     }
 
     pub async fn execute(&mut self, args: Command) -> Result<(), ExecutionError> {
-        if args.command.is_none() {
-            let json = self.read_package_json();
+        if args.is_install_without_args() {
+            let json = self.read_package_json()?;
 
             let dependencies = json.dependencies;
 
@@ -44,17 +48,41 @@ impl Program {
             return Ok(());
         }
 
-        let command = args.command.unwrap();
+        let command = args.command;
 
         match command {
             SubCommand::Install(args) => {
-                InstallActor::new(vec![args.package]).start().await.unwrap();
+                InstallActor::new(vec![args.package.unwrap()]).start().await.unwrap();
                 Ok(())
             }
             SubCommand::Cache(args) => {
                 CacheCleanActor::new(args).start().await;
 
                 Ok(())
+            }
+            SubCommand::Run(r)=>{
+                let json = self.read_package_json()?;
+                match json.scripts {
+                    Some(scripts)=> {
+                        if let Some(script) = scripts.get(&r.script) {
+                            CraftLogger::info(format!("Running script: {}", r.script));
+                            CraftLogger::info(format!("Command: {}", script));
+
+                            RunActor::new(script.clone()).start().await?;
+
+
+                            Ok(())
+                        } else {
+                            CraftLogger::error(format!("Script {} not found", r.script));
+                            Err(ExecutionError::ScriptNotFound(format!("Script {} not found", r
+                                .script)))
+                        }
+                    }
+                    None => {
+                        CraftLogger::error("No scripts found in package.json");
+                        Err(ExecutionError::NoScriptsFound)
+                    }
+                }
             }
         }
     }

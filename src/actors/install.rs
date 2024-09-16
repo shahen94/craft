@@ -31,7 +31,7 @@ impl InstallActor {
     }
 }
 
-type PipeResult = Result<(), ExecutionError>;
+pub(crate) type PipeResult = Result<(), ExecutionError>;
 
 #[async_trait]
 impl Actor<PipeResult> for InstallActor {
