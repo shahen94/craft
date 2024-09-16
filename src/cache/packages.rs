@@ -6,7 +6,7 @@ use std::{
 
 use async_recursion::async_recursion;
 use async_trait::async_trait;
-
+use homedir::windows::my_home;
 use crate::{contracts::PersistentCache, errors::CacheError};
 
 use super::constants::PACKAGES_CACHE_FOLDER;
@@ -70,8 +70,7 @@ impl PackagesCache {
 impl Default for PackagesCache {
     fn default() -> Self {
         let directory = {
-            let mut home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
-            home.push_str(PACKAGES_CACHE_FOLDER);
+            let home = my_home().unwrap().unwrap().join(PACKAGES_CACHE_FOLDER);
 
             PathBuf::from(home)
         };

@@ -1,5 +1,5 @@
 use std::{collections::HashMap, env, path::PathBuf};
-
+use homedir::windows::my_home;
 use crate::{cache::TMP_CACHE_FOLDER, contracts::PipeArtifact, package::NpmPackage};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,8 +52,7 @@ impl ExtractArtifacts {
     }
 
     pub fn get_tmp_folder() -> PathBuf {
-        let mut home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        home.push_str(TMP_CACHE_FOLDER);
+        let home = my_home().unwrap().unwrap().join(TMP_CACHE_FOLDER);
 
         PathBuf::from(home)
     }

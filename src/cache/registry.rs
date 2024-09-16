@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use std::{collections::HashMap, env, fs::File, path::PathBuf};
-
+use homedir::my_home;
 use crate::{contracts::PersistentCache, errors::CacheError, package::NpmPackage};
 
 use super::constants::{REGISTRY_CACHE_FILE, REGISTRY_CACHE_FOLDER};
@@ -30,9 +30,7 @@ impl RegistryCache {
 impl Default for RegistryCache {
     fn default() -> Self {
         let directory = {
-            let mut home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
-            home.push_str(REGISTRY_CACHE_FOLDER);
-
+            let home = my_home().unwrap().unwrap().join(REGISTRY_CACHE_FOLDER);
             PathBuf::from(home)
         };
 

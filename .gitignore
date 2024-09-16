@@ -1,3 +1,4 @@
 /target
 craft.lock
 node_modules
+.idea
