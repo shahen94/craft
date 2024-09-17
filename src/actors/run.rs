@@ -1,16 +1,18 @@
+use std::env;
 use std::process::{Command, Stdio};
 use async_trait::async_trait;
-use crate::actors::InstallActor;
 use crate::contracts::Actor;
 
 pub struct RunActor {
     pub script: String,
+    pub cwd: Option<String>
 }
 
 impl RunActor {
-    pub fn new(script: String) -> Self {
+    pub fn new(script: String, cwd: Option<String>) -> Self {
         Self {
-            script
+            script,
+            cwd
         }
     }
 }
@@ -18,9 +20,16 @@ impl RunActor {
 #[async_trait]
 impl Actor<crate::actors::install::PipeResult> for RunActor {
     async fn start(&mut self) -> crate::actors::install::PipeResult {
+        let mut exec_path = env::current_dir().expect("Error getting cwd");
+
+        if let Some(c) = self.cwd.clone() {
+            exec_path = exec_path.join(c);
+        }
+
         let mut child = if cfg!(target_os = "windows") {
             Command::new("cmd")
                 .args(["/C", self.script.as_str()])
+                .current_dir(exec_path)
                 .stdout(Stdio::inherit())
                 // creating a pipe to capture the standard error (stderr) of the child process.
                 .stderr(Stdio::inherit())
@@ -32,6 +41,7 @@ impl Actor<crate::actors::install::PipeResult> for RunActor {
             Command::new("sh")
                 .arg("-c")
                 .stdout(Stdio::inherit())
+                .current_dir(exec_path)
                 // creating a pipe to capture the standard error (stderr) of the child process.
                 .stderr(Stdio::inherit())
                 .arg(self.script.as_str())

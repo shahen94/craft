@@ -6,6 +6,7 @@ mod pipe;
 mod pipe_artifact;
 mod progress;
 mod registry;
+mod lockfile;
 
 pub use cache::PersistentCache;
 
@@ -16,3 +17,4 @@ pub use pipe::Pipe;
 pub use pipe_artifact::PipeArtifact;
 pub use progress::{Phase, Progress, ProgressAction};
 pub use registry::Registry;
+pub use lockfile::Lockfile;

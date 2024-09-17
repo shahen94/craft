@@ -62,20 +62,25 @@ impl Program {
             }
             SubCommand::Run(r)=>{
                 let json = self.read_package_json()?;
+
+                if r.script.is_none() {
+                    return Err(ExecutionError::JobExecutionFailed("script must be exactly 1".to_string(), "script must be exactly 1".to_string()))
+                }
+                let script = r.script.unwrap();
+
                 match json.scripts {
                     Some(scripts)=> {
-                        if let Some(script) = scripts.get(&r.script) {
-                            CraftLogger::info(format!("Running script: {}", r.script));
+                        if let Some(script) = scripts.get(&script) {
+                            CraftLogger::info(format!("Running script: {}", script));
                             CraftLogger::info(format!("Command: {}", script));
 
-                            RunActor::new(script.clone()).start().await?;
+                            RunActor::new(script.clone(), r.directory).start().await?;
 
 
                             Ok(())
                         } else {
-                            CraftLogger::error(format!("Script {} not found", r.script));
-                            Err(ExecutionError::ScriptNotFound(format!("Script {} not found", r
-                                .script)))
+                            CraftLogger::error(format!("Script {} not found", script));
+                            Err(ExecutionError::ScriptNotFound(format!("Script {} not found", script)))
                         }
                     }
                     None => {

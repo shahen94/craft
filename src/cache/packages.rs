@@ -2,9 +2,10 @@ use std::{
     collections::HashMap,
     path::{Path, PathBuf},
 };
-
+use std::collections::HashSet;
 use async_recursion::async_recursion;
 use async_trait::async_trait;
+use clap::builder::Str;
 use homedir::windows::my_home;
 use crate::{contracts::PersistentCache, errors::CacheError};
 
@@ -16,6 +17,7 @@ use super::constants::PACKAGES_CACHE_FOLDER;
 pub struct PackagesCache {
     pub directory: PathBuf,
     pub cache: HashMap<String, bool>,
+    pub downloaded_modules: HashSet<String>
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -55,6 +57,19 @@ impl PackagesCache {
         Ok(cache)
     }
 
+    pub async fn read_node_modules(dir: &Path) -> Result<HashSet<String>, CacheError> {
+        let mut entries = tokio::fs::read_dir(dir).await?;
+        let mut cache = HashSet::new();
+
+
+        while let Some(entry) = entries.next_entry().await? {
+            let file_name = entry.file_name().to_os_string().into_string().unwrap();
+            cache.insert(file_name);
+        }
+
+        Ok(cache)
+    }
+
     pub fn get_cache_directory(&self) -> &PathBuf {
         &self.directory
     }
@@ -62,6 +77,8 @@ impl PackagesCache {
     pub fn to_path_buf(&self, key: &str) -> PathBuf {
         self.directory.join(key)
     }
+
+
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -77,6 +94,7 @@ impl Default for PackagesCache {
         Self {
             directory,
             cache: HashMap::new(),
+            downloaded_modules: HashSet::new()
         }
     }
 }
@@ -95,6 +113,7 @@ impl PersistentCache<PathBuf> for PackagesCache {
         }
 
         self.cache = Self::read_cache_directory(&self.directory).await?;
+        self.downloaded_modules = Self::read_node_modules(&self.directory).await?;
 
         Ok(())
     }

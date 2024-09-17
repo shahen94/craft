@@ -98,7 +98,8 @@ impl DownloaderPipe<PackagesCache> {
 #[async_trait]
 impl Pipe<DownloadArtifacts> for DownloaderPipe<PackagesCache> {
     async fn run(&mut self) -> Result<DownloadArtifacts, ExecutionError> {
-        let _ = self.cache.lock().await.init().await;
+        let mut cache = self.cache.lock().await;
+        cache.init().await.map_err(|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))?;
 
         let _ = self.tx.send(ProgressAction::new(Phase::Downloading));
 

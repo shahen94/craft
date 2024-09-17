@@ -41,7 +41,7 @@ impl Command {
 /// ```
 #[derive(Debug, Parser, Clone)]
 pub enum SubCommand {
-    #[clap(name = "install")]
+    #[clap(name = "install", alias= "add")]
     Install(Install),
     #[clap(name = "run")]
     Run(Run),
@@ -72,12 +72,20 @@ pub enum SubCommand {
 pub struct Install {
     #[clap(name = "package")]
     pub package: Option<String>,
-    pub global: Option<bool>
+    #[clap(name = "global", alias="g",value_delimiter = ' ', num_args = 1..)]
+    pub global: Option<Vec<String>>,
+    #[clap(name = "save-dev", alias="D",value_delimiter = ' ', num_args = 1..)]
+    pub dev: Option<Vec<String>>,
+    #[clap(name = "save-prod", alias="P",value_delimiter = ' ', num_args = 1..)]
+    pub prod: Option<Vec<String>>
 }
+
 
 #[derive(Debug, Parser, Clone)]
 pub struct Run {
-    pub script: String,
+    #[clap(name = "dir", alias="C")]
+    pub directory: Option<String>,
+    pub script: Option<String>,
 }
 
 #[derive(Debug, Parser, Clone)]
