@@ -12,6 +12,8 @@ use crate::{
     pipeline::{DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
     ui::UIProgress,
 };
+use crate::cache::PackagesCache;
+use crate::contracts::PersistentCache;
 
 pub struct InstallActor {
     packages: Vec<String>,
@@ -37,13 +39,16 @@ pub(crate) type PipeResult = Result<(), ExecutionError>;
 impl Actor<PipeResult> for InstallActor {
     async fn start(&mut self) -> PipeResult {
         let (tx, rx) = std::sync::mpsc::channel();
-
+        let mut cache = PackagesCache::default();
+        cache.init().await.unwrap();
         let ui_thread = self.start_progress(rx);
+        let packages_to_resolve = cache.diff_downloaded_modules(&self.packages);
+
 
         // ─── Start Resolving ─────────────────────────
 
         CraftLogger::verbose_n(3, "Resolving dependencies");
-        let resolve_artifacts = ResolverPipe::new(self.packages.clone(), tx.clone())
+        let resolve_artifacts = ResolverPipe::new(packages_to_resolve, tx.clone())
             .run()
             .await?;
         CraftLogger::verbose_n(

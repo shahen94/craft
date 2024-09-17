@@ -8,7 +8,8 @@ use async_trait::async_trait;
 use clap::builder::Str;
 use homedir::windows::my_home;
 use crate::{contracts::PersistentCache, errors::CacheError};
-
+use crate::cache::registry::convert_to_registry_key;
+use crate::cache::RegistryKey;
 use super::constants::PACKAGES_CACHE_FOLDER;
 
 // ─── PackagesCache ───────────────────────────────────────────────────────────────
@@ -16,7 +17,7 @@ use super::constants::PACKAGES_CACHE_FOLDER;
 #[derive(Debug)]
 pub struct PackagesCache {
     pub directory: PathBuf,
-    pub cache: HashMap<String, bool>,
+    pub cache: HashSet<RegistryKey>,
     pub downloaded_modules: HashSet<String>
 }
 
@@ -24,12 +25,13 @@ pub struct PackagesCache {
 
 impl PackagesCache {
     #[async_recursion]
-    pub async fn read_cache_directory(dir: &Path) -> Result<HashMap<String, bool>, CacheError> {
-        let mut cache = HashMap::new();
+    pub async fn read_cache_directory(dir: &Path) -> Result<HashSet<RegistryKey>, CacheError> {
+        let mut cache:HashSet<RegistryKey> = HashSet::new();
 
         let mut entries = tokio::fs::read_dir(dir).await?;
 
         while let Some(entry) = entries.next_entry().await? {
+            /// Nested is e.g. @types/node etc.
             if entry.file_type().await?.is_dir() {
                 let dirname = entry
                     .file_name()
@@ -39,19 +41,19 @@ impl PackagesCache {
                 let p = dir.join(&dirname);
                 let nested_cache = Self::read_cache_directory(&p).await?;
 
-                for (k, v) in nested_cache {
-                    let key = format!("{}/{}", dirname, k);
-                    cache.insert(key, v);
+                for k in nested_cache {
+                    let key = format!("{}/{}", dirname, k.to_string());
+                    let key_with_subdir = convert_to_registry_key(&key);
+                    cache.insert(key_with_subdir);
                 }
             }
+            let filename = entry
+                .file_name()
+                .into_string()
+                .map_err(|_| CacheError::CacheError)?;
+            let reg_key = convert_to_registry_key(&filename);
 
-            cache.insert(
-                entry
-                    .file_name()
-                    .into_string()
-                    .map_err(|_| CacheError::CacheError)?,
-                true,
-            );
+            cache.insert(reg_key);
         }
 
         Ok(cache)
@@ -78,7 +80,17 @@ impl PackagesCache {
         self.directory.join(key)
     }
 
+    pub fn diff_downloaded_modules(&self, modules: &Vec<String>) -> Vec<String> {
+        let mut diff = vec![];
 
+        for module in modules {
+            if !self.downloaded_modules.contains(module) {
+                diff.push(module.clone());
+            }
+        }
+
+        diff
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -93,7 +105,7 @@ impl Default for PackagesCache {
 
         Self {
             directory,
-            cache: HashMap::new(),
+            cache: HashSet::new(),
             downloaded_modules: HashSet::new()
         }
     }
@@ -128,18 +140,18 @@ impl PersistentCache<PathBuf> for PackagesCache {
         Ok(())
     }
 
-    async fn get(&self, key: &str) -> Option<PathBuf> {
+    async fn get(&mut self, key: &RegistryKey) -> Option<PathBuf> {
         if self.has(key).await {
-            return Some(self.to_path_buf(key));
+            return Some(self.directory.join::<PathBuf>(key.clone().into()));
         }
 
         None
     }
-    async fn set(&mut self, key: &str, _: PathBuf) -> () {
-        self.cache.insert(key.to_string(), true);
+    async fn set(&mut self, key: &RegistryKey, _: PathBuf) -> () {
+        self.cache.insert(key.clone());
     }
 
-    async fn has(&self, key: &str) -> bool {
-        self.cache.contains_key(&key.to_owned())
+    async fn has(&mut self, key: &RegistryKey) -> bool {
+        self.cache.contains(&key.to_owned())
     }
 }

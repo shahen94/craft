@@ -14,7 +14,8 @@ use crate::{
     network::Http,
     package::NpmPackage,
 };
-
+use crate::cache::RegistryKey;
+use crate::contracts::Logger;
 use super::artifacts::{DownloadArtifacts, ResolvedItem};
 
 // ─── DownloaderPipe ─────────────────────────────────────────────────────────────
@@ -53,7 +54,8 @@ impl DownloaderPipe<PackagesCache> {
     pub async fn download_pkg(&self, package: &NpmPackage) -> Result<(), ExecutionError> {
         let pkg = package.clone();
 
-        if self.cache.lock().await.has(&pkg.to_string()).await {
+
+        if self.cache.lock().await.has(&pkg.clone().into()).await {
             CraftLogger::verbose(format!("Package already downloaded: {}", pkg.to_string()));
             let cache = self.cache.lock().await;
 
@@ -81,7 +83,11 @@ impl DownloaderPipe<PackagesCache> {
             if pkg.contains_org() {
                 Self::prepare_pkg_for_download(path).await.unwrap();
             }
-            Http::download_file(&pkg.dist.tarball, path).await.unwrap();
+            let result = Http::download_file(&pkg.dist.tarball, path, &pkg.dist.shasum).await;
+            if result.is_err() {
+                CraftLogger::error(format!("Failed to download package: {}", pkg.to_string()));
+                return;
+            }
 
             artifacts.lock().await.insert(
                 pkg.to_string(),
@@ -98,8 +104,11 @@ impl DownloaderPipe<PackagesCache> {
 #[async_trait]
 impl Pipe<DownloadArtifacts> for DownloaderPipe<PackagesCache> {
     async fn run(&mut self) -> Result<DownloadArtifacts, ExecutionError> {
-        let mut cache = self.cache.lock().await;
-        cache.init().await.map_err(|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))?;
+        {
+            let mut cache = self.cache.lock().await;
+            cache.init().await.map_err(|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))?;
+        }
+
 
         let _ = self.tx.send(ProgressAction::new(Phase::Downloading));
 

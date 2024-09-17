@@ -52,7 +52,19 @@ impl Program {
 
         match command {
             SubCommand::Install(args) => {
-                InstallActor::new(vec![args.package.unwrap()]).start().await.unwrap();
+                let packages = args.packages.unwrap();
+                if args.save_optional {
+                    InstallActor::new(packages).start().await.unwrap();
+                } else if args.save_dev {
+                    InstallActor::new(packages).start().await.unwrap();
+                } else if args.save_prod {
+                    InstallActor::new(packages).start().await.unwrap();
+                } else if args.global {
+                    InstallActor::new(packages).start().await.unwrap();
+                } else {
+                    InstallActor::new(packages).start().await.unwrap();
+                }
+
                 Ok(())
             }
             SubCommand::Cache(args) => {

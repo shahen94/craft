@@ -1,5 +1,5 @@
 use clap::Parser;
-
+use clap::ArgAction;
 /// Command line arguments
 ///
 /// # Example
@@ -21,7 +21,7 @@ pub struct Command {
 impl Command {
     pub fn is_install_without_args(&self) -> bool {
             if let SubCommand::Install(install) = self.command.clone() {
-                return install.package.is_none()
+                return  install.packages.is_none();
         }
         false
     }
@@ -70,14 +70,23 @@ pub enum SubCommand {
 /// };
 #[derive(Debug, Parser, Clone)]
 pub struct Install {
-    #[clap(name = "package")]
-    pub package: Option<String>,
-    #[clap(name = "global", alias="g",value_delimiter = ' ', num_args = 1..)]
-    pub global: Option<Vec<String>>,
-    #[clap(name = "save-dev", alias="D",value_delimiter = ' ', num_args = 1..)]
-    pub dev: Option<Vec<String>>,
-    #[clap(name = "save-prod", alias="P",value_delimiter = ' ', num_args = 1..)]
-    pub prod: Option<Vec<String>>
+    #[arg(name = "global", long, short, alias = "g")]
+    pub global: bool,
+    /// Save as dev dependency
+    #[arg(long)]
+    pub save_dev: bool,
+
+    /// Save as production dependency
+    #[arg(long)]
+    pub save_prod: bool,
+
+    /// Save as optional dependency
+    #[arg(long)]
+    pub save_optional: bool,
+
+    /// List of packages to install
+    #[arg(required = false)]
+    pub packages: Option<Vec<String>>,
 }
 
 

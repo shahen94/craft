@@ -12,7 +12,6 @@ impl Lockfile<LockfileStructure> for LockFileActor {
         let file = fs::read_to_string(path).map_err(|e|LockfileError::FileReadError(e.to_string()))?;
         let structure = serde_yaml::from_str::<LockfileStructure>(&*file).map_err(|e|LockfileError::FileReadError(e.to_string()))?;
         Ok(structure)
-
     }
 
     fn write_lock_file(path: &Path, lock: LockfileStructure) -> Result<LockfileStructure, LockfileError> {

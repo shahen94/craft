@@ -6,4 +6,3 @@ pub const DEP_CACHE_FOLDER: &str = ".craft/cache/node_modules";
 
 // ─── Files ───────────────────────────────────────────────────────────────────
 
-pub const REGISTRY_CACHE_FILE: &str = "cache.json";

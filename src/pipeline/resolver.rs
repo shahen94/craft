@@ -53,7 +53,7 @@ impl ResolverPipe<RegistryCache> {
 
         let artifact_key = package.to_string();
 
-        let cached_pkg = self.cache.get(&artifact_key).await;
+        let cached_pkg = self.cache.get(&package.clone().into()).await;
 
         if self.artifacts.get(&artifact_key).is_some() {
             CraftLogger::verbose(format!(
@@ -79,7 +79,7 @@ impl ResolverPipe<RegistryCache> {
             ResolvedItem::new(remote_package.clone(), parent.clone()),
         );
 
-        self.cache.set(&pkg_cache_key, remote_package.clone()).await;
+        self.cache.set(&remote_package.clone().into(), remote_package.clone()).await;
 
         for (name, version) in &remote_package.dependencies {
             let pkg = format!("{}@{}", name, version);
@@ -92,13 +92,6 @@ impl ResolverPipe<RegistryCache> {
                 Some(remote_package.name.clone())
             };
             self.resolve_pkg(&package, parent).await?;
-        }
-
-        match self.cache.persist().await {
-            Ok(_) => (),
-            Err(e) => {
-                println!("Failed to save registry: {}", e);
-            }
         }
 
         Ok(())

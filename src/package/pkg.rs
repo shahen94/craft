@@ -1,3 +1,4 @@
+use crate::cache::RegistryKey;
 use super::{
     registry::Registry,
     version::{contracts::Version, VersionImpl},
@@ -12,6 +13,16 @@ pub struct Package {
     pub version: VersionImpl,
     pub registry: Registry,
     pub raw_version: String,
+}
+
+
+impl Into<RegistryKey> for Package {
+    fn into(self) -> RegistryKey {
+        RegistryKey {
+            name: self.name,
+            version: self.version.to_string(),
+        }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

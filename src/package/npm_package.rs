@@ -1,6 +1,7 @@
 use std::collections::HashMap;
-
+use std::fmt::Display;
 use serde::{Deserialize, Serialize};
+use crate::cache::RegistryKey;
 
 /// This struct represents a package from the registry.
 ///
@@ -19,6 +20,16 @@ pub struct NpmPackage {
     pub dev_dependencies: HashMap<String, String>,
 
     pub dist: Distribution,
+}
+
+
+impl Into<RegistryKey> for NpmPackage {
+    fn into(self) -> RegistryKey {
+        RegistryKey {
+            name: self.name,
+            version: self.version,
+        }
+    }
 }
 
 impl PartialEq for NpmPackage {
@@ -43,9 +54,9 @@ pub struct Distribution {
     pub unpacked_size: Option<u64>,
 }
 
-impl ToString for NpmPackage {
-    fn to_string(&self) -> String {
-        format!("{}@{}", self.name, self.version)
+impl Display for NpmPackage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format!("{}@{}", self.name, self.version))
     }
 }
 
