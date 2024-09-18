@@ -51,22 +51,22 @@ impl ResolverPipe<RegistryCache> {
     ) -> Result<(), NetworkError> {
         CraftLogger::verbose(format!("Resolving package: {}", package.to_string()));
 
-        let artifact_key = package.to_string();
-
         let cached_pkg = self.cache.get(&package.clone().into()).await;
 
-        if self.artifacts.get(&artifact_key).is_some() {
-            CraftLogger::verbose(format!(
-                "Package found in artifacts: {}",
-                package.to_string()
-            ));
-            return Ok(());
+        if let Some(pkg) = cached_pkg.clone() {
+            if self.artifacts.get(&pkg.to_string()).is_some() {
+                CraftLogger::verbose(format!(
+                    "Package found in artifacts: {}",
+                    package.to_string()
+                ));
+                return Ok(());
+            }
         }
 
         if let Some(pkg) = cached_pkg {
             CraftLogger::verbose(format!("Package found in cache: {}", package.to_string()));
             self.artifacts
-                .insert(artifact_key.clone(), ResolvedItem::new(pkg.clone(), parent));
+                .insert(pkg.to_string().clone(), ResolvedItem::new(pkg.clone(), parent));
             return Ok(());
         }
 

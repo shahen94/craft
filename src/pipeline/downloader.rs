@@ -14,7 +14,6 @@ use crate::{
     network::Http,
     package::NpmPackage,
 };
-use crate::cache::RegistryKey;
 use crate::contracts::Logger;
 use super::artifacts::{DownloadArtifacts, ResolvedItem};
 
@@ -56,7 +55,7 @@ impl DownloaderPipe<PackagesCache> {
 
 
         if self.cache.lock().await.has(&pkg.clone().into()).await {
-            CraftLogger::verbose(format!("Package already downloaded: {}", pkg.to_string()));
+            CraftLogger::verbose(format!("Package already downloaded: {}", pkg));
             let cache = self.cache.lock().await;
 
             self.artifacts.lock().await.insert(
@@ -85,7 +84,7 @@ impl DownloaderPipe<PackagesCache> {
             }
             let result = Http::download_file(&pkg.dist.tarball, path, &pkg.dist.shasum).await;
             if result.is_err() {
-                CraftLogger::error(format!("Failed to download package: {}", pkg.to_string()));
+                CraftLogger::error(format!("Failed to download package: {}", pkg));
                 return;
             }
 
@@ -117,7 +116,7 @@ impl Pipe<DownloadArtifacts> for DownloaderPipe<PackagesCache> {
             CraftLogger::verbose("Downloading packages");
             for pkg in self.packages.iter() {
 
-              CraftLogger::verbose(format!("Downloading package: {}", pkg.to_string()));
+              CraftLogger::verbose(format!("Downloading package: {}", pkg));
               match self.download_pkg(pkg).await {
                 Ok(_) => {},
                 Err(err) => {

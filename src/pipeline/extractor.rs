@@ -85,7 +85,7 @@ impl Pipe<ExtractArtifacts> for ExtractorPipe {
         for artifact in &self.packages {
             CraftLogger::verbose(format!(
                 "Extracting artifact: {}",
-                artifact.package.to_string()
+                artifact.package
             ));
             self.unzip_archive(artifact).await.unwrap();
         }

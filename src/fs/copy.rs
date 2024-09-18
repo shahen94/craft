@@ -21,14 +21,12 @@ fn copy_recursive(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let from_meta = fs::metadata(from)?;
 
-    if options.overwrite {
-        if to.exists() {
-            fs::remove_dir_all(to)?;
-        }
+    if options.overwrite && to.exists() {
+        fs::remove_dir_all(to)?;
     }
 
     if from_meta.is_dir() {
-       symlink_dir(&from, &to)?;
+       symlink_dir(from, to)?;
     }
 
     Ok(())

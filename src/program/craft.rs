@@ -75,19 +75,17 @@ impl Program {
             SubCommand::Run(r)=>{
                 let json = self.read_package_json()?;
 
-                if r.script.is_none() {
+                if r.script.is_empty() {
                     return Err(ExecutionError::JobExecutionFailed("script must be exactly 1".to_string(), "script must be exactly 1".to_string()))
                 }
-                let script = r.script.unwrap();
+                let script = r.script;
 
                 match json.scripts {
                     Some(scripts)=> {
                         if let Some(script) = scripts.get(&script) {
                             CraftLogger::info(format!("Running script: {}", script));
                             CraftLogger::info(format!("Command: {}", script));
-
                             RunActor::new(script.clone(), r.directory).start().await?;
-
 
                             Ok(())
                         } else {

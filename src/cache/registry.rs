@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use std::{collections::HashMap, fs::File, path::PathBuf};
-use std::collections::HashSet;
 use homedir::my_home;
 use nodejs_semver::{Range, Version};
 use crate::{contracts::PersistentCache, errors::CacheError, package::NpmPackage};
@@ -15,9 +14,9 @@ pub struct RegistryKey{
     pub version: String,
 }
 
-impl Into<PathBuf> for RegistryKey {
-    fn into(self) -> PathBuf {
-        PathBuf::from(format!("{}@{}", self.name, self.version))
+impl From<RegistryKey> for PathBuf {
+    fn from(val: RegistryKey) -> Self {
+        PathBuf::from(format!("{}@{}", val.name, val.version))
     }
 }
 
@@ -80,8 +79,8 @@ impl RegistryCache {
 impl Default for RegistryCache {
     fn default() -> Self {
         let directory = {
-            let home = my_home().unwrap().unwrap().join(REGISTRY_CACHE_FOLDER);
-            PathBuf::from(home)
+            
+            my_home().unwrap().unwrap().join(REGISTRY_CACHE_FOLDER)
         };
 
         Self {
@@ -108,8 +107,8 @@ impl RegistryCache {
     fn perform_preload(&mut self, key: &RegistryKey) {
         if let Some(cache_key) = self.cache.get(&key.name) {
             // We already have information about the package
-            if cache_key.len() == 0 {
-                let loaded_key = self.load_file(&key);
+            if cache_key.is_empty() {
+                let loaded_key = self.load_file(key);
                 self.cache.insert(key.name.clone(), loaded_key);
             }
         }
@@ -163,7 +162,7 @@ impl PersistentCache<NpmPackage> for RegistryCache {
             // We have a range
             let range: Range = key.version.parse().unwrap();
             let mut selected_version: Option<NpmPackage> = None;
-            for (_, v) in self.cache.get(&key.version)?.iter() {
+            for (_, v) in self.cache.get(&key.name)?.iter() {
                     let v_package: Version = v.version.parse().unwrap();
 
                     // Continue if too new or too old

@@ -10,7 +10,7 @@ pub struct LockFileActor;
 impl Lockfile<LockfileStructure> for LockFileActor {
     fn read_lock_file(path: &Path) -> Result<LockfileStructure, LockfileError> {
         let file = fs::read_to_string(path).map_err(|e|LockfileError::FileReadError(e.to_string()))?;
-        let structure = serde_yaml::from_str::<LockfileStructure>(&*file).map_err(|e|LockfileError::FileReadError(e.to_string()))?;
+        let structure = serde_yaml::from_str::<LockfileStructure>(&file).map_err(|e|LockfileError::FileReadError(e.to_string()))?;
         Ok(structure)
     }
 

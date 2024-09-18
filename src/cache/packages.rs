@@ -1,11 +1,7 @@
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 use std::collections::HashSet;
 use async_recursion::async_recursion;
 use async_trait::async_trait;
-use clap::builder::Str;
 use homedir::windows::my_home;
 use crate::{contracts::PersistentCache, errors::CacheError};
 use crate::cache::registry::convert_to_registry_key;
@@ -98,9 +94,9 @@ impl PackagesCache {
 impl Default for PackagesCache {
     fn default() -> Self {
         let directory = {
-            let home = my_home().unwrap().unwrap().join(PACKAGES_CACHE_FOLDER);
+            
 
-            home
+            my_home().unwrap().unwrap().join(PACKAGES_CACHE_FOLDER)
         };
 
         Self {

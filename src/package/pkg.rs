@@ -16,11 +16,11 @@ pub struct Package {
 }
 
 
-impl Into<RegistryKey> for Package {
-    fn into(self) -> RegistryKey {
+impl From<Package> for RegistryKey {
+    fn from(val: Package) -> Self {
         RegistryKey {
-            name: self.name,
-            version: self.version.to_string(),
+            name: val.name,
+            version: val.version.to_string(),
         }
     }
 }

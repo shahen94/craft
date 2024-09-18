@@ -23,11 +23,11 @@ pub struct NpmPackage {
 }
 
 
-impl Into<RegistryKey> for NpmPackage {
-    fn into(self) -> RegistryKey {
+impl From<NpmPackage> for RegistryKey {
+    fn from(val: NpmPackage) -> Self {
         RegistryKey {
-            name: self.name,
-            version: self.version,
+            name: val.name,
+            version: val.version,
         }
     }
 }

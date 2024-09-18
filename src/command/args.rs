@@ -1,5 +1,4 @@
 use clap::Parser;
-use clap::ArgAction;
 /// Command line arguments
 ///
 /// # Example
@@ -92,9 +91,10 @@ pub struct Install {
 
 #[derive(Debug, Parser, Clone)]
 pub struct Run {
-    #[clap(name = "dir", alias="C")]
+    #[clap(name = "dir", alias="C", required=false, index=2)]
     pub directory: Option<String>,
-    pub script: Option<String>,
+    #[arg(required = true, name="--script", index=1)]
+    pub script: String,
 }
 
 #[derive(Debug, Parser, Clone)]
