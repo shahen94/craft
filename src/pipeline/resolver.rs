@@ -81,7 +81,7 @@ impl ResolverPipe<RegistryCache> {
             self.cache.set(&remote_package.clone().into(), remote_package.clone()).await;
         }
 
-
+        // This is correct because sub dependencies are always only dependencies
         for (name, version) in self.cache.get(&final_key).await.unwrap().dependencies {
             let pkg = format!("{}@{}", name, version);
 

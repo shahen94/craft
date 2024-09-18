@@ -3,15 +3,20 @@ use std::fs;
 use std::path::Path;
 
 pub fn copy_dir(from: &Path, to: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    let mut from = from.to_path_buf();
     if to.exists() {
         fs::remove_dir_all(to).unwrap();
+    }
+
+    if !from.exists() {
+        from = from.join("..");
     }
 
     fs::create_dir_all(to).unwrap();
 
     let options = CopyOptions::new().overwrite(true);
 
-    copy_recursive(from, to, &options)
+    copy_recursive(from.as_path(), to, &options)
 }
 
 fn copy_recursive(

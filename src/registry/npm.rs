@@ -67,6 +67,8 @@ impl NpmRegistry {
 #[async_trait]
 impl Registry for NpmRegistry {
     async fn fetch(&self, package: &Package) -> Result<NpmPackage, NetworkError> {
+        log::info!("Fetching package: {}", package.to_string());
+
         if package.version.is_exact() {
             let pkg = self.get_exact_package(package).await?;
 

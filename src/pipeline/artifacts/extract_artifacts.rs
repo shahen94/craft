@@ -52,8 +52,6 @@ impl ExtractArtifacts {
     }
 
     pub fn get_tmp_folder() -> PathBuf {
-        
-
         my_home().unwrap().unwrap().join(DEP_CACHE_FOLDER.clone())
     }
 

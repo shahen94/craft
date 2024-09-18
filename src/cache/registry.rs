@@ -1,5 +1,6 @@
 use async_trait::async_trait;
-use std::{collections::HashMap, fs::File, path::PathBuf};
+use std::{collections::HashMap, fs::File, io, path::PathBuf};
+use std::fmt::Display;
 use homedir::my_home;
 use nodejs_semver::{Range, Version};
 use crate::{contracts::PersistentCache, errors::CacheError, package::NpmPackage};
@@ -9,9 +10,16 @@ use super::constants::{REGISTRY_CACHE_FOLDER};
 
 //
 #[derive(Eq, Hash, Debug, Clone)]
-pub struct RegistryKey{
+pub struct RegistryKey {
     pub name: String,
     pub version: String,
+}
+
+
+impl Display for RegistryKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}@{}", self.name, self.version)
+    }
 }
 
 impl From<RegistryKey> for PathBuf {
@@ -51,7 +59,6 @@ pub fn convert_to_registry_key(key: &str) -> RegistryKey {
 }
 
 
-
 // ─── RegistryCache ───────────────────────────────────────────────────────────────
 
 #[derive(Debug)]
@@ -66,9 +73,29 @@ pub struct RegistryCache {
 impl RegistryCache {
     /// Update to a given versions also updates the complete file
     pub async fn persist(&self, key: &RegistryKey) -> Result<(), CacheError> {
-        let cache_file = File::create(self.directory.join(format!("{}.json", key.name))).unwrap();
+        let path_to_use: PathBuf;
 
-        serde_json::to_writer(cache_file, &self.cache.get(&key.name)).unwrap();
+        // @types/node -> Should go to a separate folder @types and contain a file node
+        if key.name.contains("/") {
+            let splitted_val = key.name.split("/").collect::<Vec<&str>>();
+            let dir_to_create = self.directory.join(&splitted_val[0]);
+            if !dir_to_create.exists() {
+                tokio::fs::create_dir_all(&dir_to_create).await?;
+            }
+
+            path_to_use = dir_to_create.join(format!("{}.json", splitted_val[1]));
+        } else {
+            path_to_use = self.directory.join(format!("{}.json", key.name));
+        }
+
+        let cache_file = File::create(path_to_use);
+
+        if cache_file.is_err() {
+            println!("ERror for key {}", key)
+        }
+
+        let key_to_save = self.cache.get(&key.name).unwrap();
+        serde_json::to_writer(cache_file.unwrap(), key_to_save).unwrap();
 
         Ok(())
     }
@@ -79,13 +106,12 @@ impl RegistryCache {
 impl Default for RegistryCache {
     fn default() -> Self {
         let directory = {
-            
             my_home().unwrap().unwrap().join(REGISTRY_CACHE_FOLDER.clone())
         };
 
         Self {
             directory,
-            cache: HashMap::new()
+            cache: HashMap::new(),
         }
     }
 }
@@ -93,15 +119,15 @@ impl Default for RegistryCache {
 // ───────────────────────────────────────────────────────────────────────────────
 
 impl RegistryCache {
-    fn load_file(&self, key: &RegistryKey) -> HashMap<String, NpmPackage> {
+    fn load_file(&self, key: &RegistryKey) -> Result<HashMap<String, NpmPackage>, io::Error> {
         // Not yet loaded into cache
         let cache_file = File::open(self.directory.join(format!("{}.json",
                                                                 key.name)))
             .unwrap();
 
         // Loads complete configuration
-        let cache: HashMap<String, NpmPackage> = serde_json::from_reader(cache_file).unwrap();
-        cache
+        let cache: HashMap<String, NpmPackage> = serde_json::from_reader(cache_file)?;
+        Ok(cache)
     }
 
     fn perform_preload(&mut self, key: &RegistryKey) {
@@ -109,7 +135,15 @@ impl RegistryCache {
             // We already have information about the package
             if cache_key.is_empty() {
                 let loaded_key = self.load_file(key);
-                self.cache.insert(key.name.clone(), loaded_key);
+                match loaded_key {
+                    Ok(loaded_key) => {
+                        self.cache.insert(key.name.clone(), loaded_key);
+                    }
+                    Err(e) => {
+                        log::error!("Failed to load cache file for {} with {}.", key.name, e
+                            .to_string());
+                    }
+                }
             }
         }
     }
@@ -131,6 +165,19 @@ impl PersistentCache<NpmPackage> for RegistryCache {
         let mut entries = tokio::fs::read_dir(&self.directory).await?;
 
         while let Some(entry) = entries.next_entry().await? {
+            let file_or_dir_name = entry.file_name().to_string_lossy().to_string();
+            // There is hopefully only one / in the name @babel/core
+            if entry.file_type().await?.is_dir() {
+                // We have a directory
+                let mut sub_entries = tokio::fs::read_dir(entry.path()).await?;
+                while let Some(sub_entry) = sub_entries.next_entry().await? {
+                    let file_name = sub_entry.file_name().to_string_lossy().to_string();
+                    self.cache.insert(format!("{}/{}", file_or_dir_name,
+                                              file_name.replace(".json", "").to_string()),
+                                      HashMap::new());
+                }
+            }
+
             self.cache.insert(entry.file_name().to_string_lossy().replace(".json", "").to_string
             (), HashMap::new());
         }
@@ -149,41 +196,32 @@ impl PersistentCache<NpmPackage> for RegistryCache {
     }
 
     async fn get(&mut self, key: &RegistryKey) -> Option<NpmPackage> {
-
         self.perform_preload(key);
 
-        // Optimization O(1) resolve static versions
-        if key.version.as_bytes()[0].is_ascii_digit() {
-            // We have a specific version
-            let named_package = self.cache.get(&key.name);
+        // We have a range
+        let range: Range = key.version.parse().unwrap();
+        let mut selected_version: Option<NpmPackage> = None;
+        for (_, v) in self.cache.get(&key.name)?.iter() {
+            let v_package: Version = v.version.parse().unwrap();
 
-            named_package?.get(&key.version).cloned()
-        } else {
-            // We have a range
-            let range: Range = key.version.parse().unwrap();
-            let mut selected_version: Option<NpmPackage> = None;
-            for (_, v) in self.cache.get(&key.name)?.iter() {
-                    let v_package: Version = v.version.parse().unwrap();
-
-                    // Continue if too new or too old
-                    if !range.satisfies(&v_package) {
-                        continue;
-                    }
-
-                    match &mut selected_version {
-                        Some(sv) => {
-                            let selected_version = Version::parse(&sv.version).unwrap();
-                            if v_package > selected_version {
-                                *sv = v.clone();
-                            }
-                        }
-                        None => {
-                            selected_version = Some(v.clone());
-                        }
-                    }
+            // Continue if too new or too old
+            if !range.satisfies(&v_package) {
+                continue;
             }
-            selected_version
+
+            match &mut selected_version {
+                Some(sv) => {
+                    let selected_version = Version::parse(&sv.version).unwrap();
+                    if v_package > selected_version {
+                        *sv = v.clone();
+                    }
+                }
+                None => {
+                    selected_version = Some(v.clone());
+                }
+            }
         }
+        selected_version
     }
 
     async fn set(&mut self, key: &RegistryKey, value: NpmPackage) -> () {
