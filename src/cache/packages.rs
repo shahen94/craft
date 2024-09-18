@@ -4,7 +4,7 @@ use crate::cache::RegistryKey;
 use crate::{contracts::PersistentCache, errors::CacheError};
 use async_recursion::async_recursion;
 use async_trait::async_trait;
-use homedir::windows::my_home;
+use homedir::my_home;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 

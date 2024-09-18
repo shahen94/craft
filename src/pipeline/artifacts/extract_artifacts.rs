@@ -1,5 +1,5 @@
 use crate::{cache::DEP_CACHE_FOLDER, contracts::PipeArtifact, package::NpmPackage};
-use homedir::windows::my_home;
+use homedir::my_home;
 use std::{collections::HashMap, path::PathBuf};
 
 // ─────────────────────────────────────────────────────────────────────────────
