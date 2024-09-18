@@ -62,7 +62,7 @@ impl LockFileActor {
             }
             None => {
                 let mut new_importers = HashMap::new();
-                new_importers.insert(CURRENT_IMPORTER.to_string(), Self::create_importers(self.resolved_items.clone(), None));;
+                new_importers.insert(CURRENT_IMPORTER.to_string(), Self::create_importers(self.resolved_items.clone(), None));
 
                 lockfile_structure.importers = Some(new_importers);
                 Ok(())

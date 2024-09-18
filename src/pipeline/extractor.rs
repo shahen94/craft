@@ -1,6 +1,7 @@
 use std::sync::{mpsc::Sender, Arc};
 
 use async_trait::async_trait;
+use tokio::fs;
 use tokio::sync::Mutex;
 
 use crate::{
@@ -9,7 +10,7 @@ use crate::{
     logger::CraftLogger,
     tar::Gzip,
 };
-
+use crate::pipeline::ResolvedItem;
 use super::artifacts::{ExtractArtifacts, StoredArtifact};
 
 pub struct ExtractorPipe {
@@ -32,17 +33,18 @@ impl ExtractorPipe {
     }
 
     // Skip because we now simlink the extracted files
-    pub async fn cleanup() {
-        return;
-
-
-        // Skip because we now simlink the extracted files
-        let tmp_folder = ExtractArtifacts::get_tmp_folder();
-
-        if tmp_folder.exists() {
-            CraftLogger::verbose("Cleaning up temporary cache folder");
-            tokio::fs::remove_dir_all(&tmp_folder).await.unwrap();
+    pub async fn cleanup(vec: Vec<ResolvedItem>) -> Result<(), ExecutionError> {
+        let mapped_str = vec.iter().map(|x| x.package.name.clone()).collect::<Vec<String>>();
+        let mut entries = tokio::fs::read_dir("node_modules").await.map_err
+        (|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))?;
+       while let Some(entry) = entries.next_entry().await.map_err(|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))? {
+            let dir_name = entry.file_name().to_str().unwrap().to_string();
+            if !mapped_str.contains(&dir_name) {
+                fs::remove_dir_all(entry.path()).await.map_err(|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))?;
+            }
         }
+
+        Ok(())
     }
 
     pub async fn unzip_archive(&self, artifact: &StoredArtifact) -> Result<(), ZipError> {

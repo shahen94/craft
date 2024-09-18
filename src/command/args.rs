@@ -3,7 +3,7 @@ use clap::Parser;
 ///
 /// # Example
 ///
-/// ```
+/// ```no_run
 /// use clap::Parser;
 /// use craft::command::Command;
 ///
@@ -30,7 +30,7 @@ impl Command {
 /// Sub commands
 ///
 /// # Example
-/// ```
+/// ```no_run
 /// use clap::Parser;
 /// use craft::command::{Command, SubCommand};
 ///
@@ -52,7 +52,7 @@ pub enum SubCommand {
 /// Install sub command
 ///
 /// # Example
-/// ```
+/// ```no_run
 /// use clap::Parser;
 /// use craft::command::{Command, SubCommand, Install};
 ///

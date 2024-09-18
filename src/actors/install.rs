@@ -97,7 +97,7 @@ impl Actor<PipeResult> for InstallActor {
 
         // ─── Cleanup ────────────────────────────────
 
-        ExtractorPipe::cleanup().await;
+        ExtractorPipe::cleanup(resolve_artifacts.get_artifacts()).await;
 
         drop(tx);
         ui_thread.join().unwrap();
