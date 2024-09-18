@@ -1,7 +1,6 @@
 use std::{env, path::PathBuf, sync::mpsc::Sender};
 
 use async_trait::async_trait;
-use clap::builder::Str;
 use homedir::my_home;
 use lazy_static::lazy_static;
 

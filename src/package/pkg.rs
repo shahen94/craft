@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use super::{
     registry::Registry,
     version::{contracts::Version, VersionImpl},
@@ -26,9 +27,9 @@ impl From<Package> for RegistryKey {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-impl ToString for Package {
-    fn to_string(&self) -> String {
-        format!("{}@{}", self.name, self.raw_version)
+impl Display for Package {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format!("{}@{}", self.name, self.raw_version))
     }
 }
 

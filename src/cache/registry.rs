@@ -8,7 +8,7 @@ use std::{collections::HashMap, fs::File, io, path::PathBuf};
 use super::constants::REGISTRY_CACHE_FOLDER;
 
 //
-#[derive(Eq, Hash, Debug, Clone)]
+#[derive(Eq, Debug, Clone)]
 pub struct RegistryKey {
     pub name: String,
     pub version: String,
@@ -38,12 +38,6 @@ impl From<&NpmPackage> for RegistryKey {
             name: pkg.name.clone(),
             version: pkg.version.clone(),
         }
-    }
-}
-
-impl RegistryKey {
-    pub fn to_string(&self) -> String {
-        format!("{}@{}", self.name, self.version)
     }
 }
 
@@ -107,7 +101,7 @@ impl RegistryCache {
         // @types/node -> Should go to a separate folder @types and contain a file node
         if key.name.contains("/") {
             let splitted_val = key.name.split("/").collect::<Vec<&str>>();
-            let dir_to_create = self.directory.join(&splitted_val[0]);
+            let dir_to_create = self.directory.join(splitted_val[0]);
             if !dir_to_create.exists() {
                 tokio::fs::create_dir_all(&dir_to_create).await?;
             }
@@ -207,7 +201,7 @@ impl PersistentCache<NpmPackage> for RegistryCache {
                         format!(
                             "{}/{}",
                             file_or_dir_name,
-                            file_name.replace(".json", "").to_string()
+                            file_name.replace(".json", "")
                         ),
                         HashMap::new(),
                     );

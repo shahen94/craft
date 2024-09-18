@@ -27,8 +27,8 @@ impl Command {
     }
 }
 
-impl Into<ProgramDesire> for Install {
-    fn into(self) -> ProgramDesire {
+impl From<Install> for ProgramDesire {
+    fn from(val: Install) -> Self {
         let node_env = env::var("NODE_ENV").unwrap_or("development".to_string());
         let mut program_desire = ProgramDesire {
             dev_install: true,
@@ -44,24 +44,24 @@ impl Into<ProgramDesire> for Install {
         program_desire.pnpm_lock_yaml_available = fs::exists("pnpm-lock.yaml").unwrap_or(false);
 
         // In that case we only install dev dependencies
-        if self.dev {
+        if val.dev {
             program_desire.prod_install = false;
             program_desire.optional_install = false;
             return program_desire;
         }
 
-        if self.save_prod {
+        if val.save_prod {
             program_desire.dev_install = false;
             program_desire.optional_install = false;
             return program_desire;
         }
 
-        /// If no optional we don't install optional dependencies
-        if self.no_optional {
+        // If no optional we don't install optional dependencies
+        if val.no_optional {
             program_desire.optional_install = false;
         }
 
-        if self.global {
+        if val.global {
             program_desire.global_install = true;
             program_desire.dev_install = false;
             program_desire.prod_install = false;

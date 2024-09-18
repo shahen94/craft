@@ -68,7 +68,7 @@ impl PipeArtifact<Vec<ResolvedItem>> for ResolveArtifacts {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::net::ToSocketAddrs;
+    
 
     #[test]
     fn test_resolve_artifacts() {

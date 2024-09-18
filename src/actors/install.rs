@@ -7,7 +7,6 @@ use async_trait::async_trait;
 
 use crate::cache::PackagesCache;
 use crate::contracts::{Lockfile, PersistentCache};
-use crate::errors::ExecutionError::JobExecutionFailed;
 use crate::lockfile::lock_file_actor::LockFileActor;
 use crate::{
     contracts::{Actor, Pipe, PipeArtifact, Progress, ProgressAction},
@@ -98,7 +97,7 @@ impl Actor<PipeResult> for InstallActor {
 
         // ─── Cleanup ────────────────────────────────
 
-        ExtractorPipe::cleanup(resolve_artifacts.get_artifacts()).await;
+        ExtractorPipe::cleanup(resolve_artifacts.get_artifacts()).await?;
 
         drop(tx);
         ui_thread.join().unwrap();

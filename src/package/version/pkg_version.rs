@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use regex::Regex;
 
 use crate::package::version::{connector::Connector, constants::LINEAR_RANGE_REGEX};
@@ -30,13 +31,14 @@ pub struct VersionImpl {
 
 // ─── ToString ────────────────────────────────────────────────────────────────
 
-impl ToString for VersionImpl {
-    fn to_string(&self) -> String {
-        self.inner
+impl Display for VersionImpl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = self.inner
             .iter()
             .map(|constraint| constraint.to_string())
             .collect::<Vec<_>>()
-            .join(" ")
+            .join(" ");
+        write!(f, "{}", str)
     }
 }
 

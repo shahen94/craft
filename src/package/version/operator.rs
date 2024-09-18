@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::str::FromStr;
 
 // ─── Operator ──────────────────────────────────────────────────────────────────
@@ -35,9 +36,9 @@ impl FromStr for Operator {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-impl ToString for Operator {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             Operator::Tilde => "~".to_string(),
             Operator::Caret => "^".to_string(),
             Operator::GreaterThan => ">".to_string(),
@@ -45,7 +46,8 @@ impl ToString for Operator {
             Operator::LessThan => "<".to_string(),
             Operator::LessThanOrEqual => "<=".to_string(),
             Operator::Equal => "=".to_string(),
-        }
+        };
+        write!(f, "{}", str)
     }
 }
 

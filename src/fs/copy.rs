@@ -1,4 +1,4 @@
-use fs_extra::dir::{create, CopyOptions};
+use fs_extra::dir::CopyOptions;
 use std::fs;
 use std::path::Path;
 
@@ -46,17 +46,5 @@ pub fn symlink_dir<P: AsRef<Path>, U: AsRef<Path>>(from: P, to: U) -> std::io::R
 #[cfg(windows)]
 pub fn symlink_dir<P: AsRef<Path>, U: AsRef<Path>>(from: P, to: U) -> std::io::Result<()> {
     junction::create(from, to)?;
-    Ok(())
-}
-
-#[cfg(windows)]
-pub fn remove_symlink_dir<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
-    fs::remove_dir(path)?;
-    Ok(())
-}
-
-#[cfg(unix)]
-pub fn remove_symlink_dir<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
-    std::fs::remove_file(path)?;
     Ok(())
 }

@@ -7,10 +7,8 @@ use crate::{
     command::{Command, SubCommand},
     contracts::{Actor, Progress, ProgressAction},
     errors::ExecutionError,
-    package::PackageJson,
     ui::UIProgress,
 };
-use std::collections::HashMap;
 use std::{
     sync::mpsc::Receiver,
     thread::{self, JoinHandle},
@@ -31,26 +29,26 @@ impl Program {
         let command = args.command.clone();
 
         match command {
-            SubCommand::Install(argsInstall) => {
+            SubCommand::Install(args_install) => {
                 if args.is_install_without_args() {
-                    let program_desire: ProgramDesire = argsInstall.into();
+                    let program_desire: ProgramDesire = args_install.into();
                     let deps_to_install = PreprocessDependencyInstall::new(program_desire)
                         .run()
                         .await
                         .unwrap();
 
                     InstallActor::new(deps_to_install).start().await.unwrap();
-                } else if argsInstall.save_optional {
-                    let packages = argsInstall.packages.clone().unwrap();
+                } else if args_install.save_optional {
+                    let packages = args_install.packages.clone().unwrap();
                     InstallActor::new(packages).start().await.unwrap();
-                } else if argsInstall.save_dev {
-                    let packages = argsInstall.packages.clone().unwrap();
+                } else if args_install.save_dev {
+                    let packages = args_install.packages.clone().unwrap();
                     InstallActor::new(packages).start().await.unwrap();
-                } else if argsInstall.save_prod {
-                    let packages = argsInstall.packages.clone().unwrap();
+                } else if args_install.save_prod {
+                    let packages = args_install.packages.clone().unwrap();
                     InstallActor::new(packages).start().await.unwrap();
-                } else if argsInstall.global {
-                    let packages = argsInstall.packages.clone().unwrap();
+                } else if args_install.global {
+                    let packages = args_install.packages.clone().unwrap();
                     InstallActor::new(packages).start().await.unwrap();
                 }
 

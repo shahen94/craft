@@ -1,6 +1,5 @@
-use colored::Colorize;
 
-use crate::contracts::{Logger, CRAFT_VERBOSE_LOGGING};
+use crate::contracts::Logger;
 
 // ─── CraftLogger ─────────────────────────────────────────────────────────────────
 

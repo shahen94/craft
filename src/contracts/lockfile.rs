@@ -1,6 +1,5 @@
 use crate::errors::LockfileError;
 use crate::lockfile::lockfile_structure::LockfileStructure;
-use std::io;
 use std::path::Path;
 
 pub trait Lockfile<T> {

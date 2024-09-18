@@ -27,7 +27,7 @@ impl PackagesCache {
         let mut entries = tokio::fs::read_dir(dir).await?;
 
         while let Some(entry) = entries.next_entry().await? {
-            /// Nested is e.g. @types/node etc.
+            // Nested is e.g. @types/node etc.
             if entry.file_type().await?.is_dir() {
                 let dirname = entry
                     .file_name()

@@ -8,7 +8,7 @@ use crate::pipeline::ResolvedItem;
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::mpsc::Sender;
-use std::{fs, io};
+use std::fs;
 
 pub struct LockFileActor {
     sender: Sender<ProgressAction>,
@@ -39,10 +39,7 @@ impl LockFileActor {
         packages: Vec<ResolvedItem>,
         map: Option<ResolvedDependencies>,
     ) -> ResolvedDependencies {
-        let mut map_to_use = match map {
-            Some(m) => m,
-            None => HashMap::new(),
-        };
+        let mut map_to_use = map.unwrap_or_default();
 
         packages.iter().for_each(|item| {
             if item.parent.is_none() {
@@ -64,7 +61,7 @@ impl LockFileActor {
     ) -> Result<(), LockfileError> {
         match &mut lockfile_structure.importers {
             Some(e) => {
-                let current_importer = e.get(CURRENT_IMPORTER).clone();
+                let current_importer = e.get(CURRENT_IMPORTER);
                 match current_importer {
                     Some(i) => {
                         e.insert(

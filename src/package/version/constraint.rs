@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use super::{
     constants::SEMVER_REGEX, contracts::Satisfies, field::VersionField, operator::Operator,
 };
@@ -250,8 +251,8 @@ impl Satisfies for VersionConstraint {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-impl ToString for VersionConstraint {
-    fn to_string(&self) -> String {
+impl Display for VersionConstraint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut version = format!(
             "{}.{}.{}",
             self.major.to_string(),
@@ -272,7 +273,7 @@ impl ToString for VersionConstraint {
             version = format!("{}+{}", version, build);
         }
 
-        version
+        write!(f, "{}", version)
     }
 }
 

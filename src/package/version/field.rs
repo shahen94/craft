@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use super::contracts::Satisfies;
 
 // ─── VersionField ────────────────────────────────────────────────────────────
@@ -64,12 +65,13 @@ impl VersionField {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-impl ToString for VersionField {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for VersionField {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             VersionField::Exact(value) => format!("{}", value),
             VersionField::Wildcard => "*".to_string(),
-        }
+        };
+        write!(f, "{}", str)
     }
 }
 

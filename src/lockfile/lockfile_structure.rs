@@ -1,4 +1,3 @@
-use clap::builder::Str;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -17,10 +16,10 @@ type DepPath = String;
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum LockfileResolution {
-    DirectoryResolution(DirectoryResolution),
-    GitRepositoryResolution(GitRepositoryResolution),
-    TarballResolution(TarballResolution),
-    IntegrityResolution(IntegrityResolution),
+    Directory(DirectoryResolution),
+    GitRepository(GitRepositoryResolution),
+    Tarball(TarballResolution),
+    Integrity(IntegrityResolution),
 }
 
 /**

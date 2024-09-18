@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use super::{connector::Connector, constraint::VersionConstraint, contracts::Satisfies};
 
 // ─── VersionGroup ──────────────────────────────────────────────────────────────
@@ -21,8 +22,8 @@ impl VersionGroup {
 
 // ───────────────────────────────────────────────────────────────────────────────
 
-impl ToString for VersionGroup {
-    fn to_string(&self) -> String {
+impl Display for VersionGroup {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut constraints = self
             .constraints
             .iter()
@@ -34,7 +35,7 @@ impl ToString for VersionGroup {
             constraints = format!("({})", constraints);
         }
 
-        constraints
+        write!(f, "{}", constraints)
     }
 }
 
