@@ -42,14 +42,15 @@ impl PackagesCache {
                     let key_with_subdir = convert_to_registry_key(&key);
                     cache.insert(key_with_subdir);
                 }
-            }
-            let filename = entry
-                .file_name()
-                .into_string()
-                .map_err(|_| CacheError::CacheError)?;
-            let reg_key = convert_to_registry_key(&filename);
+            } else {
+                let filename = entry
+                    .file_name()
+                    .into_string()
+                    .map_err(|_| CacheError::CacheError)?;
+                let reg_key = convert_to_registry_key(&filename);
 
-            cache.insert(reg_key);
+                cache.insert(reg_key);
+            }
         }
 
         Ok(cache)

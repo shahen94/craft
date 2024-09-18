@@ -52,11 +52,18 @@ impl ExtractorPipe {
 
         let tmp_folder = ExtractArtifacts::get_tmp_folder();
 
+
+
         tokio::task::spawn_blocking(move || {
             let dest = tmp_folder.join(format!(
                 "{}-{}",
                 &artifact_s.package.name, &artifact_s.package.version
             ));
+
+            // Skip if already unzipped
+            if dest.exists() {
+                return Ok(());
+            }
             match Gzip::extract(&artifact_s.zip_path, &dest) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e),

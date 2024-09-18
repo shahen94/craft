@@ -10,6 +10,7 @@ pub struct Http;
 impl Http {
     pub async fn download_file(url: &str, path: &PathBuf, sha_sum: &str) -> Result<(),
         NetworkError> {
+        log::info!("Downloading file from: {}", url);
         let mut response = reqwest::get(url).await?;
         let mut hasher = Sha1::new();
 

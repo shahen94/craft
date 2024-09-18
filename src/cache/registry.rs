@@ -51,11 +51,45 @@ impl RegistryKey {
 }
 
 pub fn convert_to_registry_key(key: &str) -> RegistryKey {
+    if key.starts_with("@") {
+        let key_version_arr = key.split("@").collect::<Vec<&str>>();
+        let name = format!("@{}{}", key_version_arr[0], key_version_arr[1]);
+
+        if key_version_arr.len() == 2 {
+            log::info!("Key: {}", key);
+        }
+
+        return RegistryKey{
+            name,
+            version: key_version_arr[2].to_string(),
+        }
+    }
+
     let key_version_arr = key.split("@").collect::<Vec<&str>>();
     RegistryKey {
         name: key_version_arr[0].to_string(),
         version: key_version_arr[1].to_string(),
     }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_convert_to_registry_key() {
+        let key = "express@4.17.1";
+        let registry_key = super::convert_to_registry_key(key);
+        assert_eq!(registry_key.name, "express");
+        assert_eq!(registry_key.version, "4.17.1");
+    }
+
+    #[test]
+    fn test_convert_scoped_package() {
+        let key = "@types/node@14.14.37";
+        let registry_key = super::convert_to_registry_key(key);
+        assert_eq!(registry_key.name, "@types/node");
+        assert_eq!(registry_key.version, "14.14.37");
+    }
+
 }
 
 

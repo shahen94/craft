@@ -108,7 +108,6 @@ impl Pipe<DownloadArtifacts> for DownloaderPipe<PackagesCache> {
             cache.init().await.map_err(|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))?;
         }
 
-
         let _ = self.tx.send(ProgressAction::new(Phase::Downloading));
 
         let _ = tokio::join! {
