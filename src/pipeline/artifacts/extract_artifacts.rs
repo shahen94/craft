@@ -54,7 +54,7 @@ impl ExtractArtifacts {
     pub fn get_tmp_folder() -> PathBuf {
         
 
-        my_home().unwrap().unwrap().join(DEP_CACHE_FOLDER)
+        my_home().unwrap().unwrap().join(DEP_CACHE_FOLDER.clone())
     }
 
     pub fn add(&mut self, package: NpmPackage, unzip_at: PathBuf) {

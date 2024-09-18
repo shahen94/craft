@@ -1,7 +1,9 @@
 use std::time::Duration;
-
+use chrono::Local;
+use env_logger::{Builder, Logger};
 use indicatif::{MultiProgress, ProgressBar};
-
+use indicatif_log_bridge::LogWrapper;
+use log::{Level, LevelFilter};
 use crate::{
     contracts::{Phase, Progress, ProgressAction, CRAFT_VERBOSE_LOGGING},
     perf::Performance,
@@ -23,6 +25,29 @@ pub struct UIProgress {
     is_only_verbose: bool,
 }
 
+pub fn init_logging() -> Logger {
+    use std::io::Write;
+    Builder::new()
+        .format(|buf, record| {
+            let symbol = match record.level() {
+                Level::Info => "ℹ️",
+                Level::Error => "❌",
+                Level::Warn => "⚠️",
+                Level::Debug => "🐛",
+                Level::Trace => "🔍",
+            };
+            writeln!(
+                buf,
+                "{} {} - {}",
+                Local::now().format("%Y-%m-%dT%H:%M:%S"),
+                symbol,
+                record.args()
+            )
+        })
+        .filter(None, LevelFilter::Info)
+        .build()
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 impl Default for UIProgress {
@@ -37,6 +62,12 @@ impl Default for UIProgress {
             .unwrap_or("false".to_string())
             .parse::<bool>()
             .unwrap_or(false);
+        let logger = init_logging();
+        let level = logger.filter();
+        LogWrapper::new(multi_pb.clone(), logger).try_init().unwrap();
+        log::set_max_level(level);
+
+
 
         UIProgress {
             multi_pb,
@@ -56,7 +87,7 @@ impl Progress for UIProgress {
                 self.resolving_spinner
                     .set_message(format!("{} Resolving ...", RESOLVING));
                 self.resolving_spinner
-                    .enable_steady_tick(Duration::from_millis(100));
+                    .enable_steady_tick(Duration::from_millis(1));
             }
             Phase::Downloading => {
                 self.resolving_spinner.finish();
@@ -65,7 +96,7 @@ impl Progress for UIProgress {
                 self.downloading_spinner
                     .set_message(format!("{} Downloading ...", DOWNLOADING));
                 self.downloading_spinner
-                    .enable_steady_tick(Duration::from_millis(100));
+                    .enable_steady_tick(Duration::from_millis(1));
             }
             Phase::Extracting => {
                 self.downloading_spinner.finish();

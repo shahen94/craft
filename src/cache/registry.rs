@@ -80,7 +80,7 @@ impl Default for RegistryCache {
     fn default() -> Self {
         let directory = {
             
-            my_home().unwrap().unwrap().join(REGISTRY_CACHE_FOLDER)
+            my_home().unwrap().unwrap().join(REGISTRY_CACHE_FOLDER.clone())
         };
 
         Self {

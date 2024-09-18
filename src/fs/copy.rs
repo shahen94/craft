@@ -1,4 +1,4 @@
-use fs_extra::dir::CopyOptions;
+use fs_extra::dir::{create, CopyOptions};
 use std::fs;
 use std::path::Path;
 
@@ -42,8 +42,7 @@ pub fn symlink_dir<P: AsRef<Path>, U: AsRef<Path>>(from: P, to: U) -> std::io::R
 
 #[cfg(windows)]
 pub fn symlink_dir<P: AsRef<Path>, U: AsRef<Path>>(from: P, to: U) -> std::io::Result<()> {
-    use std::os::windows::fs::symlink_dir;
-    symlink_dir(from, to)?;
+    junction::create(from,to)?;
     Ok(())
 }
 

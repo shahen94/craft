@@ -96,7 +96,7 @@ impl Default for PackagesCache {
         let directory = {
             
 
-            my_home().unwrap().unwrap().join(PACKAGES_CACHE_FOLDER)
+            my_home().unwrap().unwrap().join(PACKAGES_CACHE_FOLDER.clone())
         };
 
         Self {
