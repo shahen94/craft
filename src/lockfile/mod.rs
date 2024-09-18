@@ -1,2 +1,3 @@
 pub mod lock_file_actor;
-pub mod lockfile_structure;
+pub(crate) mod lockfile_structure;
+mod constants;

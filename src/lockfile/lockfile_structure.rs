@@ -1,8 +1,15 @@
 use std::collections::HashMap;
+use clap::builder::Str;
 use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ResolvedDependency {
+    pub specifier: String,
+    pub version: String
+}
+
 type ProjectId = String;
-type ResolvedDependencies = HashMap<String, String>;
+pub type ResolvedDependencies = HashMap<String, ResolvedDependency>;
 type CatalogName = String;
 type DependencyName = String;
 type DepPath = String;
@@ -92,22 +99,60 @@ pub struct LockfileSettings {
     pub peers_suffix_max_length: Option<i32>
 }
 
+fn default_lockfile_version() -> String {
+    "9.0".to_string()
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all="camelCase")]
 pub struct LockfileStructure {
-  pub importers: Option<HashMap<ProjectId, ResolvedDependencies>>,
+    #[serde(default = "default_lockfile_version")]
     pub lockfile_version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub settings: Option<LockfileSettings>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub importers: Option<HashMap<ProjectId, ResolvedDependencies>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub time: Option<HashMap<String,String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub catalogs: Option<HashMap<CatalogName, HashMap<DependencyName, ResolvedCatalogEntry>>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub packages: Option<PackageSnapshots>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub never_built_dependencies: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub only_built_dependencies: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub overrides: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub package_extensions_checksum: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ignored_optional_dependencies: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub patched_dependencies: Option<HashMap<String, PatchFile>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pnpmfile_checksum: Option<String>,
-    pub settings: Option<LockfileSettings>
+}
+
+
+impl Default for LockfileStructure {
+    fn default() -> Self {
+        LockfileStructure{
+            lockfile_version: "9.0".to_string(),
+            importers: None,
+            ignored_optional_dependencies: None,
+            overrides: None,
+            catalogs: None,
+            only_built_dependencies: None,
+            package_extensions_checksum: None,
+            settings: None,
+            time: None,
+            patched_dependencies: None,
+            pnpmfile_checksum: None,
+            never_built_dependencies: None,
+            packages: None
+        }
+    }
 }
 
 

@@ -15,8 +15,8 @@ pub fn copy_dir(from: &Path, to: &Path) -> Result<(), Box<dyn std::error::Error>
 }
 
 fn copy_recursive(
-    from: &std::path::Path,
-    to: &std::path::Path,
+    from: &Path,
+    to: &Path,
     options: &CopyOptions,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let from_meta = fs::metadata(from)?;
@@ -48,7 +48,7 @@ pub fn symlink_dir<P: AsRef<Path>, U: AsRef<Path>>(from: P, to: U) -> std::io::R
 
 #[cfg(windows)]
 pub fn remove_symlink_dir<P: AsRef<Path>>(path: P) -> std::io::Result<()> {
-    std::fs::remove_dir(path)?;
+    fs::remove_dir(path)?;
     Ok(())
 }
 

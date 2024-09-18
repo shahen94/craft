@@ -66,7 +66,7 @@ impl ResolverPipe<RegistryCache> {
         if let Some(pkg) = cached_pkg {
             CraftLogger::verbose(format!("Package found in cache: {}", package.to_string()));
             self.artifacts
-                .insert(pkg.to_string().clone(), ResolvedItem::new(pkg.clone(), parent));
+                .insert(pkg.to_string().clone(), ResolvedItem::new(pkg.clone(), parent, package.raw_version.clone()));
             return Ok(());
         }
 
@@ -76,7 +76,7 @@ impl ResolverPipe<RegistryCache> {
 
         self.artifacts.insert(
             pkg_cache_key.clone(),
-            ResolvedItem::new(remote_package.clone(), parent.clone()),
+            ResolvedItem::new(remote_package.clone(), parent.clone(), package.raw_version.clone()),
         );
 
         self.cache.set(&remote_package.clone().into(), remote_package.clone()).await;

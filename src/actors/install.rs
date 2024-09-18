@@ -13,7 +13,9 @@ use crate::{
     ui::UIProgress,
 };
 use crate::cache::PackagesCache;
-use crate::contracts::PersistentCache;
+use crate::contracts::{Lockfile, PersistentCache};
+use crate::errors::ExecutionError::JobExecutionFailed;
+use crate::lockfile::lock_file_actor::LockFileActor;
 
 pub struct InstallActor {
     packages: Vec<String>,
@@ -42,13 +44,12 @@ impl Actor<PipeResult> for InstallActor {
         let mut cache = PackagesCache::default();
         cache.init().await.unwrap();
         let ui_thread = self.start_progress(rx);
-        let packages_to_resolve = cache.diff_downloaded_modules(&self.packages);
 
 
         // ─── Start Resolving ─────────────────────────
 
         CraftLogger::verbose_n(3, "Resolving dependencies");
-        let resolve_artifacts = ResolverPipe::new(packages_to_resolve, tx.clone())
+        let resolve_artifacts = ResolverPipe::new(self.packages.clone(), tx.clone())
             .run()
             .await?;
         CraftLogger::verbose_n(
@@ -92,7 +93,7 @@ impl Actor<PipeResult> for InstallActor {
         .await?;
 
         // ─── Sync Lock File ────────────────────────
-        // TODO: Sync lock file
+        LockFileActor::new(tx.clone(), resolve_artifacts.get_artifacts()).run().unwrap();
 
         // ─── Cleanup ────────────────────────────────
 
