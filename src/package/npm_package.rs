@@ -1,7 +1,7 @@
+use crate::cache::RegistryKey;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Display;
-use serde::{Deserialize, Serialize};
-use crate::cache::RegistryKey;
 
 /// This struct represents a package from the registry.
 ///
@@ -21,7 +21,6 @@ pub struct NpmPackage {
 
     pub dist: Distribution,
 }
-
 
 impl From<NpmPackage> for RegistryKey {
     fn from(val: NpmPackage) -> Self {

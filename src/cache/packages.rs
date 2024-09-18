@@ -1,12 +1,12 @@
-use std::path::{Path, PathBuf};
-use std::collections::HashSet;
+use super::constants::PACKAGES_CACHE_FOLDER;
+use crate::cache::registry::convert_to_registry_key;
+use crate::cache::RegistryKey;
+use crate::{contracts::PersistentCache, errors::CacheError};
 use async_recursion::async_recursion;
 use async_trait::async_trait;
 use homedir::windows::my_home;
-use crate::{contracts::PersistentCache, errors::CacheError};
-use crate::cache::registry::convert_to_registry_key;
-use crate::cache::RegistryKey;
-use super::constants::PACKAGES_CACHE_FOLDER;
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 // ─── PackagesCache ───────────────────────────────────────────────────────────────
 
@@ -14,7 +14,7 @@ use super::constants::PACKAGES_CACHE_FOLDER;
 pub struct PackagesCache {
     pub directory: PathBuf,
     pub cache: HashSet<RegistryKey>,
-    pub downloaded_modules: HashSet<String>
+    pub downloaded_modules: HashSet<String>,
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -22,7 +22,7 @@ pub struct PackagesCache {
 impl PackagesCache {
     #[async_recursion]
     pub async fn read_cache_directory(dir: &Path) -> Result<HashSet<RegistryKey>, CacheError> {
-        let mut cache:HashSet<RegistryKey> = HashSet::new();
+        let mut cache: HashSet<RegistryKey> = HashSet::new();
 
         let mut entries = tokio::fs::read_dir(dir).await?;
 
@@ -60,7 +60,6 @@ impl PackagesCache {
         let mut entries = tokio::fs::read_dir(dir).await?;
         let mut cache = HashSet::new();
 
-
         while let Some(entry) = entries.next_entry().await? {
             let file_name = entry.file_name().to_os_string().into_string().unwrap();
             cache.insert(file_name);
@@ -95,15 +94,16 @@ impl PackagesCache {
 impl Default for PackagesCache {
     fn default() -> Self {
         let directory = {
-            
-
-            my_home().unwrap().unwrap().join(PACKAGES_CACHE_FOLDER.clone())
+            my_home()
+                .unwrap()
+                .unwrap()
+                .join(PACKAGES_CACHE_FOLDER.clone())
         };
 
         Self {
             directory,
             cache: HashSet::new(),
-            downloaded_modules: HashSet::new()
+            downloaded_modules: HashSet::new(),
         }
     }
 }

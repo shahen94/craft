@@ -5,14 +5,14 @@ use clap::builder::Str;
 use homedir::my_home;
 use lazy_static::lazy_static;
 
+use super::artifacts::{ExtractArtifactsMap, LinkArtifactItem, ResolvedItem};
+use crate::cache::DEP_CACHE_FOLDER;
 use crate::{
     contracts::{Logger, Phase, Pipe, ProgressAction},
     errors::ExecutionError,
     fs::copy_dir,
     logger::CraftLogger,
 };
-use crate::cache::DEP_CACHE_FOLDER;
-use super::artifacts::{ExtractArtifactsMap, LinkArtifactItem, ResolvedItem};
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ pub struct LinkerPipe {
     tx: Sender<ProgressAction>,
     resolved: Vec<ResolvedItem>,
     extracted: ExtractArtifactsMap,
-    central_store: PathBuf
+    central_store: PathBuf,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ impl LinkerPipe {
             tx,
             resolved,
             extracted,
-            central_store: my_home().unwrap().unwrap().join(DEP_CACHE_FOLDER.clone())
+            central_store: my_home().unwrap().unwrap().join(DEP_CACHE_FOLDER.clone()),
         }
     }
 
@@ -71,9 +71,7 @@ impl LinkerPipe {
                     path.push(p);
                     path.push("node_modules")
                 }
-                NODE_MODULES
-                    .join(&path)
-                    .join(&pkg.name)
+                NODE_MODULES.join(&path).join(&pkg.name)
             } else {
                 NODE_MODULES.join(&pkg.name)
             };
@@ -106,8 +104,8 @@ impl LinkerPipe {
         }
     }
 
-    fn get_from_location(&self,package_name: String) -> PathBuf {
-        self.central_store.join(package_name.replace("@","-"))
+    fn get_from_location(&self, package_name: String) -> PathBuf {
+        self.central_store.join(package_name.replace("@", "-"))
     }
 }
 

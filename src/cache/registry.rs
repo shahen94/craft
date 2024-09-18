@@ -1,12 +1,11 @@
+use crate::{contracts::PersistentCache, errors::CacheError, package::NpmPackage};
 use async_trait::async_trait;
-use std::{collections::HashMap, fs::File, io, path::PathBuf};
-use std::fmt::Display;
 use homedir::my_home;
 use nodejs_semver::{Range, Version};
-use crate::{contracts::PersistentCache, errors::CacheError, package::NpmPackage};
+use std::fmt::Display;
+use std::{collections::HashMap, fs::File, io, path::PathBuf};
 
-use super::constants::{REGISTRY_CACHE_FOLDER};
-
+use super::constants::REGISTRY_CACHE_FOLDER;
 
 //
 #[derive(Eq, Hash, Debug, Clone)]
@@ -14,7 +13,6 @@ pub struct RegistryKey {
     pub name: String,
     pub version: String,
 }
-
 
 impl Display for RegistryKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -33,7 +31,6 @@ impl PartialEq for RegistryKey {
         self.name == other.name && self.version == other.version
     }
 }
-
 
 impl From<&NpmPackage> for RegistryKey {
     fn from(pkg: &NpmPackage) -> Self {
@@ -59,10 +56,10 @@ pub fn convert_to_registry_key(key: &str) -> RegistryKey {
             log::info!("Key: {}", key);
         }
 
-        return RegistryKey{
+        return RegistryKey {
             name,
             version: key_version_arr[2].to_string(),
-        }
+        };
     }
 
     let key_version_arr = key.split("@").collect::<Vec<&str>>();
@@ -89,9 +86,7 @@ mod tests {
         assert_eq!(registry_key.name, "@types/node");
         assert_eq!(registry_key.version, "14.14.37");
     }
-
 }
-
 
 // ─── RegistryCache ───────────────────────────────────────────────────────────────
 
@@ -140,7 +135,10 @@ impl RegistryCache {
 impl Default for RegistryCache {
     fn default() -> Self {
         let directory = {
-            my_home().unwrap().unwrap().join(REGISTRY_CACHE_FOLDER.clone())
+            my_home()
+                .unwrap()
+                .unwrap()
+                .join(REGISTRY_CACHE_FOLDER.clone())
         };
 
         Self {
@@ -155,9 +153,7 @@ impl Default for RegistryCache {
 impl RegistryCache {
     fn load_file(&self, key: &RegistryKey) -> Result<HashMap<String, NpmPackage>, io::Error> {
         // Not yet loaded into cache
-        let cache_file = File::open(self.directory.join(format!("{}.json",
-                                                                key.name)))
-            .unwrap();
+        let cache_file = File::open(self.directory.join(format!("{}.json", key.name))).unwrap();
 
         // Loads complete configuration
         let cache: HashMap<String, NpmPackage> = serde_json::from_reader(cache_file)?;
@@ -174,15 +170,17 @@ impl RegistryCache {
                         self.cache.insert(key.name.clone(), loaded_key);
                     }
                     Err(e) => {
-                        log::error!("Failed to load cache file for {} with {}.", key.name, e
-                            .to_string());
+                        log::error!(
+                            "Failed to load cache file for {} with {}.",
+                            key.name,
+                            e.to_string()
+                        );
                     }
                 }
             }
         }
     }
 }
-
 
 #[async_trait]
 impl PersistentCache<NpmPackage> for RegistryCache {
@@ -193,7 +191,6 @@ impl PersistentCache<NpmPackage> for RegistryCache {
                 .map_err(CacheError::FileSystemError)?;
             return Ok(());
         }
-
 
         // load cache
         let mut entries = tokio::fs::read_dir(&self.directory).await?;
@@ -206,14 +203,25 @@ impl PersistentCache<NpmPackage> for RegistryCache {
                 let mut sub_entries = tokio::fs::read_dir(entry.path()).await?;
                 while let Some(sub_entry) = sub_entries.next_entry().await? {
                     let file_name = sub_entry.file_name().to_string_lossy().to_string();
-                    self.cache.insert(format!("{}/{}", file_or_dir_name,
-                                              file_name.replace(".json", "").to_string()),
-                                      HashMap::new());
+                    self.cache.insert(
+                        format!(
+                            "{}/{}",
+                            file_or_dir_name,
+                            file_name.replace(".json", "").to_string()
+                        ),
+                        HashMap::new(),
+                    );
                 }
             }
 
-            self.cache.insert(entry.file_name().to_string_lossy().replace(".json", "").to_string
-            (), HashMap::new());
+            self.cache.insert(
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .replace(".json", "")
+                    .to_string(),
+                HashMap::new(),
+            );
         }
 
         Ok(())
@@ -276,6 +284,10 @@ impl PersistentCache<NpmPackage> for RegistryCache {
         self.perform_preload(key);
 
         self.cache.contains_key(&key.name)
-            && self.cache.get(&key.name).unwrap().contains_key(&key.version)
+            && self
+                .cache
+                .get(&key.name)
+                .unwrap()
+                .contains_key(&key.version)
     }
 }

@@ -1,5 +1,5 @@
-use std::{env, fs};
 use clap::Parser;
+use std::{env, fs};
 /// Command line arguments
 ///
 /// # Example
@@ -26,7 +26,6 @@ impl Command {
         false
     }
 }
-
 
 impl Into<ProgramDesire> for Install {
     fn into(self) -> ProgramDesire {
@@ -57,9 +56,6 @@ impl Into<ProgramDesire> for Install {
             return program_desire;
         }
 
-
-
-
         /// If no optional we don't install optional dependencies
         if self.no_optional {
             program_desire.optional_install = false;
@@ -76,9 +72,6 @@ impl Into<ProgramDesire> for Install {
             program_desire.dev_install = false;
             program_desire.optional_install = false;
         }
-
-
-
 
         program_desire
     }
@@ -98,7 +91,6 @@ pub struct ProgramDesire {
     pub package_json_available: bool,
     pub pnpm_lock_yaml_available: bool,
 }
-
 
 /// Sub commands
 ///
@@ -170,7 +162,6 @@ pub struct Install {
     #[arg(required = false)]
     pub packages: Option<Vec<String>>,
 }
-
 
 #[derive(Debug, Parser, Clone)]
 pub struct Run {

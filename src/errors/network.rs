@@ -11,5 +11,5 @@ pub enum NetworkError {
     #[error("Failed to fetch version {0}")]
     FailedToFetchVersion(String),
     #[error("Checksum mismatch while downloading {0}")]
-    CheckSum(String)
+    CheckSum(String),
 }

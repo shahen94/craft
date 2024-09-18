@@ -1,9 +1,9 @@
-use crate::cache::RegistryKey;
 use super::{
     registry::Registry,
     version::{contracts::Version, VersionImpl},
     NpmPackage,
 };
+use crate::cache::RegistryKey;
 
 // ─── Package ───────────────────────────────────────────────────────────────────
 
@@ -14,7 +14,6 @@ pub struct Package {
     pub registry: Registry,
     pub raw_version: String,
 }
-
 
 impl From<Package> for RegistryKey {
     fn from(val: Package) -> Self {

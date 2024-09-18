@@ -1,24 +1,22 @@
-use std::collections::HashMap;
-use clap::builder::Str;
 use crate::command::ProgramDesire;
 use crate::errors::ExecutionError;
 use crate::package::PackageJson;
+use clap::builder::Str;
+use std::collections::HashMap;
 
-pub struct PreprocessDependencyInstall{
+pub struct PreprocessDependencyInstall {
     pub program_desire: ProgramDesire,
 }
 
-
 impl PreprocessDependencyInstall {
     pub fn new(program_desire: ProgramDesire) -> PreprocessDependencyInstall {
-        PreprocessDependencyInstall{
-            program_desire
-        }
+        PreprocessDependencyInstall { program_desire }
     }
 
     pub(crate) fn read_package_json() -> Result<PackageJson, ExecutionError> {
-        std::fs::read_to_string("package.json").map(|e|e.into()).map_err(|_|
-            ExecutionError::PackageJsonNotFound)
+        std::fs::read_to_string("package.json")
+            .map(|e| e.into())
+            .map_err(|_| ExecutionError::PackageJsonNotFound)
     }
 
     fn format_dependencies(&self, dependencies: HashMap<String, String>) -> Vec<String> {
@@ -32,7 +30,7 @@ impl PreprocessDependencyInstall {
     /// Calculates the main dependencies to use
     fn calculate_dependencies(&self) -> Result<Vec<String>, ExecutionError> {
         let mut dependencies = vec![];
-        let package_json =  Self::read_package_json()?;
+        let package_json = Self::read_package_json()?;
         if self.program_desire.dev_install {
             if let Some(dev_deps) = package_json.dev_dependencies {
                 dependencies.append(&mut self.format_dependencies(dev_deps));
@@ -52,7 +50,6 @@ impl PreprocessDependencyInstall {
         }
 
         Ok(dependencies)
-
     }
 
     pub fn get_script() -> Result<HashMap<String, String>, ExecutionError> {

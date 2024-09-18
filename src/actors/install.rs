@@ -5,6 +5,10 @@ use std::{
 
 use async_trait::async_trait;
 
+use crate::cache::PackagesCache;
+use crate::contracts::{Lockfile, PersistentCache};
+use crate::errors::ExecutionError::JobExecutionFailed;
+use crate::lockfile::lock_file_actor::LockFileActor;
 use crate::{
     contracts::{Actor, Pipe, PipeArtifact, Progress, ProgressAction},
     errors::ExecutionError,
@@ -12,10 +16,6 @@ use crate::{
     pipeline::{DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
     ui::UIProgress,
 };
-use crate::cache::PackagesCache;
-use crate::contracts::{Lockfile, PersistentCache};
-use crate::errors::ExecutionError::JobExecutionFailed;
-use crate::lockfile::lock_file_actor::LockFileActor;
 
 pub struct InstallActor {
     packages: Vec<String>,
@@ -44,7 +44,6 @@ impl Actor<PipeResult> for InstallActor {
         let mut cache = PackagesCache::default();
         cache.init().await.unwrap();
         let ui_thread = self.start_progress(rx);
-
 
         // ─── Start Resolving ─────────────────────────
 
@@ -93,7 +92,9 @@ impl Actor<PipeResult> for InstallActor {
         .await?;
 
         // ─── Sync Lock File ────────────────────────
-        LockFileActor::new(tx.clone(), resolve_artifacts.get_artifacts()).run().unwrap();
+        LockFileActor::new(tx.clone(), resolve_artifacts.get_artifacts())
+            .run()
+            .unwrap();
 
         // ─── Cleanup ────────────────────────────────
 

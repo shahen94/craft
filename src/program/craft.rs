@@ -1,8 +1,7 @@
-use std::{
-    sync::mpsc::Receiver,
-    thread::{self, JoinHandle},
-};
-use std::collections::HashMap;
+use crate::actors::{PreprocessDependencyInstall, RunActor};
+use crate::command::ProgramDesire;
+use crate::contracts::Logger;
+use crate::logger::CraftLogger;
 use crate::{
     actors::{CacheCleanActor, InstallActor},
     command::{Command, SubCommand},
@@ -11,10 +10,11 @@ use crate::{
     package::PackageJson,
     ui::UIProgress,
 };
-use crate::actors::{PreprocessDependencyInstall, RunActor};
-use crate::command::ProgramDesire;
-use crate::contracts::Logger;
-use crate::logger::CraftLogger;
+use std::collections::HashMap;
+use std::{
+    sync::mpsc::Receiver,
+    thread::{self, JoinHandle},
+};
 
 pub struct Program;
 
@@ -27,22 +27,20 @@ impl Program {
         })
     }
 
-
     pub async fn execute(&mut self, args: Command) -> Result<(), ExecutionError> {
         let command = args.command.clone();
 
         match command {
             SubCommand::Install(argsInstall) => {
-
-
                 if args.is_install_without_args() {
                     let program_desire: ProgramDesire = argsInstall.into();
-                    let deps_to_install = PreprocessDependencyInstall::new(program_desire).run()
-                        .await.unwrap();
+                    let deps_to_install = PreprocessDependencyInstall::new(program_desire)
+                        .run()
+                        .await
+                        .unwrap();
 
                     InstallActor::new(deps_to_install).start().await.unwrap();
-                }
-                else if argsInstall.save_optional {
+                } else if argsInstall.save_optional {
                     let packages = argsInstall.packages.clone().unwrap();
                     InstallActor::new(packages).start().await.unwrap();
                 } else if argsInstall.save_dev {
@@ -67,7 +65,10 @@ impl Program {
                 let json = PreprocessDependencyInstall::get_script()?;
 
                 if json.is_empty() {
-                    return Err(ExecutionError::JobExecutionFailed("script must be exactly 1".to_string(), "script must be exactly 1".to_string()));
+                    return Err(ExecutionError::JobExecutionFailed(
+                        "script must be exactly 1".to_string(),
+                        "script must be exactly 1".to_string(),
+                    ));
                 }
 
                 if let Some(script) = json.get(&r.script) {
@@ -78,7 +79,10 @@ impl Program {
                     Ok(())
                 } else {
                     CraftLogger::error(format!("Script {} not found", r.script));
-                    Err(ExecutionError::ScriptNotFound(format!("Script {} not found", r.script)))
+                    Err(ExecutionError::ScriptNotFound(format!(
+                        "Script {} not found",
+                        r.script
+                    )))
                 }
             }
         }

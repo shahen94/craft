@@ -13,7 +13,7 @@ pub struct ResolveArtifacts {
 pub struct ResolvedItem {
     pub package: NpmPackage,
     pub parent: Option<String>,
-    pub specifier: String
+    pub specifier: String,
 }
 
 // --------------------------------------------------------------------------------
@@ -21,10 +21,14 @@ pub struct ResolvedItem {
 impl ResolvedItem {
     pub fn new(package: NpmPackage, parent: Option<String>, mut specifier: String) -> Self {
         if specifier == "*" {
-            specifier = format!("^{}",package.version)
+            specifier = format!("^{}", package.version)
         }
 
-        Self { package, parent, specifier }
+        Self {
+            package,
+            parent,
+            specifier,
+        }
     }
 
     #[cfg(test)]
@@ -63,8 +67,8 @@ impl PipeArtifact<Vec<ResolvedItem>> for ResolveArtifacts {
 
 #[cfg(test)]
 mod tests {
-    use std::net::ToSocketAddrs;
     use super::*;
+    use std::net::ToSocketAddrs;
 
     #[test]
     fn test_resolve_artifacts() {
@@ -83,7 +87,10 @@ mod tests {
             "#,
         )
         .unwrap();
-        resolve_artifacts.insert("package".to_string(), ResolvedItem::with_no_parent(package, "1.2.0".to_string()));
+        resolve_artifacts.insert(
+            "package".to_string(),
+            ResolvedItem::with_no_parent(package, "1.2.0".to_string()),
+        );
 
         assert_eq!(
             resolve_artifacts.get("package").unwrap().package.version,
@@ -108,7 +115,10 @@ mod tests {
             "#,
         )
         .unwrap();
-        resolve_artifacts.insert("package".to_string(), ResolvedItem::with_no_parent(package, "1.0.0".to_string()));
+        resolve_artifacts.insert(
+            "package".to_string(),
+            ResolvedItem::with_no_parent(package, "1.0.0".to_string()),
+        );
 
         assert_eq!(resolve_artifacts.get_artifacts().len(), 1);
     }

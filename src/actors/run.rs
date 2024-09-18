@@ -1,19 +1,16 @@
+use crate::contracts::Actor;
+use async_trait::async_trait;
 use std::env;
 use std::process::{Command, Stdio};
-use async_trait::async_trait;
-use crate::contracts::Actor;
 
 pub struct RunActor {
     pub script: String,
-    pub cwd: Option<String>
+    pub cwd: Option<String>,
 }
 
 impl RunActor {
     pub fn new(script: String, cwd: Option<String>) -> Self {
-        Self {
-            script,
-            cwd
-        }
+        Self { script, cwd }
     }
 }
 
@@ -49,7 +46,6 @@ impl Actor<crate::actors::install::PipeResult> for RunActor {
                 .expect("failed to execute process")
         };
         let _ = child.wait().expect("child process wasn't running");
-
 
         Ok(())
     }

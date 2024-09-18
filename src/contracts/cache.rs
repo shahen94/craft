@@ -1,6 +1,6 @@
-use async_trait::async_trait;
 use crate::cache::RegistryKey;
 use crate::errors::CacheError;
+use async_trait::async_trait;
 
 #[async_trait]
 pub trait PersistentCache<T> {

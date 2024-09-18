@@ -6,6 +6,8 @@ use std::{
 use async_trait::async_trait;
 use tokio::sync::Mutex;
 
+use super::artifacts::{DownloadArtifacts, ResolvedItem};
+use crate::contracts::Logger;
 use crate::{
     cache::PackagesCache,
     contracts::{PersistentCache, Phase, Pipe, PipeArtifact, ProgressAction},
@@ -14,8 +16,6 @@ use crate::{
     network::Http,
     package::NpmPackage,
 };
-use crate::contracts::Logger;
-use super::artifacts::{DownloadArtifacts, ResolvedItem};
 
 // ─── DownloaderPipe ─────────────────────────────────────────────────────────────
 
@@ -52,7 +52,6 @@ impl DownloaderPipe<PackagesCache> {
 
     pub async fn download_pkg(&self, package: &NpmPackage) -> Result<(), ExecutionError> {
         let pkg = package.clone();
-
 
         if self.cache.lock().await.has(&pkg.clone().into()).await {
             CraftLogger::verbose(format!("Package already downloaded: {}", pkg));
@@ -105,7 +104,10 @@ impl Pipe<DownloadArtifacts> for DownloaderPipe<PackagesCache> {
     async fn run(&mut self) -> Result<DownloadArtifacts, ExecutionError> {
         {
             let mut cache = self.cache.lock().await;
-            cache.init().await.map_err(|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))?;
+            cache
+                .init()
+                .await
+                .map_err(|e| ExecutionError::JobExecutionFailed(e.to_string(), e.to_string()))?;
         }
 
         let _ = self.tx.send(ProgressAction::new(Phase::Downloading));

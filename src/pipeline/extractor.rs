@@ -4,14 +4,14 @@ use async_trait::async_trait;
 use tokio::fs;
 use tokio::sync::Mutex;
 
+use super::artifacts::{ExtractArtifacts, StoredArtifact};
+use crate::pipeline::ResolvedItem;
 use crate::{
     contracts::{Phase, Pipe, PipeArtifact, ProgressAction},
     errors::{ExecutionError, ZipError},
     logger::CraftLogger,
     tar::Gzip,
 };
-use crate::pipeline::ResolvedItem;
-use super::artifacts::{ExtractArtifacts, StoredArtifact};
 
 pub struct ExtractorPipe {
     packages: Vec<StoredArtifact>,
@@ -34,13 +34,23 @@ impl ExtractorPipe {
 
     // Skip because we now simlink the extracted files
     pub async fn cleanup(vec: Vec<ResolvedItem>) -> Result<(), ExecutionError> {
-        let mapped_str = vec.iter().map(|x| x.package.name.clone()).collect::<Vec<String>>();
-        let mut entries = tokio::fs::read_dir("node_modules").await.map_err
-        (|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))?;
-       while let Some(entry) = entries.next_entry().await.map_err(|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))? {
+        let mapped_str = vec
+            .iter()
+            .map(|x| x.package.name.clone())
+            .collect::<Vec<String>>();
+        let mut entries = tokio::fs::read_dir("node_modules")
+            .await
+            .map_err(|e| ExecutionError::JobExecutionFailed(e.to_string(), e.to_string()))?;
+        while let Some(entry) = entries
+            .next_entry()
+            .await
+            .map_err(|e| ExecutionError::JobExecutionFailed(e.to_string(), e.to_string()))?
+        {
             let dir_name = entry.file_name().to_str().unwrap().to_string();
             if !mapped_str.contains(&dir_name) {
-                fs::remove_dir_all(entry.path()).await.map_err(|e|ExecutionError::JobExecutionFailed(e.to_string(),e.to_string()))?;
+                fs::remove_dir_all(entry.path()).await.map_err(|e| {
+                    ExecutionError::JobExecutionFailed(e.to_string(), e.to_string())
+                })?;
             }
         }
 
@@ -51,8 +61,6 @@ impl ExtractorPipe {
         let artifact_s = artifact.clone();
 
         let tmp_folder = ExtractArtifacts::get_tmp_folder();
-
-
 
         tokio::task::spawn_blocking(move || {
             let dest = tmp_folder.join(format!(
@@ -92,10 +100,7 @@ impl Pipe<ExtractArtifacts> for ExtractorPipe {
         let _ = self.tx.send(ProgressAction::new(Phase::Extracting));
 
         for artifact in &self.packages {
-            CraftLogger::verbose(format!(
-                "Extracting artifact: {}",
-                artifact.package
-            ));
+            CraftLogger::verbose(format!("Extracting artifact: {}", artifact.package));
             self.unzip_archive(artifact).await.unwrap();
         }
 

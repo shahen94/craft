@@ -9,5 +9,5 @@ pub enum ExecutionError {
     #[error("Failed to find script {0}")]
     ScriptNotFound(String),
     #[error("Failed to find a script in package.json")]
-    NoScriptsFound
+    NoScriptsFound,
 }

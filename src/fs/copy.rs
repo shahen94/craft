@@ -31,13 +31,11 @@ fn copy_recursive(
     }
 
     if from_meta.is_dir() {
-       symlink_dir(from, to)?;
+        symlink_dir(from, to)?;
     }
 
     Ok(())
 }
-
-
 
 #[cfg(unix)]
 pub fn symlink_dir<P: AsRef<Path>, U: AsRef<Path>>(from: P, to: U) -> std::io::Result<()> {
@@ -47,7 +45,7 @@ pub fn symlink_dir<P: AsRef<Path>, U: AsRef<Path>>(from: P, to: U) -> std::io::R
 
 #[cfg(windows)]
 pub fn symlink_dir<P: AsRef<Path>, U: AsRef<Path>>(from: P, to: U) -> std::io::Result<()> {
-    junction::create(from,to)?;
+    junction::create(from, to)?;
     Ok(())
 }
 

@@ -1,6 +1,6 @@
-use std::{collections::HashMap, path::PathBuf};
-use homedir::windows::my_home;
 use crate::{cache::DEP_CACHE_FOLDER, contracts::PipeArtifact, package::NpmPackage};
+use homedir::windows::my_home;
+use std::{collections::HashMap, path::PathBuf};
 
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -1,11 +1,11 @@
-use std::collections::HashMap;
 use clap::builder::Str;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ResolvedDependency {
     pub specifier: String,
-    pub version: String
+    pub version: String,
 }
 
 type ProjectId = String;
@@ -20,51 +20,50 @@ pub enum LockfileResolution {
     DirectoryResolution(DirectoryResolution),
     GitRepositoryResolution(GitRepositoryResolution),
     TarballResolution(TarballResolution),
-    IntegrityResolution(IntegrityResolution)
+    IntegrityResolution(IntegrityResolution),
 }
 
 /**
  * tarball hosted remotely
  */
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct TarballResolution {
     pub r#type: Option<String>,
     pub tarball: Option<String>,
     pub integrity: Option<String>,
-    pub path: Option<String>
+    pub path: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct DirectoryResolution {
-    directory: String
+    directory: String,
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct GitRepositoryResolution {
     repo: String,
     commit: String,
-    path: Option<String>
+    path: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct IntegrityResolution {
-    pub integrity: String
+    pub integrity: String,
 }
 
-
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct ResolvedCatalogEntry {
     pub specifier: String,
-    pub version: String
+    pub version: String,
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct PackageSnapshot {
     pub id: Option<String>,
     pub optional: Option<bool>,
@@ -72,31 +71,31 @@ pub struct PackageSnapshot {
     pub has_bin: Option<bool>,
     pub name: Option<String>,
     pub version: Option<String>,
-    pub resolution: LockfileResolution
+    pub resolution: LockfileResolution,
 }
 
 pub type PackageSnapshots = HashMap<DepPath, PackageSnapshot>;
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct PatchFile {
     pub path: String,
-    pub hash: String
+    pub hash: String,
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct PatchInfo {
     strict: bool,
-    file: PatchFile
+    file: PatchFile,
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct LockfileSettings {
     pub auto_install_peers: Option<bool>,
     pub exclude_links_from_lockfile: Option<bool>,
-    pub peers_suffix_max_length: Option<i32>
+    pub peers_suffix_max_length: Option<i32>,
 }
 
 fn default_lockfile_version() -> String {
@@ -104,7 +103,7 @@ fn default_lockfile_version() -> String {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct LockfileStructure {
     #[serde(default = "default_lockfile_version")]
     pub lockfile_version: String,
@@ -113,7 +112,7 @@ pub struct LockfileStructure {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub importers: Option<HashMap<ProjectId, ResolvedDependencies>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time: Option<HashMap<String,String>>,
+    pub time: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub catalogs: Option<HashMap<CatalogName, HashMap<DependencyName, ResolvedCatalogEntry>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -134,10 +133,9 @@ pub struct LockfileStructure {
     pub pnpmfile_checksum: Option<String>,
 }
 
-
 impl Default for LockfileStructure {
     fn default() -> Self {
-        LockfileStructure{
+        LockfileStructure {
             lockfile_version: "9.0".to_string(),
             importers: None,
             ignored_optional_dependencies: None,
@@ -150,29 +148,27 @@ impl Default for LockfileStructure {
             patched_dependencies: None,
             pnpmfile_checksum: None,
             never_built_dependencies: None,
-            packages: None
+            packages: None,
         }
     }
 }
 
-
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 struct ProjectSnapshot {
     specifiers: ResolvedDependencies,
     dependencies: Option<ResolvedDependencies>,
     optional_dependencies: Option<ResolvedDependencies>,
     dev_dependencies: Option<ResolvedDependencies>,
-    dependencies_meta: Option<DependenciesMeta>
+    dependencies_meta: Option<DependenciesMeta>,
 }
 
-
-pub type DependenciesMeta  = HashMap<DependencyName, DependencyMeta>;
+pub type DependenciesMeta = HashMap<DependencyName, DependencyMeta>;
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all="camelCase")]
-pub struct DependencyMeta  {
+#[serde(rename_all = "camelCase")]
+pub struct DependencyMeta {
     injected: Option<bool>,
     node: Option<String>,
-    patch: Option<String>
+    patch: Option<String>,
 }

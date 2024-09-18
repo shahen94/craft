@@ -7,5 +7,5 @@ pub enum LockfileError {
     #[error("Error writing file {0}")]
     FileWriteError(String),
     #[error("Error file contains invalid structure {0}")]
-    InvalidStructure(String)
+    InvalidStructure(String),
 }

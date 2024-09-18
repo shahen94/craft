@@ -1,13 +1,13 @@
-use std::time::Duration;
+use crate::{
+    contracts::{Phase, Progress, ProgressAction, CRAFT_VERBOSE_LOGGING},
+    perf::Performance,
+};
 use chrono::Local;
 use env_logger::{Builder, Logger};
 use indicatif::{MultiProgress, ProgressBar};
 use indicatif_log_bridge::LogWrapper;
 use log::{Level, LevelFilter};
-use crate::{
-    contracts::{Phase, Progress, ProgressAction, CRAFT_VERBOSE_LOGGING},
-    perf::Performance,
-};
+use std::time::Duration;
 
 use super::constants::{COMPLETED, DOWNLOADING, EXTRACTING, LINKING, RESOLVING};
 
@@ -64,10 +64,10 @@ impl Default for UIProgress {
             .unwrap_or(false);
         let logger = init_logging();
         let level = logger.filter();
-        LogWrapper::new(multi_pb.clone(), logger).try_init().unwrap();
+        LogWrapper::new(multi_pb.clone(), logger)
+            .try_init()
+            .unwrap();
         log::set_max_level(level);
-
-
 
         UIProgress {
             multi_pb,

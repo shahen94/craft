@@ -5,7 +5,7 @@ use serde::Deserialize;
 // ─── PackageJson ─────────────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct PackageJson {
     pub dependencies: Option<HashMap<String, String>>,
     pub dev_dependencies: Option<HashMap<String, String>>,

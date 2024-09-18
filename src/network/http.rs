@@ -1,15 +1,18 @@
 use std::path::PathBuf;
 
+use crate::errors::NetworkError;
+use sha1::{Digest, Sha1};
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
-use sha1::{Sha1, Digest};
-use crate::errors::NetworkError;
 
 pub struct Http;
 
 impl Http {
-    pub async fn download_file(url: &str, path: &PathBuf, sha_sum: &str) -> Result<(),
-        NetworkError> {
+    pub async fn download_file(
+        url: &str,
+        path: &PathBuf,
+        sha_sum: &str,
+    ) -> Result<(), NetworkError> {
         log::info!("Downloading file from: {}", url);
         let mut response = reqwest::get(url).await?;
         let mut hasher = Sha1::new();
