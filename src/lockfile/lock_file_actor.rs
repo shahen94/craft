@@ -1,4 +1,4 @@
-use crate::contracts::{Lockfile, ProgressAction};
+use crate::contracts::Lockfile;
 use crate::errors::LockfileError;
 use crate::lockfile::constants::CURRENT_IMPORTER;
 use crate::lockfile::lockfile_structure::{
@@ -7,26 +7,26 @@ use crate::lockfile::lockfile_structure::{
 use crate::pipeline::ResolvedItem;
 use std::collections::HashMap;
 use std::path::Path;
-use std::sync::mpsc::Sender;
 use std::fs;
+use crate::command::Install;
 
 pub struct LockFileActor {
-    sender: Sender<ProgressAction>,
     resolved_items: Vec<ResolvedItem>,
+    install_option: Option<Install>,
 }
 
 impl LockFileActor {
     pub(crate) fn new(
-        sender: Sender<ProgressAction>,
         resolved_items: Vec<ResolvedItem>,
+        install_option: Option<Install>,
     ) -> LockFileActor {
         LockFileActor {
             resolved_items,
-            sender,
+            install_option
         }
     }
 
-    fn persist_lockfile_strcuture(
+    fn persist_lockfile_structure(
         lockfile_structure: LockfileStructure,
     ) -> Result<(), LockfileError> {
         let string = serde_yaml::to_string(&lockfile_structure).unwrap();
@@ -97,30 +97,20 @@ impl Lockfile<LockfileStructure> for LockFileActor {
         let file =
             fs::read_to_string(path).map_err(|e| LockfileError::FileReadError(e.to_string()))?;
         let structure = serde_yaml::from_str::<LockfileStructure>(&file)
-            .map_err(|e| LockfileError::FileReadError(e.to_string()))?;
-        Ok(structure)
-    }
-
-    fn write_lock_file(
-        path: &Path,
-        lock: LockfileStructure,
-    ) -> Result<LockfileStructure, LockfileError> {
-        let locked = serde_yaml::to_string(&lock)
             .map_err(|e| LockfileError::InvalidStructure(e.to_string()))?;
-        fs::write(path, locked).map_err(|e| LockfileError::FileWriteError(e.to_string()))?;
-        Ok(lock)
+        Ok(structure)
     }
 
     fn run(&self) -> Result<(), LockfileError> {
         if fs::exists("pnpm-lock.yaml").expect("Can't check existence of file does_not_exist.txt") {
             let mut lockfile_structure = Self::read_lock_file(Path::new("pnpm-lock.yaml"))?;
             self.handle_importers(&mut lockfile_structure)?;
-            Self::persist_lockfile_strcuture(lockfile_structure)?;
+            Self::persist_lockfile_structure(lockfile_structure)?;
             Ok(())
         } else {
             let mut lockfile_structure = LockfileStructure::default();
             self.handle_importers(&mut lockfile_structure)?;
-            Self::persist_lockfile_strcuture(lockfile_structure)?;
+            Self::persist_lockfile_structure(lockfile_structure)?;
             Ok(())
         }
     }

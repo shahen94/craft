@@ -15,14 +15,16 @@ use crate::{
     pipeline::{DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
     ui::UIProgress,
 };
+use crate::command::Install;
 
 pub struct InstallActor {
     packages: Vec<String>,
+    install: Option<Install>
 }
 
 impl InstallActor {
-    pub fn new(packages: Vec<String>) -> Self {
-        Self { packages }
+    pub fn new(packages: Vec<String>, install: Option<Install>) -> Self {
+        Self { packages, install }
     }
 
     fn start_progress(&self, rx: Receiver<ProgressAction>) -> JoinHandle<()> {
@@ -46,42 +48,39 @@ impl Actor<PipeResult> for InstallActor {
 
         // ─── Start Resolving ─────────────────────────
 
-        CraftLogger::verbose_n(3, "Resolving dependencies");
+        CraftLogger::verbose("Resolving dependencies");
         let resolve_artifacts = ResolverPipe::new(self.packages.clone(), tx.clone())
             .run()
             .await?;
-        CraftLogger::verbose_n(
-            3,
+        CraftLogger::verbose(
             format!("Resolved: {:?}", resolve_artifacts.get_artifacts().len()),
         );
 
         // ─── Start Downloading ──────────────────────
 
-        CraftLogger::verbose_n(3, "Downloading dependencies");
+        CraftLogger::verbose("Downloading dependencies");
         let download_artifacts = DownloaderPipe::new(&resolve_artifacts, tx.clone())
             .run()
             .await?;
 
-        CraftLogger::verbose_n(
-            3,
+        CraftLogger::verbose(
             format!("Downloaded {:?}", download_artifacts.get_artifacts().len()),
         );
 
         // ─── Start Extracting ───────────────────────
 
-        CraftLogger::verbose_n(3, "Extracting dependencies");
+        CraftLogger::verbose("Extracting dependencies");
         let extracted_artifacts = ExtractorPipe::new(&download_artifacts, tx.clone())
             .run()
             .await?;
 
-        CraftLogger::verbose_n(
-            3,
+        CraftLogger::verbose(
             format!("Extracted {:?}", extracted_artifacts.get_artifacts().len()),
         );
 
         // ─── Start Linking ──────────────────────────
 
-        CraftLogger::verbose_n(3, "Linking dependencies");
+        CraftLogger::verbose("Linking dependencies");
         LinkerPipe::new(
             tx.clone(),
             resolve_artifacts.get_artifacts(),
@@ -91,7 +90,7 @@ impl Actor<PipeResult> for InstallActor {
         .await?;
 
         // ─── Sync Lock File ────────────────────────
-        LockFileActor::new(tx.clone(), resolve_artifacts.get_artifacts())
+        LockFileActor::new(resolve_artifacts.get_artifacts(), self.install.clone())
             .run()
             .unwrap();
 

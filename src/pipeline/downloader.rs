@@ -83,7 +83,7 @@ impl DownloaderPipe<PackagesCache> {
             }
             let result = Http::download_file(&pkg.dist.tarball, path, &pkg.dist.shasum).await;
             if result.is_err() {
-                CraftLogger::error(format!("Failed to download package: {}", pkg));
+                CraftLogger::warn(format!("Failed to download package: {}", pkg));
                 return;
             }
 

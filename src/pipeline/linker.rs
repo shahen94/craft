@@ -1,11 +1,9 @@
 use std::{env, path::PathBuf, sync::mpsc::Sender};
 
 use async_trait::async_trait;
-use homedir::my_home;
 use lazy_static::lazy_static;
 
 use super::artifacts::{ExtractArtifactsMap, LinkArtifactItem, ResolvedItem};
-use crate::cache::DEP_CACHE_FOLDER;
 use crate::{
     contracts::{Logger, Phase, Pipe, ProgressAction},
     errors::ExecutionError,
@@ -19,8 +17,7 @@ use crate::{
 pub struct LinkerPipe {
     tx: Sender<ProgressAction>,
     resolved: Vec<ResolvedItem>,
-    extracted: ExtractArtifactsMap,
-    central_store: PathBuf,
+    extracted: ExtractArtifactsMap
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,8 +37,7 @@ impl LinkerPipe {
         Self {
             tx,
             resolved,
-            extracted,
-            central_store: my_home().unwrap().unwrap().join(DEP_CACHE_FOLDER.clone()),
+            extracted
         }
     }
 
@@ -101,10 +97,6 @@ impl LinkerPipe {
                 CraftLogger::error(format!("Error: {}", e));
             }
         }
-    }
-
-    fn get_from_location(&self, package_name: String) -> PathBuf {
-        self.central_store.join(package_name.replace("@", "-"))
     }
 }
 

@@ -38,7 +38,7 @@ impl Registry for GitRegistry {
             }
         }
 
-        println!("Failed to fetch version: {}", package.to_string());
+        println!("Failed to fetch version: {}", package);
 
         Err(NetworkError::FailedToFetchVersion(
             package.raw_version.clone(),

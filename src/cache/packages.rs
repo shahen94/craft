@@ -38,7 +38,7 @@ impl PackagesCache {
                 let nested_cache = Self::read_cache_directory(&p).await?;
 
                 for k in nested_cache {
-                    let key = format!("{}/{}", dirname, k.to_string());
+                    let key = format!("{}/{}", dirname, k);
                     let key_with_subdir = convert_to_registry_key(&key);
                     cache.insert(key_with_subdir);
                 }
@@ -70,22 +70,6 @@ impl PackagesCache {
 
     pub fn get_cache_directory(&self) -> &PathBuf {
         &self.directory
-    }
-
-    pub fn to_path_buf(&self, key: &str) -> PathBuf {
-        self.directory.join(key)
-    }
-
-    pub fn diff_downloaded_modules(&self, modules: &Vec<String>) -> Vec<String> {
-        let mut diff = vec![];
-
-        for module in modules {
-            if !self.downloaded_modules.contains(module) {
-                diff.push(module.clone());
-            }
-        }
-
-        diff
     }
 }
 

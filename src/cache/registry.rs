@@ -8,7 +8,7 @@ use std::{collections::HashMap, fs::File, io, path::PathBuf};
 use super::constants::REGISTRY_CACHE_FOLDER;
 
 //
-#[derive(Eq, Debug, Clone)]
+#[derive(Eq, Debug, Hash, PartialEq, Clone)]
 pub struct RegistryKey {
     pub name: String,
     pub version: String,
@@ -23,12 +23,6 @@ impl Display for RegistryKey {
 impl From<RegistryKey> for PathBuf {
     fn from(val: RegistryKey) -> Self {
         PathBuf::from(format!("{}@{}", val.name, val.version))
-    }
-}
-
-impl PartialEq for RegistryKey {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name && self.version == other.version
     }
 }
 

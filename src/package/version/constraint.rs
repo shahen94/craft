@@ -255,14 +255,14 @@ impl Display for VersionConstraint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut version = format!(
             "{}.{}.{}",
-            self.major.to_string(),
-            self.minor.to_string(),
-            self.patch.to_string()
+            self.major,
+            self.minor,
+            self.patch
         );
 
         match &self.operator {
             Operator::Equal => {}
-            operator => version = format!("{}{}", operator.to_string(), version),
+            operator => version = format!("{}{}", operator, version),
         }
 
         if let Some(pre_release) = &self.pre_release {

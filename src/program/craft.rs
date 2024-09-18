@@ -37,19 +37,10 @@ impl Program {
                         .await
                         .unwrap();
 
-                    InstallActor::new(deps_to_install).start().await.unwrap();
-                } else if args_install.save_optional {
+                    InstallActor::new(deps_to_install, None).start().await.unwrap();
+                } else {
                     let packages = args_install.packages.clone().unwrap();
-                    InstallActor::new(packages).start().await.unwrap();
-                } else if args_install.save_dev {
-                    let packages = args_install.packages.clone().unwrap();
-                    InstallActor::new(packages).start().await.unwrap();
-                } else if args_install.save_prod {
-                    let packages = args_install.packages.clone().unwrap();
-                    InstallActor::new(packages).start().await.unwrap();
-                } else if args_install.global {
-                    let packages = args_install.packages.clone().unwrap();
-                    InstallActor::new(packages).start().await.unwrap();
+                    InstallActor::new(packages, Some(args_install.clone())).start().await.unwrap();
                 }
 
                 Ok(())

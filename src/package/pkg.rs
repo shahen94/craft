@@ -29,7 +29,7 @@ impl From<Package> for RegistryKey {
 
 impl Display for Package {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", format!("{}@{}", self.name, self.raw_version))
+        write!(f, "{}@{}", self.name, self.raw_version)
     }
 }
 

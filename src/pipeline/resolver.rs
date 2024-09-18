@@ -49,7 +49,7 @@ impl ResolverPipe<RegistryCache> {
         package: &Package,
         parent: Option<String>,
     ) -> Result<(), NetworkError> {
-        CraftLogger::verbose(format!("Resolving package: {}", package.to_string()));
+        CraftLogger::verbose(format!("Resolving package: {}", package));
 
         let cached_pkg = self.cache.get(&package.clone().into()).await;
 
@@ -57,14 +57,14 @@ impl ResolverPipe<RegistryCache> {
             if self.artifacts.get(&pkg.to_string()).is_some() {
                 CraftLogger::verbose(format!(
                     "Package found in artifacts: {}",
-                    package.to_string()
+                    package
                 ));
             }
         }
 
         let final_key: RegistryKey;
         if let Some(pkg) = cached_pkg {
-            CraftLogger::verbose(format!("Package found in cache: {}", package.to_string()));
+            CraftLogger::verbose(format!("Package found in cache: {}", package));
             final_key = pkg.clone().into();
             self.artifacts.insert(
                 pkg.to_string().clone(),

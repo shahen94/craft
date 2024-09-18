@@ -83,7 +83,7 @@ impl Registry for NpmRegistry {
             }
         }
 
-        println!("Failed to fetch version: {}", package.to_string());
+        println!("Failed to fetch version: {}", package);
 
         Err(NetworkError::FailedToFetchVersion(package.to_string()))
     }
