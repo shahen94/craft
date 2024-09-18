@@ -1,9 +1,7 @@
 {
   "type": "module",
   "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^5.9.7",
-    "react": "^18.2.0"
+    "is-even": "^1.0.0"
   },
   "devDependencies": {
     "eslint": "^7.2.0"

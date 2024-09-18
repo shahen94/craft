@@ -3,7 +3,7 @@ use std::sync::mpsc::Sender;
 use async_recursion::async_recursion;
 use async_trait::async_trait;
 
-use crate::cache::RegistryCache;
+use crate::cache::{RegistryCache, RegistryKey};
 use crate::contracts::{PersistentCache, Phase, Pipe, ProgressAction, Registry};
 use crate::errors::{ExecutionError, NetworkError};
 use crate::logger::CraftLogger;
@@ -59,37 +59,38 @@ impl ResolverPipe<RegistryCache> {
                     "Package found in artifacts: {}",
                     package.to_string()
                 ));
-                return Ok(());
             }
         }
 
+        let final_key: RegistryKey ;
         if let Some(pkg) = cached_pkg {
             CraftLogger::verbose(format!("Package found in cache: {}", package.to_string()));
+            final_key = pkg.clone().into();
             self.artifacts
-                .insert(pkg.to_string().clone(), ResolvedItem::new(pkg.clone(), parent, package.raw_version.clone()));
-            return Ok(());
+                .insert(pkg.to_string().clone(), ResolvedItem::new(pkg.clone(), parent.clone(), package.raw_version.clone()));
+        } else {
+            let remote_package = self.npm_registry.fetch(package).await.unwrap();
+
+            let pkg_cache_key = remote_package.to_string();
+            final_key = remote_package.clone().into();
+            self.artifacts.insert(
+                pkg_cache_key.clone(),
+                ResolvedItem::new(remote_package.clone(), parent.clone(), package.raw_version.clone()),
+            );
+
+            self.cache.set(&remote_package.clone().into(), remote_package.clone()).await;
         }
 
-        let remote_package = self.npm_registry.fetch(package).await.unwrap();
 
-        let pkg_cache_key = remote_package.to_string();
-
-        self.artifacts.insert(
-            pkg_cache_key.clone(),
-            ResolvedItem::new(remote_package.clone(), parent.clone(), package.raw_version.clone()),
-        );
-
-        self.cache.set(&remote_package.clone().into(), remote_package.clone()).await;
-
-        for (name, version) in &remote_package.dependencies {
+        for (name, version) in self.cache.get(&final_key).await.unwrap().dependencies {
             let pkg = format!("{}@{}", name, version);
 
             let package = Package::new(pkg.as_str());
 
             let parent = if let Some(ref p) = parent {
-                Some(format!("{}/{}", p, remote_package.name))
+                Some(format!("{}/{}", p, final_key.name))
             } else {
-                Some(remote_package.name.clone())
+                Some(final_key.name.clone())
             };
             self.resolve_pkg(&package, parent).await?;
         }

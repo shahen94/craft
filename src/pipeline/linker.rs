@@ -1,6 +1,8 @@
 use std::{env, path::PathBuf, sync::mpsc::Sender};
 
 use async_trait::async_trait;
+use clap::builder::Str;
+use homedir::my_home;
 use lazy_static::lazy_static;
 
 use crate::{
@@ -9,7 +11,7 @@ use crate::{
     fs::copy_dir,
     logger::CraftLogger,
 };
-
+use crate::cache::DEP_CACHE_FOLDER;
 use super::artifacts::{ExtractArtifactsMap, LinkArtifactItem, ResolvedItem};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -19,6 +21,7 @@ pub struct LinkerPipe {
     tx: Sender<ProgressAction>,
     resolved: Vec<ResolvedItem>,
     extracted: ExtractArtifactsMap,
+    central_store: PathBuf
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -39,11 +42,15 @@ impl LinkerPipe {
             tx,
             resolved,
             extracted,
+            central_store: my_home().unwrap().unwrap().join(DEP_CACHE_FOLDER.clone())
         }
     }
 
     fn build_linker_artifacts(&mut self) -> Vec<LinkArtifactItem> {
         let mut linker_artifacts = vec![];
+
+        // So that the parents (things in our package.json come first)
+        self.resolved.reverse();
 
         for resolved in &self.resolved {
             let pkg = &resolved.package;
@@ -55,16 +62,17 @@ impl LinkerPipe {
 
             let from = self.extracted.get(&pkg.to_string()).unwrap().clone();
 
+            // If it is a child
             let to = if let Some(parent) = parent {
                 let path_vec = parent.split('/').collect::<Vec<&str>>();
                 let mut path = PathBuf::new();
 
                 for p in path_vec {
                     path.push(p);
+                    path.push("node_modules")
                 }
                 NODE_MODULES
                     .join(&path)
-                    .join("node_modules")
                     .join(&pkg.name)
             } else {
                 NODE_MODULES.join(&pkg.name)
@@ -76,7 +84,7 @@ impl LinkerPipe {
         linker_artifacts
     }
 
-    async fn link(&mut self, artifacts: Vec<LinkArtifactItem>) {
+    async fn link(&mut self, artifacts: &Vec<LinkArtifactItem>) {
         for artifact in artifacts {
             if let Err(e) = std::fs::create_dir_all(&artifact.to) {
                 CraftLogger::error(format!(
@@ -97,6 +105,10 @@ impl LinkerPipe {
             }
         }
     }
+
+    fn get_from_location(&self,package_name: String) -> PathBuf {
+        self.central_store.join(package_name.replace("@","-"))
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -108,7 +120,7 @@ impl Pipe<()> for LinkerPipe {
 
         let artifacts = self.build_linker_artifacts();
 
-        self.link(artifacts).await;
+        self.link(&artifacts).await;
 
         Ok(())
     }
