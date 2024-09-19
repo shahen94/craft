@@ -37,10 +37,7 @@ impl Program {
                         .await
                         .unwrap();
 
-                    InstallActor::new(deps_to_install)
-                        .start()
-                        .await
-                        .unwrap();
+                    InstallActor::new(deps_to_install).start().await.unwrap();
                 } else {
                     let packages = args_install
                         .packages
@@ -62,10 +59,7 @@ impl Program {
                         })
                         .collect::<Vec<PackageType>>();
 
-                    InstallActor::new(packages)
-                        .start()
-                        .await
-                        .unwrap();
+                    InstallActor::new(packages).start().await.unwrap();
                 }
 
                 Ok(())

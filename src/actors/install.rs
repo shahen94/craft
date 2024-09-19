@@ -112,12 +112,9 @@ impl Actor<PipeResult> for InstallActor {
         .await?;
 
         // ─── Sync Lock File ────────────────────────
-        LockFileActor::new(
-            resolve_artifacts.0.get_artifacts(),
-            resolve_artifacts.1,
-        )
-        .run()
-        .unwrap();
+        LockFileActor::new(resolve_artifacts.0.get_artifacts(), resolve_artifacts.1)
+            .run()
+            .unwrap();
 
         // ─── Cleanup ────────────────────────────────
 

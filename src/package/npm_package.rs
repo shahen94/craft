@@ -76,11 +76,13 @@ pub struct PeerDependencyMeta {
 
 impl From<NpmPackage> for PackageMetaRecorder {
     fn from(val: NpmPackage) -> Self {
-        let mut meta_recoder = PackageMetaRecorder { name: val.name,
+        let mut meta_recoder = PackageMetaRecorder {
+            name: val.name,
             peer_dependencies: val.peer_dependencies,
             peer_dependencies_meta: val.peer_dependencies_meta,
             engines: val.engines,
-            ..Default::default() };
+            ..Default::default()
+        };
 
         if let Some(integrity) = val.dist.integrity {
             meta_recoder.resolution = Some(PackageResolution { integrity })
@@ -102,9 +104,7 @@ impl From<NpmPackage> for PackageMetaRecorder {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Repository {
-
-}
+pub struct Repository {}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(untagged)]

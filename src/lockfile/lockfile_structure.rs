@@ -73,7 +73,6 @@ pub struct PackageSnapshot {
     pub resolution: LockfileResolution,
 }
 
-
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PatchFile {

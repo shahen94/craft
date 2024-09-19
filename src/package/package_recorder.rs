@@ -14,20 +14,19 @@ pub struct PackageMetaRecorder {
     pub os: Option<Vec<String>>,
 }
 
- impl From<PackageMetaRecorder> for PackageMetaHandler {
-     fn from(val: PackageMetaRecorder) -> Self {
-         PackageMetaHandler {
-             resolution: val.resolution,
-             os: val.os,
-             cpu: val.cpu,
-             has_bin: val.has_bin,
-             engines: val.engines,
-             peer_dependencies: val.peer_dependencies,
-             peer_dependencies_meta: val.peer_dependencies_meta,
-         }
-     }
- }
-
+impl From<PackageMetaRecorder> for PackageMetaHandler {
+    fn from(val: PackageMetaRecorder) -> Self {
+        PackageMetaHandler {
+            resolution: val.resolution,
+            os: val.os,
+            cpu: val.cpu,
+            has_bin: val.has_bin,
+            engines: val.engines,
+            peer_dependencies: val.peer_dependencies,
+            peer_dependencies_meta: val.peer_dependencies_meta,
+        }
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
