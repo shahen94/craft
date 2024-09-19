@@ -78,6 +78,7 @@ impl From<NpmPackage> for PackageMetaRecorder {
     fn from(val: NpmPackage) -> Self {
         let mut meta_recoder = PackageMetaRecorder {
             name: val.name,
+            version: val.version,
             peer_dependencies: val.peer_dependencies,
             peer_dependencies_meta: val.peer_dependencies_meta,
             engines: val.engines,

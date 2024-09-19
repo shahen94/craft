@@ -1,10 +1,12 @@
 use crate::package::npm_package::PeerDependencyMeta;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct PackageMetaRecorder {
     pub name: String,
+    pub version: String,
     pub resolution: Option<PackageResolution>,
     pub engines: Option<HashMap<String, String>>,
     pub peer_dependencies: Option<HashMap<String, String>>,
@@ -12,6 +14,12 @@ pub struct PackageMetaRecorder {
     pub peer_dependencies_meta: Option<HashMap<String, PeerDependencyMeta>>,
     pub cpu: Option<Vec<String>>,
     pub os: Option<Vec<String>>,
+}
+
+impl Display for PackageMetaRecorder {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}@{}", self.name, self.version)
+    }
 }
 
 impl From<PackageMetaRecorder> for PackageMetaHandler {
@@ -52,7 +60,7 @@ pub struct PackageResolution {
     pub integrity: String,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub struct PackageRecorder {
     pub main_packages: Vec<PackageMetaRecorder>,
     pub sub_dependencies: Vec<PackageMetaRecorder>,

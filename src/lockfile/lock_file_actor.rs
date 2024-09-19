@@ -181,12 +181,12 @@ impl LockFileActor {
 
         self.recorder.main_packages.iter().for_each(|p| {
             let pm_handler: PackageMetaHandler = p.clone().into();
-            hashmap.insert(p.name.clone(), pm_handler);
+            hashmap.insert(p.to_string(), pm_handler);
         });
 
         self.recorder.sub_dependencies.iter().for_each(|p| {
             let pm_handler: PackageMetaHandler = p.clone().into();
-            hashmap.insert(p.name.clone(), pm_handler);
+            hashmap.insert(p.to_string(), pm_handler);
         });
 
         lockfile_structure.packages = Some(hashmap)
@@ -212,6 +212,7 @@ impl Lockfile<LockfileStructure> for LockFileActor {
         } else {
             let mut lockfile_structure = LockfileStructure::default();
             self.handle_importers(&mut lockfile_structure)?;
+            self.handle_packages(&mut lockfile_structure);
             Self::persist_lockfile_structure(lockfile_structure)?;
             Ok(())
         }

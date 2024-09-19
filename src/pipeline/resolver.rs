@@ -177,8 +177,13 @@ impl ResolverPipe<RegistryCache> {
             jobs.push(job)
         }
 
-        join_all(jobs).await;
-
+        let results = join_all(jobs).await;
+        for result in results.into_iter() {
+            let jh_handle = result.unwrap();
+            if let Err(e) = jh_handle {
+                log::error!("Error is {}", e.to_string())
+            }
+        }
         Ok(package_recorder_arc.clone().lock().await.clone())
     }
 }
