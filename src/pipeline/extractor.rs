@@ -34,6 +34,8 @@ impl ExtractorPipe {
 
     // Skip because we now simlink the extracted files
     pub async fn cleanup(vec: Vec<ResolvedItem>) -> Result<(), ExecutionError> {
+        use std::fs::metadata;
+
         let mapped_str = vec
             .iter()
             .map(|x| x.package.name.clone())
@@ -47,8 +49,14 @@ impl ExtractorPipe {
             .map_err(|e| ExecutionError::JobExecutionFailed(e.to_string(), e.to_string()))?
         {
             let dir_name = entry.file_name().to_str().unwrap().to_string();
-            if !mapped_str.contains(&dir_name) {
+            let meta = metadata(entry.path())
+                .map_err(|e| ExecutionError::JobExecutionFailed(e.to_string(), e.to_string()))?;
+            if !mapped_str.contains(&dir_name) && meta.is_dir() {
                 fs::remove_dir_all(entry.path()).await.map_err(|e| {
+                    ExecutionError::JobExecutionFailed(e.to_string(), e.to_string())
+                })?;
+            } else if !mapped_str.contains(&dir_name) && meta.is_file() {
+                fs::remove_file(entry.path()).await.map_err(|e| {
                     ExecutionError::JobExecutionFailed(e.to_string(), e.to_string())
                 })?;
             }

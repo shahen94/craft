@@ -125,7 +125,10 @@ pub struct LockfileStructure {
     pub time: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub catalogs: Option<HashMap<CatalogName, HashMap<DependencyName, ResolvedCatalogEntry>>>,
-    #[serde(skip_serializing_if = "Option::is_none",serialize_with = "ordered_map")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "ordered_map"
+    )]
     pub packages: Option<HashMap<String, PackageMetaHandler>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub never_built_dependencies: Option<Vec<String>>,
@@ -143,20 +146,20 @@ pub struct LockfileStructure {
     pub pnpmfile_checksum: Option<String>,
 }
 
-
-fn ordered_map<S>(value: &Option<HashMap<String, PackageMetaHandler>>, serializer: S) ->
-                                                                                    Result<S::Ok, S::Error>
+fn ordered_map<S>(
+    value: &Option<HashMap<String, PackageMetaHandler>>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
-
     return match value {
         None => return serializer.serialize_none(),
         Some(v) => {
             let ordered: BTreeMap<_, _> = v.iter().collect();
             ordered.serialize(serializer)
         }
-    }
+    };
 }
 
 impl Default for LockfileStructure {

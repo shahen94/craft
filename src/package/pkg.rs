@@ -1,11 +1,8 @@
-use super::{
-    registry::Registry,
-    version::{contracts::Version},
-};
+use super::registry::Registry;
 use crate::actors::PackageType;
 use crate::cache::RegistryKey;
-use std::fmt::Display;
 use nodejs_semver::Range;
+use std::fmt::Display;
 // ─── Package ───────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
@@ -37,24 +34,14 @@ impl Display for Package {
 
 impl Package {
     pub(crate) fn satisfies(&self, version: &str) -> bool {
-        let range: Range =  self.raw_version.parse().unwrap();
+        let range: Range = self.raw_version.parse().unwrap();
         let version: nodejs_semver::Version = version.parse().unwrap();
         version.satisfies(&range)
-    }
-
-
-    fn detect_registry(version: &str) -> Registry {
-        if Registry::is_git(version) {
-            return Registry::Git;
-        }
-
-        Registry::Npm
     }
 
     pub fn new(package: PackageType) -> Self {
         let binding = package.get_name();
         let parts = binding.rsplitn(2, '@').collect::<Vec<_>>();
-
 
         Self {
             name: parts[1].to_string(),

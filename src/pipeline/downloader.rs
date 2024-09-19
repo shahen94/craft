@@ -59,7 +59,7 @@ impl DownloaderPipe<PackagesCache> {
         let pkg = package.clone();
 
         if cache.has(&pkg.clone().into()).await {
-            log::info!("{}",format!("Package already downloaded: {}", pkg));
+            log::info!("{}", format!("Package already downloaded: {}", pkg));
             let cache_dir = { cache.get_cache_directory().join(pkg.to_string()) };
 
             {

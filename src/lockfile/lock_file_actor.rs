@@ -30,7 +30,7 @@ impl LockFileActor {
     fn persist_lockfile_structure(
         lockfile_structure: LockfileStructure,
     ) -> Result<(), LockfileError> {
-        let string = serde_yaml::to_string(&lockfile_structure).unwrap();
+        let string = serde_yaml_ng::to_string(&lockfile_structure).unwrap();
         fs::write("pnpm-lock.yaml", string)
             .map_err(|e| LockfileError::FileWriteError(e.to_string()))?;
         Ok(())
@@ -197,7 +197,7 @@ impl Lockfile<LockfileStructure> for LockFileActor {
     fn read_lock_file(path: &Path) -> Result<LockfileStructure, LockfileError> {
         let file =
             fs::read_to_string(path).map_err(|e| LockfileError::FileReadError(e.to_string()))?;
-        let structure = serde_yaml::from_str::<LockfileStructure>(&file)
+        let structure = serde_yaml_ng::from_str::<LockfileStructure>(&file)
             .map_err(|e| LockfileError::InvalidStructure(e.to_string()))?;
         Ok(structure)
     }

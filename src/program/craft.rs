@@ -37,7 +37,10 @@ impl Program {
                         .await
                         .unwrap();
 
-                    InstallActor::new(deps_to_install).start().await.unwrap();
+                    let err = InstallActor::new(deps_to_install).start().await;
+                    if let Err(err) = err {
+                        CraftLogger::error(format!("{}", err));
+                    }
                 } else {
                     let packages = args_install
                         .packages
