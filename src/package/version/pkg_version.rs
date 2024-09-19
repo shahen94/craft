@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use regex::Regex;
+use std::fmt::Display;
 
 use crate::package::version::{connector::Connector, constants::LINEAR_RANGE_REGEX};
 
@@ -33,7 +33,8 @@ pub struct VersionImpl {
 
 impl Display for VersionImpl {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = self.inner
+        let str = self
+            .inner
             .iter()
             .map(|constraint| constraint.to_string())
             .collect::<Vec<_>>()

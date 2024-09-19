@@ -17,7 +17,7 @@ use crate::{
 pub struct LinkerPipe {
     tx: Sender<ProgressAction>,
     resolved: Vec<ResolvedItem>,
-    extracted: ExtractArtifactsMap
+    extracted: ExtractArtifactsMap,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ impl LinkerPipe {
         Self {
             tx,
             resolved,
-            extracted
+            extracted,
         }
     }
 

@@ -1,6 +1,6 @@
+use crate::package::PackageMetaHandler;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::package::PackageMetaHandler;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ResolvedDependency {
@@ -112,7 +112,7 @@ pub struct ImporterSections {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub optional_dependencies: Option<ResolvedDependencies>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub peer_dependencies: Option<ResolvedDependencies>
+    pub peer_dependencies: Option<ResolvedDependencies>,
 }
 
 #[derive(Serialize, Deserialize)]

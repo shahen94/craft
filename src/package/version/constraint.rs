@@ -1,7 +1,7 @@
-use std::fmt::Display;
 use super::{
     constants::SEMVER_REGEX, contracts::Satisfies, field::VersionField, operator::Operator,
 };
+use std::fmt::Display;
 
 // ─── VersionConstraint ───────────────────────────────────────────────────────
 
@@ -253,12 +253,7 @@ impl Satisfies for VersionConstraint {
 
 impl Display for VersionConstraint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut version = format!(
-            "{}.{}.{}",
-            self.major,
-            self.minor,
-            self.patch
-        );
+        let mut version = format!("{}.{}.{}", self.major, self.minor, self.patch);
 
         match &self.operator {
             Operator::Equal => {}

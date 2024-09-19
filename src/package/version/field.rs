@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use super::contracts::Satisfies;
+use std::fmt::Display;
 
 // ─── VersionField ────────────────────────────────────────────────────────────
 

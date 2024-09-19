@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use super::{connector::Connector, constraint::VersionConstraint, contracts::Satisfies};
+use std::fmt::Display;
 
 // ─── VersionGroup ──────────────────────────────────────────────────────────────
 

@@ -37,25 +37,35 @@ impl Program {
                         .await
                         .unwrap();
 
-                    InstallActor::new(deps_to_install, None).start().await.unwrap();
+                    InstallActor::new(deps_to_install, None)
+                        .start()
+                        .await
+                        .unwrap();
                 } else {
+                    let packages = args_install
+                        .packages
+                        .clone()
+                        .unwrap()
+                        .iter()
+                        .map(|p| {
+                            return if args_install.save_global {
+                                PackageType::Global(p.to_string())
+                            } else if args_install.save_prod {
+                                PackageType::Prod(p.to_string())
+                            } else if args_install.save_dev {
+                                PackageType::Dev(p.to_string())
+                            } else if args_install.save_optional {
+                                PackageType::Optional(p.to_string())
+                            } else {
+                                PackageType::Prod(p.to_string())
+                            };
+                        })
+                        .collect::<Vec<PackageType>>();
 
-                    let packages = args_install.packages.clone().unwrap().iter().map(|p|{
-                        return if args_install.save_global {
-                            PackageType::Global(p.to_string())
-                        } else if args_install.save_prod {
-                            PackageType::Prod(p.to_string())
-                        } else if args_install.save_dev {
-                            PackageType::Dev(p.to_string())
-                        } else if args_install.save_optional {
-                            PackageType::Optional(p.to_string())
-                        } else {
-                            PackageType::Prod(p.to_string())
-                        }
-                    }).collect::<Vec<PackageType>>();
-
-
-                    InstallActor::new(packages, Some(args_install.clone())).start().await.unwrap();
+                    InstallActor::new(packages, Some(args_install.clone()))
+                        .start()
+                        .await
+                        .unwrap();
                 }
 
                 Ok(())

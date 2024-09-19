@@ -1,4 +1,3 @@
-
 use crate::contracts::Logger;
 
 // ─── CraftLogger ─────────────────────────────────────────────────────────────────
@@ -17,7 +16,6 @@ impl CraftLogger {
 // ───────────────────────────────────────────────────────────────────────────────
 
 impl Logger for CraftLogger {
-
     fn info<S: AsRef<str> + std::fmt::Display>(message: S) {
         log::info!("{}", message)
     }

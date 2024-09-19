@@ -1,19 +1,21 @@
+use crate::actors::PackageType;
+use crate::command::Install;
 use crate::contracts::Lockfile;
 use crate::errors::LockfileError;
 use crate::lockfile::constants::CURRENT_IMPORTER;
-use crate::lockfile::lockfile_structure::{ImporterSections, LockfileStructure, ResolvedDependencies, ResolvedDependency};
+use crate::lockfile::lockfile_structure::{
+    ImporterSections, LockfileStructure, ResolvedDependencies, ResolvedDependency,
+};
+use crate::package::{PackageMetaHandler, PackageRecorder};
 use crate::pipeline::ResolvedItem;
 use std::collections::HashMap;
-use std::path::Path;
 use std::fs;
-use crate::actors::PackageType;
-use crate::command::Install;
-use crate::package::{PackageMetaHandler, PackageRecorder};
+use std::path::Path;
 
 pub struct LockFileActor {
     resolved_items: Vec<ResolvedItem>,
     install_option: Option<Install>,
-    recorder: PackageRecorder
+    recorder: PackageRecorder,
 }
 
 impl LockFileActor {
@@ -42,110 +44,100 @@ impl LockFileActor {
         packages: Vec<ResolvedItem>,
         map: Option<&ImporterSections>,
     ) -> ImporterSections {
-        let mut map_to_use = map.map(|e|e.clone()).unwrap_or_default();
+        let mut map_to_use = map.map(|e| e.clone()).unwrap_or_default();
 
         packages.iter().for_each(|item| {
             if item.parent.is_none() {
                 match item.package_type {
-                    PackageType::Dev(_) => {
-                        match &mut map_to_use.dev_dependencies {
-                            Some(ref mut dev_d)=>{
-                                dev_d.insert(
-                                    item.package.name.clone(),
-                                    ResolvedDependency {
-                                        version: item.package.version.clone(),
-                                        specifier: item.specifier.clone(),
-                                    },
-                                );
-                            }
-                            None=>{
-                                let mut dev_deps = HashMap::new();
-                                dev_deps.insert(
-                                    item.package.name.clone(),
-                                    ResolvedDependency {
-                                        version: item.package.version.clone(),
-                                        specifier: item.specifier.clone(),
-                                    },
-                                );
-                                map_to_use.dev_dependencies = Some(dev_deps)
-                            }
+                    PackageType::Dev(_) => match &mut map_to_use.dev_dependencies {
+                        Some(ref mut dev_d) => {
+                            dev_d.insert(
+                                item.package.name.clone(),
+                                ResolvedDependency {
+                                    version: item.package.version.clone(),
+                                    specifier: item.specifier.clone(),
+                                },
+                            );
                         }
-                    }
-                    PackageType::Optional(_) => {
-                        match map_to_use.optional_dependencies {
-                            Some(ref mut opt_d)=>{
-                                opt_d.insert(
-                                    item.package.name.clone(),
-                                    ResolvedDependency {
-                                        version: item.package.version.clone(),
-                                        specifier: item.specifier.clone(),
-                                    },
-                                );
-                            }
-                            None=>{
-                                let mut dev_deps = HashMap::new();
-                                dev_deps.insert(
-                                    item.package.name.clone(),
-                                    ResolvedDependency {
-                                        version: item.package.version.clone(),
-                                        specifier: item.specifier.clone(),
-                                    },
-                                );
-                                map_to_use.optional_dependencies = Some(dev_deps)
-                            }
+                        None => {
+                            let mut dev_deps = HashMap::new();
+                            dev_deps.insert(
+                                item.package.name.clone(),
+                                ResolvedDependency {
+                                    version: item.package.version.clone(),
+                                    specifier: item.specifier.clone(),
+                                },
+                            );
+                            map_to_use.dev_dependencies = Some(dev_deps)
                         }
-                    }
-                    PackageType::Prod(_) => {
-                        match map_to_use.dependencies {
-                            Some(ref mut opt_d)=>{
-                                opt_d.insert(
-                                    item.package.name.clone(),
-                                    ResolvedDependency {
-                                        version: item.package.version.clone(),
-                                        specifier: item.specifier.clone(),
-                                    },
-                                );
-                            }
-                            None=>{
-                                let mut prod_deps = HashMap::new();
-                                prod_deps.insert(
-                                    item.package.name.clone(),
-                                    ResolvedDependency {
-                                        version: item.package.version.clone(),
-                                        specifier: item.specifier.clone(),
-                                    },
-                                );
-                                map_to_use.dependencies = Some(prod_deps)
-                            }
+                    },
+                    PackageType::Optional(_) => match map_to_use.optional_dependencies {
+                        Some(ref mut opt_d) => {
+                            opt_d.insert(
+                                item.package.name.clone(),
+                                ResolvedDependency {
+                                    version: item.package.version.clone(),
+                                    specifier: item.specifier.clone(),
+                                },
+                            );
                         }
-                    }
-                    PackageType::Peer(_) => {
-                        match map_to_use.peer_dependencies {
-                            Some(ref mut opt_d)=>{
-                                opt_d.insert(
-                                    item.package.name.clone(),
-                                    ResolvedDependency {
-                                        version: item.package.version.clone(),
-                                        specifier: item.specifier.clone(),
-                                    },
-                                );
-                            }
-                            None=>{
-                                let mut prod_deps = HashMap::new();
-                                prod_deps.insert(
-                                    item.package.name.clone(),
-                                    ResolvedDependency {
-                                        version: item.package.version.clone(),
-                                        specifier: item.specifier.clone(),
-                                    },
-                                );
-                                map_to_use.peer_dependencies = Some(prod_deps)
-                            }
+                        None => {
+                            let mut dev_deps = HashMap::new();
+                            dev_deps.insert(
+                                item.package.name.clone(),
+                                ResolvedDependency {
+                                    version: item.package.version.clone(),
+                                    specifier: item.specifier.clone(),
+                                },
+                            );
+                            map_to_use.optional_dependencies = Some(dev_deps)
                         }
-                    }
-                    PackageType::Global(_) => {
-
-                    }
+                    },
+                    PackageType::Prod(_) => match map_to_use.dependencies {
+                        Some(ref mut opt_d) => {
+                            opt_d.insert(
+                                item.package.name.clone(),
+                                ResolvedDependency {
+                                    version: item.package.version.clone(),
+                                    specifier: item.specifier.clone(),
+                                },
+                            );
+                        }
+                        None => {
+                            let mut prod_deps = HashMap::new();
+                            prod_deps.insert(
+                                item.package.name.clone(),
+                                ResolvedDependency {
+                                    version: item.package.version.clone(),
+                                    specifier: item.specifier.clone(),
+                                },
+                            );
+                            map_to_use.dependencies = Some(prod_deps)
+                        }
+                    },
+                    PackageType::Peer(_) => match map_to_use.peer_dependencies {
+                        Some(ref mut opt_d) => {
+                            opt_d.insert(
+                                item.package.name.clone(),
+                                ResolvedDependency {
+                                    version: item.package.version.clone(),
+                                    specifier: item.specifier.clone(),
+                                },
+                            );
+                        }
+                        None => {
+                            let mut prod_deps = HashMap::new();
+                            prod_deps.insert(
+                                item.package.name.clone(),
+                                ResolvedDependency {
+                                    version: item.package.version.clone(),
+                                    specifier: item.specifier.clone(),
+                                },
+                            );
+                            map_to_use.peer_dependencies = Some(prod_deps)
+                        }
+                    },
+                    PackageType::Global(_) => {}
                 }
             }
         });
@@ -188,18 +180,16 @@ impl LockFileActor {
         }
     }
 
-
-    fn handle_packages(&self,
-                       lockfile_structure: &mut LockfileStructure) {
+    fn handle_packages(&self, lockfile_structure: &mut LockfileStructure) {
         let mut hashmap: HashMap<String, PackageMetaHandler> = HashMap::new();
 
-        self.recorder.main_packages.iter().for_each(|p|{
-            let pm_handler: PackageMetaHandler  = p.clone().into();
+        self.recorder.main_packages.iter().for_each(|p| {
+            let pm_handler: PackageMetaHandler = p.clone().into();
             hashmap.insert(p.name.clone(), pm_handler);
         });
 
-        self.recorder.sub_dependencies.iter().for_each(|p|{
-            let pm_handler: PackageMetaHandler  = p.clone().into();
+        self.recorder.sub_dependencies.iter().for_each(|p| {
+            let pm_handler: PackageMetaHandler = p.clone().into();
             hashmap.insert(p.name.clone(), pm_handler);
         });
 

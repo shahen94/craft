@@ -192,11 +192,7 @@ impl PersistentCache<NpmPackage> for RegistryCache {
                 while let Some(sub_entry) = sub_entries.next_entry().await? {
                     let file_name = sub_entry.file_name().to_string_lossy().to_string();
                     self.cache.insert(
-                        format!(
-                            "{}/{}",
-                            file_or_dir_name,
-                            file_name.replace(".json", "")
-                        ),
+                        format!("{}/{}", file_or_dir_name, file_name.replace(".json", "")),
                         HashMap::new(),
                     );
                 }

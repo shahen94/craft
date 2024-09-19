@@ -1,11 +1,3 @@
-use std::sync::Arc;
-use std::sync::mpsc::Sender;
-use std::thread;
-use async_recursion::async_recursion;
-use async_trait::async_trait;
-use futures::future;
-use futures::future::join_all;
-use futures::lock::Mutex;
 use crate::actors::PackageType;
 use crate::cache::{RegistryCache, RegistryKey};
 use crate::contracts::{PersistentCache, Phase, Pipe, ProgressAction, Registry};
@@ -14,6 +6,14 @@ use crate::logger::CraftLogger;
 use crate::package::{NpmPackage, Package, PackageRecorder};
 use crate::registry::GitRegistry;
 use crate::registry::NpmRegistry;
+use async_recursion::async_recursion;
+use async_trait::async_trait;
+use futures::future;
+use futures::future::join_all;
+use futures::lock::Mutex;
+use std::sync::mpsc::Sender;
+use std::sync::Arc;
+use std::thread;
 
 use super::artifacts::{ResolveArtifacts, ResolvedItem};
 
@@ -58,18 +58,13 @@ impl ResolverPipe<RegistryCache> {
         artifacts: Arc<Mutex<ResolveArtifacts>>,
     ) -> Result<(), NetworkError> {
         CraftLogger::verbose(format!("Resolving package: {}", package));
-        let mut cache = {
-            cache_arc.lock().await.clone()
-        };
+        let mut cache = { cache_arc.lock().await.clone() };
 
         let cached_pkg = cache.get(&package.clone().into()).await;
 
         if let Some(pkg) = cached_pkg.clone() {
             if artifacts.lock().await.get(&pkg.to_string()).is_some() {
-                CraftLogger::verbose(format!(
-                    "Package found in artifacts: {}",
-                    package
-                ));
+                CraftLogger::verbose(format!("Package found in artifacts: {}", package));
             }
         }
 
@@ -79,7 +74,12 @@ impl ResolverPipe<RegistryCache> {
             final_key = pkg.clone().into();
             artifacts.lock().await.insert(
                 pkg.to_string().clone(),
-                ResolvedItem::new(pkg.clone(), parent.clone(), package.raw_version.clone(), package.package_type.clone()),
+                ResolvedItem::new(
+                    pkg.clone(),
+                    parent.clone(),
+                    package.raw_version.clone(),
+                    package.package_type.clone(),
+                ),
             );
         } else {
             let remote_package = NpmRegistry::new().fetch(package).await.unwrap();
@@ -111,7 +111,6 @@ impl ResolverPipe<RegistryCache> {
             cache.get(&final_key).await.clone().unwrap()
         };
 
-
         {
             let mut package_recorder = package_recorder.lock().await;
             match parent {
@@ -119,11 +118,12 @@ impl ResolverPipe<RegistryCache> {
                     package_recorder.main_packages.push(package.clone().into());
                 }
                 Some(_) => {
-                    package_recorder.sub_dependencies.push(package.clone().into());
+                    package_recorder
+                        .sub_dependencies
+                        .push(package.clone().into());
                 }
             }
         }
-
 
         let mut jobs = Vec::new();
         if let Some(deps) = package.dependencies {
@@ -153,7 +153,7 @@ impl ResolverPipe<RegistryCache> {
         for result in results.into_iter() {
             let jh_handle = result.unwrap();
             if let Err(e) = jh_handle {
-                log::error!("Error is {}",e.to_string())
+                log::error!("Error is {}", e.to_string())
             }
         }
 
@@ -171,10 +171,12 @@ impl ResolverPipe<RegistryCache> {
             let pra = package_recorder_arc.clone();
             let cache = self.cache.clone();
             let artifacts = self.artifacts.clone();
-            let job = tokio::spawn(async move {{
-                let package = Package::new(pkg);
-                Self::resolve_pkg(&package, None, pra, cache, artifacts).await
-            }});
+            let job = tokio::spawn(async move {
+                {
+                    let package = Package::new(pkg);
+                    Self::resolve_pkg(&package, None, pra, cache, artifacts).await
+                }
+            });
             jobs.push(job)
         }
 
@@ -194,9 +196,7 @@ impl Pipe<(ResolveArtifacts, PackageRecorder)> for ResolverPipe<RegistryCache> {
 
         match self.resolve().await {
             Ok(e) => {
-                let artifacts = {
-                    self.artifacts.lock().await.clone()
-                };
+                let artifacts = { self.artifacts.lock().await.clone() };
                 Ok((artifacts, e))
             }
             Err(e) => Err(ExecutionError::JobExecutionFailed(

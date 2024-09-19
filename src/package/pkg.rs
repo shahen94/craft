@@ -1,11 +1,11 @@
-use std::fmt::Display;
-use crate::actors::PackageType;
 use super::{
     registry::Registry,
     version::{contracts::Version, VersionImpl},
     NpmPackage,
 };
+use crate::actors::PackageType;
 use crate::cache::RegistryKey;
+use std::fmt::Display;
 
 // ─── Package ───────────────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ pub struct Package {
     pub version: VersionImpl,
     pub registry: Registry,
     pub raw_version: String,
-    pub package_type: PackageType
+    pub package_type: PackageType,
 }
 
 impl From<Package> for RegistryKey {
@@ -56,7 +56,7 @@ impl Package {
                 version: Version::new("*"),
                 registry: Registry::Npm,
                 raw_version: "*".to_string(),
-                package_type: package
+                package_type: package,
             },
             2 => {
                 let escaped_version = if parts[0] == "latest" {
@@ -76,7 +76,7 @@ impl Package {
                     registry,
                     version,
                     raw_version: parts[0].to_string(),
-                    package_type: package
+                    package_type: package,
                 }
             }
             _ => panic!("Invalid package name: {}", package.get_name()),

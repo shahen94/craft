@@ -1,14 +1,14 @@
 use crate::cache::RegistryKey;
+use crate::package::package_recorder::{PackageMetaRecorder, PackageResolution};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
-use crate::package::package_recorder::{PackageMetaRecorder, PackageResolution};
 
 /// This struct represents a package from the registry.
 ///
 /// It is used to deserialize the JSON response from the registry.
 #[derive(Debug, Deserialize, Serialize, Clone)]
-#[serde(rename_all="camelCase")]
+#[serde(rename_all = "camelCase")]
 pub struct NpmPackage {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -70,20 +70,17 @@ pub struct NpmPackage {
 }
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
-pub struct  PeerDependencyMeta {
-    optional: Option<bool>
+pub struct PeerDependencyMeta {
+    optional: Option<bool>,
 }
-
 
 impl Into<PackageMetaRecorder> for NpmPackage {
     fn into(self) -> PackageMetaRecorder {
         let mut meta_recoder = PackageMetaRecorder::default();
         meta_recoder.name = self.name;
 
-        if let  Some(integrity) = self.dist.integrity {
-            meta_recoder.resolution = Some(PackageResolution{
-                integrity,
-            })
+        if let Some(integrity) = self.dist.integrity {
+            meta_recoder.resolution = Some(PackageResolution { integrity })
         }
         meta_recoder.engines = self.engines;
         if let Some(_) = self.bin {
@@ -101,35 +98,31 @@ impl Into<PackageMetaRecorder> for NpmPackage {
 
         meta_recoder.peer_dependencies = self.peer_dependencies;
 
-
         meta_recoder
     }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-struct Repository {
-
-}
+struct Repository {}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(untagged)]
 pub enum BinType {
     BinMappings(HashMap<String, String>),
-    Bin(String)
+    Bin(String),
 }
-
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(untagged)]
 pub enum LicenseType {
     LicenseArray(Vec<License>),
-    License(License)
+    License(License),
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct License {
     r#type: String,
-    url: String
+    url: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -137,9 +130,8 @@ pub struct Bugs {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>
+    pub email: Option<String>,
 }
-
 
 impl From<NpmPackage> for RegistryKey {
     fn from(val: NpmPackage) -> Self {

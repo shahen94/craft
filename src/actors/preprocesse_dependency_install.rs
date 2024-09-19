@@ -1,8 +1,8 @@
+use crate::actors::PackageType;
 use crate::command::ProgramDesire;
 use crate::errors::ExecutionError;
 use crate::package::PackageJson;
 use std::collections::HashMap;
-use crate::actors::PackageType;
 
 pub struct PreprocessDependencyInstall {
     pub program_desire: ProgramDesire,
@@ -33,27 +33,32 @@ impl PreprocessDependencyInstall {
         let package_json = Self::read_package_json()?;
         if self.program_desire.dev_install {
             if let Some(dev_deps) = package_json.dev_dependencies {
-                let mut dev_dependencies = self.format_dependencies(dev_deps)
+                let mut dev_dependencies = self
+                    .format_dependencies(dev_deps)
                     .iter()
-                    .map(|p_name|PackageType::Dev(p_name.to_string())).collect::<Vec<PackageType>>();
+                    .map(|p_name| PackageType::Dev(p_name.to_string()))
+                    .collect::<Vec<PackageType>>();
                 dependencies.append(&mut dev_dependencies);
             }
         }
 
         if self.program_desire.prod_install {
             if let Some(prod_deps) = package_json.dependencies {
-                let mut prod_dependencies = self.format_dependencies(prod_deps)
+                let mut prod_dependencies = self
+                    .format_dependencies(prod_deps)
                     .iter()
-                    .map(|p_name|PackageType::Prod(p_name.to_string())).collect::<Vec<PackageType>>();
+                    .map(|p_name| PackageType::Prod(p_name.to_string()))
+                    .collect::<Vec<PackageType>>();
                 dependencies.append(&mut prod_dependencies);
             }
         }
 
         if self.program_desire.optional_install {
             if let Some(optional_deps) = package_json.optional_dependencies {
-                let mut opt_dependencies = self.format_dependencies(optional_deps)
+                let mut opt_dependencies = self
+                    .format_dependencies(optional_deps)
                     .iter()
-                    .map(|p_name|PackageType::Optional(p_name.to_string()))
+                    .map(|p_name| PackageType::Optional(p_name.to_string()))
                     .collect::<Vec<PackageType>>();
                 dependencies.append(&mut opt_dependencies);
             }

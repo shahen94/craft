@@ -6,6 +6,7 @@ use std::{
 use async_trait::async_trait;
 
 use crate::cache::PackagesCache;
+use crate::command::Install;
 use crate::contracts::{Lockfile, PersistentCache};
 use crate::lockfile::lock_file_actor::LockFileActor;
 use crate::{
@@ -15,7 +16,6 @@ use crate::{
     pipeline::{DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
     ui::UIProgress,
 };
-use crate::command::Install;
 
 #[derive(Debug, Clone)]
 pub enum PackageType {
@@ -23,34 +23,24 @@ pub enum PackageType {
     Optional(String),
     Prod(String),
     Peer(String),
-    Global(String)
+    Global(String),
 }
 
 impl PackageType {
     pub fn get_name(&self) -> String {
         match self {
-            PackageType::Dev(d) => {
-                d.to_string()
-            }
-            PackageType::Optional(o) => {
-                o.to_string()
-            }
-            PackageType::Prod(p) => {
-                p.to_string()
-            }
-            PackageType::Peer(peer) => {
-                peer.to_string()
-            }
-            PackageType::Global(g) => {
-                g.to_string()
-            }
+            PackageType::Dev(d) => d.to_string(),
+            PackageType::Optional(o) => o.to_string(),
+            PackageType::Prod(p) => p.to_string(),
+            PackageType::Peer(peer) => peer.to_string(),
+            PackageType::Global(g) => g.to_string(),
         }
     }
 }
 
 pub struct InstallActor {
     packages: Vec<PackageType>,
-    install: Option<Install>
+    install: Option<Install>,
 }
 
 impl InstallActor {
@@ -83,9 +73,10 @@ impl Actor<PipeResult> for InstallActor {
         let resolve_artifacts = ResolverPipe::new(self.packages.clone(), tx.clone())
             .run()
             .await?;
-        CraftLogger::verbose(
-            format!("Resolved: {:?}", resolve_artifacts.0.get_artifacts().len()),
-        );
+        CraftLogger::verbose(format!(
+            "Resolved: {:?}",
+            resolve_artifacts.0.get_artifacts().len()
+        ));
 
         // ─── Start Downloading ──────────────────────
 
@@ -94,9 +85,10 @@ impl Actor<PipeResult> for InstallActor {
             .run()
             .await?;
 
-        CraftLogger::verbose(
-            format!("Downloaded {:?}", download_artifacts.get_artifacts().len()),
-        );
+        CraftLogger::verbose(format!(
+            "Downloaded {:?}",
+            download_artifacts.get_artifacts().len()
+        ));
 
         // ─── Start Extracting ───────────────────────
 
@@ -105,9 +97,10 @@ impl Actor<PipeResult> for InstallActor {
             .run()
             .await?;
 
-        CraftLogger::verbose(
-            format!("Extracted {:?}", extracted_artifacts.get_artifacts().len()),
-        );
+        CraftLogger::verbose(format!(
+            "Extracted {:?}",
+            extracted_artifacts.get_artifacts().len()
+        ));
 
         // ─── Start Linking ──────────────────────────
 
@@ -121,9 +114,13 @@ impl Actor<PipeResult> for InstallActor {
         .await?;
 
         // ─── Sync Lock File ────────────────────────
-        LockFileActor::new(resolve_artifacts.0.get_artifacts(), self.install.clone(), resolve_artifacts.1)
-            .run()
-            .unwrap();
+        LockFileActor::new(
+            resolve_artifacts.0.get_artifacts(),
+            self.install.clone(),
+            resolve_artifacts.1,
+        )
+        .run()
+        .unwrap();
 
         // ─── Cleanup ────────────────────────────────
 

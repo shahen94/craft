@@ -5,6 +5,6 @@ mod run;
 
 pub use cache_clean::CacheCleanActor;
 pub use install::InstallActor;
+pub use install::PackageType;
 pub use preprocesse_dependency_install::PreprocessDependencyInstall;
 pub use run::RunActor;
-pub use install::PackageType;
