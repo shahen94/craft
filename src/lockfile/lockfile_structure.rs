@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use crate::package::PackageMetaHandler;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ResolvedDependency {
@@ -101,6 +102,19 @@ fn default_lockfile_version() -> String {
     "9.0".to_string()
 }
 
+#[derive(Serialize, Deserialize, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ImporterSections {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dependencies: Option<ResolvedDependencies>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dev_dependencies: Option<ResolvedDependencies>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub optional_dependencies: Option<ResolvedDependencies>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub peer_dependencies: Option<ResolvedDependencies>
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LockfileStructure {
@@ -109,13 +123,13 @@ pub struct LockfileStructure {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub settings: Option<LockfileSettings>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub importers: Option<HashMap<ProjectId, ResolvedDependencies>>,
+    pub importers: Option<HashMap<ProjectId, ImporterSections>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub time: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub catalogs: Option<HashMap<CatalogName, HashMap<DependencyName, ResolvedCatalogEntry>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub packages: Option<PackageSnapshots>,
+    pub packages: Option<HashMap<String, PackageMetaHandler>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub never_built_dependencies: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]

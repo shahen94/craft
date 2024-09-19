@@ -78,7 +78,7 @@ mod tests {
 
 // ─── RegistryCache ───────────────────────────────────────────────────────────────
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RegistryCache {
     pub directory: PathBuf,
     // express -> 4.17.1 -> NpmPackage

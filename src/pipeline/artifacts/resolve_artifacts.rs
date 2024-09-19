@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{contracts::PipeArtifact, package::NpmPackage};
-
+use crate::actors::PackageType;
 // --------------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
@@ -14,17 +14,19 @@ pub struct ResolvedItem {
     pub package: NpmPackage,
     pub parent: Option<String>,
     pub specifier: String,
+    pub package_type: PackageType
 }
 
 // --------------------------------------------------------------------------------
 
 impl ResolvedItem {
-    pub fn new(package: NpmPackage, parent: Option<String>, mut specifier: String) -> Self {
+    pub fn new(package: NpmPackage, parent: Option<String>, mut specifier: String, package_type: PackageType) -> Self {
         if specifier == "*" {
             specifier = format!("^{}", package.version)
         }
 
         Self {
+            package_type,
             package,
             parent,
             specifier,
@@ -32,8 +34,8 @@ impl ResolvedItem {
     }
 
     #[cfg(test)]
-    pub fn with_no_parent(package: NpmPackage, specifier: String) -> Self {
-        Self::new(package, None, specifier)
+    pub fn with_no_parent(package: NpmPackage, specifier: String, package_type: PackageType) -> Self {
+        Self::new(package, None, specifier, package_type)
     }
 }
 
@@ -89,7 +91,7 @@ mod tests {
         .unwrap();
         resolve_artifacts.insert(
             "package".to_string(),
-            ResolvedItem::with_no_parent(package, "1.2.0".to_string()),
+            ResolvedItem::with_no_parent(package, "1.2.0".to_string(), PackageType::Prod("1.2.0".to_string())),
         );
 
         assert_eq!(
@@ -117,8 +119,7 @@ mod tests {
         .unwrap();
         resolve_artifacts.insert(
             "package".to_string(),
-            ResolvedItem::with_no_parent(package, "1.0.0".to_string()),
-        );
+            ResolvedItem::with_no_parent(package, "1.0.0".to_string(), PackageType::Prod("1.2.0".to_string())));
 
         assert_eq!(resolve_artifacts.get_artifacts().len(), 1);
     }

@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 // ─── PackagesCache ───────────────────────────────────────────────────────────────
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PackagesCache {
     pub directory: PathBuf,
     pub cache: HashSet<RegistryKey>,

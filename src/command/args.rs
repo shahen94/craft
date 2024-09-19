@@ -34,7 +34,6 @@ impl From<Install> for ProgramDesire {
             dev_install: true,
             prod_install: true,
             optional_install: true,
-            global_install: false,
             package_json_available: false,
             pnpm_lock_yaml_available: false,
         };
@@ -50,7 +49,7 @@ impl From<Install> for ProgramDesire {
             return program_desire;
         }
 
-        if val.save_prod {
+        if val.prod {
             program_desire.dev_install = false;
             program_desire.optional_install = false;
             return program_desire;
@@ -61,8 +60,7 @@ impl From<Install> for ProgramDesire {
             program_desire.optional_install = false;
         }
 
-        if val.global {
-            program_desire.global_install = true;
+        if val.save_global {
             program_desire.dev_install = false;
             program_desire.prod_install = false;
             program_desire.optional_install = false;
@@ -87,7 +85,6 @@ pub struct ProgramDesire {
     pub dev_install: bool,
     pub prod_install: bool,
     pub optional_install: bool,
-    pub global_install: bool,
     pub package_json_available: bool,
     pub pnpm_lock_yaml_available: bool,
 }
@@ -135,7 +132,7 @@ pub enum SubCommand {
 #[derive(Debug, Parser, Clone)]
 pub struct Install {
     #[arg(name = "global", long, short, alias = "g")]
-    pub global: bool,
+    pub save_global: bool,
     /// Save as dev dependency
     #[arg(long)]
     pub save_dev: bool,

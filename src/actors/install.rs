@@ -17,13 +17,44 @@ use crate::{
 };
 use crate::command::Install;
 
+#[derive(Debug, Clone)]
+pub enum PackageType {
+    Dev(String),
+    Optional(String),
+    Prod(String),
+    Peer(String),
+    Global(String)
+}
+
+impl PackageType {
+    pub fn get_name(&self) -> String {
+        match self {
+            PackageType::Dev(d) => {
+                d.to_string()
+            }
+            PackageType::Optional(o) => {
+                o.to_string()
+            }
+            PackageType::Prod(p) => {
+                p.to_string()
+            }
+            PackageType::Peer(peer) => {
+                peer.to_string()
+            }
+            PackageType::Global(g) => {
+                g.to_string()
+            }
+        }
+    }
+}
+
 pub struct InstallActor {
-    packages: Vec<String>,
+    packages: Vec<PackageType>,
     install: Option<Install>
 }
 
 impl InstallActor {
-    pub fn new(packages: Vec<String>, install: Option<Install>) -> Self {
+    pub fn new(packages: Vec<PackageType>, install: Option<Install>) -> Self {
         Self { packages, install }
     }
 
@@ -53,13 +84,13 @@ impl Actor<PipeResult> for InstallActor {
             .run()
             .await?;
         CraftLogger::verbose(
-            format!("Resolved: {:?}", resolve_artifacts.get_artifacts().len()),
+            format!("Resolved: {:?}", resolve_artifacts.0.get_artifacts().len()),
         );
 
         // ─── Start Downloading ──────────────────────
 
         CraftLogger::verbose("Downloading dependencies");
-        let download_artifacts = DownloaderPipe::new(&resolve_artifacts, tx.clone())
+        let download_artifacts = DownloaderPipe::new(&resolve_artifacts.0, tx.clone())
             .run()
             .await?;
 
@@ -83,20 +114,20 @@ impl Actor<PipeResult> for InstallActor {
         CraftLogger::verbose("Linking dependencies");
         LinkerPipe::new(
             tx.clone(),
-            resolve_artifacts.get_artifacts(),
+            resolve_artifacts.0.get_artifacts(),
             extracted_artifacts.get_artifacts(),
         )
         .run()
         .await?;
 
         // ─── Sync Lock File ────────────────────────
-        LockFileActor::new(resolve_artifacts.get_artifacts(), self.install.clone())
+        LockFileActor::new(resolve_artifacts.0.get_artifacts(), self.install.clone(), resolve_artifacts.1)
             .run()
             .unwrap();
 
         // ─── Cleanup ────────────────────────────────
 
-        ExtractorPipe::cleanup(resolve_artifacts.get_artifacts()).await?;
+        ExtractorPipe::cleanup(resolve_artifacts.0.get_artifacts()).await?;
 
         drop(tx);
         ui_thread.join().unwrap();
