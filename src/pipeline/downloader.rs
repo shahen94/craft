@@ -120,10 +120,10 @@ impl Pipe<DownloadArtifacts> for DownloaderPipe<PackagesCache> {
             let artifacts = self.artifacts.clone();
             let job = tokio::spawn(async move {
                 CraftLogger::verbose(format!("Downloading package: {}", pkg));
-                return match Self::download_pkg(&pkg, cache, artifacts).await {
+                match Self::download_pkg(&pkg, cache, artifacts).await {
                     Ok(_) => Ok(()),
                     Err(err) => Err(err),
-                };
+                }
             });
             jobs.push(job);
         }

@@ -1,10 +1,9 @@
 use crate::actors::PackageType;
-use crate::command::Install;
 use crate::contracts::Lockfile;
 use crate::errors::LockfileError;
 use crate::lockfile::constants::CURRENT_IMPORTER;
 use crate::lockfile::lockfile_structure::{
-    ImporterSections, LockfileStructure, ResolvedDependencies, ResolvedDependency,
+    ImporterSections, LockfileStructure, ResolvedDependency,
 };
 use crate::package::{PackageMetaHandler, PackageRecorder};
 use crate::pipeline::ResolvedItem;
@@ -14,19 +13,16 @@ use std::path::Path;
 
 pub struct LockFileActor {
     resolved_items: Vec<ResolvedItem>,
-    install_option: Option<Install>,
     recorder: PackageRecorder,
 }
 
 impl LockFileActor {
     pub(crate) fn new(
         resolved_items: Vec<ResolvedItem>,
-        install_option: Option<Install>,
         recorder: PackageRecorder,
     ) -> LockFileActor {
         LockFileActor {
             resolved_items,
-            install_option,
             recorder,
         }
     }
@@ -44,7 +40,7 @@ impl LockFileActor {
         packages: Vec<ResolvedItem>,
         map: Option<&ImporterSections>,
     ) -> ImporterSections {
-        let mut map_to_use = map.map(|e| e.clone()).unwrap_or_default();
+        let mut map_to_use = map.cloned().unwrap_or_default();
 
         packages.iter().for_each(|item| {
             if item.parent.is_none() {

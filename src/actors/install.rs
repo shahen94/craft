@@ -6,7 +6,6 @@ use std::{
 use async_trait::async_trait;
 
 use crate::cache::PackagesCache;
-use crate::command::Install;
 use crate::contracts::{Lockfile, PersistentCache};
 use crate::lockfile::lock_file_actor::LockFileActor;
 use crate::{
@@ -40,12 +39,11 @@ impl PackageType {
 
 pub struct InstallActor {
     packages: Vec<PackageType>,
-    install: Option<Install>,
 }
 
 impl InstallActor {
-    pub fn new(packages: Vec<PackageType>, install: Option<Install>) -> Self {
-        Self { packages, install }
+    pub fn new(packages: Vec<PackageType>) -> Self {
+        Self { packages }
     }
 
     fn start_progress(&self, rx: Receiver<ProgressAction>) -> JoinHandle<()> {
@@ -116,7 +114,6 @@ impl Actor<PipeResult> for InstallActor {
         // ─── Sync Lock File ────────────────────────
         LockFileActor::new(
             resolve_artifacts.0.get_artifacts(),
-            self.install.clone(),
             resolve_artifacts.1,
         )
         .run()

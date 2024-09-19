@@ -1,7 +1,6 @@
 use super::{
     registry::Registry,
     version::{contracts::Version, VersionImpl},
-    NpmPackage,
 };
 use crate::actors::PackageType;
 use crate::cache::RegistryKey;

@@ -1,7 +1,7 @@
 use crate::cache::RegistryKey;
 use crate::package::package_recorder::{PackageMetaRecorder, PackageResolution};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fmt::Display;
 
 /// This struct represents a package from the registry.
@@ -74,36 +74,37 @@ pub struct PeerDependencyMeta {
     optional: Option<bool>,
 }
 
-impl Into<PackageMetaRecorder> for NpmPackage {
-    fn into(self) -> PackageMetaRecorder {
-        let mut meta_recoder = PackageMetaRecorder::default();
-        meta_recoder.name = self.name;
+impl From<NpmPackage> for PackageMetaRecorder {
+    fn from(val: NpmPackage) -> Self {
+        let mut meta_recoder = PackageMetaRecorder { name: val.name,
+            peer_dependencies: val.peer_dependencies,
+            peer_dependencies_meta: val.peer_dependencies_meta,
+            engines: val.engines,
+            ..Default::default() };
 
-        if let Some(integrity) = self.dist.integrity {
+        if let Some(integrity) = val.dist.integrity {
             meta_recoder.resolution = Some(PackageResolution { integrity })
         }
-        meta_recoder.engines = self.engines;
-        if let Some(_) = self.bin {
+        if val.bin.is_some() {
             meta_recoder.has_bin = Some(true)
         }
 
-        meta_recoder.peer_dependencies_meta = self.peer_dependencies_meta;
-        if let Some(cpu) = self.cpu {
+        if let Some(cpu) = val.cpu {
             meta_recoder.cpu = Some(cpu)
         }
 
-        if let Some(os) = self.os {
+        if let Some(os) = val.os {
             meta_recoder.os = Some(os)
         }
-
-        meta_recoder.peer_dependencies = self.peer_dependencies;
 
         meta_recoder
     }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-struct Repository {}
+pub struct Repository {
+
+}
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(untagged)]

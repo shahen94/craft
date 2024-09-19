@@ -37,7 +37,7 @@ impl Program {
                         .await
                         .unwrap();
 
-                    InstallActor::new(deps_to_install, None)
+                    InstallActor::new(deps_to_install)
                         .start()
                         .await
                         .unwrap();
@@ -48,7 +48,7 @@ impl Program {
                         .unwrap()
                         .iter()
                         .map(|p| {
-                            return if args_install.save_global {
+                            if args_install.save_global {
                                 PackageType::Global(p.to_string())
                             } else if args_install.save_prod {
                                 PackageType::Prod(p.to_string())
@@ -58,11 +58,11 @@ impl Program {
                                 PackageType::Optional(p.to_string())
                             } else {
                                 PackageType::Prod(p.to_string())
-                            };
+                            }
                         })
                         .collect::<Vec<PackageType>>();
 
-                    InstallActor::new(packages, Some(args_install.clone()))
+                    InstallActor::new(packages)
                         .start()
                         .await
                         .unwrap();

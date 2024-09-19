@@ -13,7 +13,6 @@ use futures::future::join_all;
 use futures::lock::Mutex;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
-use std::thread;
 
 use super::artifacts::{ResolveArtifacts, ResolvedItem};
 
@@ -23,7 +22,6 @@ use super::artifacts::{ResolveArtifacts, ResolvedItem};
 pub struct ResolverPipe<C: PersistentCache<NpmPackage>> {
     packages: Vec<PackageType>,
     cache: Arc<Mutex<C>>,
-    npm_registry: NpmRegistry,
 
     #[allow(dead_code)]
     git_registry: GitRegistry,
@@ -42,7 +40,6 @@ impl ResolverPipe<RegistryCache> {
         Self {
             packages,
             cache: Arc::new(Mutex::new(un_arced_cache)),
-            npm_registry: NpmRegistry::new(),
             git_registry: GitRegistry::new(),
             artifacts: Arc::new(Mutex::new(un_arced_articated)),
             tx,
@@ -182,8 +179,7 @@ impl ResolverPipe<RegistryCache> {
 
         join_all(jobs).await;
 
-        let x = Ok(package_recorder_arc.clone().lock().await.clone());
-        x
+        Ok(package_recorder_arc.clone().lock().await.clone())
     }
 }
 

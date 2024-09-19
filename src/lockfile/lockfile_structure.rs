@@ -12,7 +12,6 @@ type ProjectId = String;
 pub type ResolvedDependencies = HashMap<String, ResolvedDependency>;
 type CatalogName = String;
 type DependencyName = String;
-type DepPath = String;
 
 #[derive(Serialize, Deserialize)]
 #[serde(untagged)]
@@ -74,7 +73,6 @@ pub struct PackageSnapshot {
     pub resolution: LockfileResolution,
 }
 
-pub type PackageSnapshots = HashMap<DepPath, PackageSnapshot>;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
