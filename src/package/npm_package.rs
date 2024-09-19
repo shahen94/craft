@@ -31,7 +31,7 @@ pub struct NpmPackage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub license: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub funding: Option<License>,
+    pub funding: Option<LicenseType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub files: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -119,6 +119,7 @@ pub enum BinType {
 pub enum LicenseType {
     LicenseArray(Vec<License>),
     License(License),
+    String(String),
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

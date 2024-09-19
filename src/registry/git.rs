@@ -33,9 +33,7 @@ impl Registry for GitRegistry {
         let pkg = self.get_archive(package).await?;
 
         for (version, remote_package) in pkg.versions.iter() {
-            if package.version.satisfies(version) {
                 return Ok(remote_package.clone());
-            }
         }
 
         println!("Failed to fetch version: {}", package);

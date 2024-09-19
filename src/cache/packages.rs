@@ -121,6 +121,9 @@ impl PersistentCache<PathBuf> for PackagesCache {
         Ok(())
     }
 
+    async fn has(&mut self, key: &RegistryKey) -> bool {
+        self.cache.contains(&key.to_owned())
+    }
     async fn get(&mut self, key: &RegistryKey) -> Option<PathBuf> {
         if self.has(key).await {
             return Some(self.directory.join::<PathBuf>(key.clone().into()));
@@ -128,11 +131,8 @@ impl PersistentCache<PathBuf> for PackagesCache {
 
         None
     }
+
     async fn set(&mut self, key: &RegistryKey, _: PathBuf) -> () {
         self.cache.insert(key.clone());
-    }
-
-    async fn has(&mut self, key: &RegistryKey) -> bool {
-        self.cache.contains(&key.to_owned())
     }
 }

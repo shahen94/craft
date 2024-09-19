@@ -69,18 +69,29 @@ impl Registry for NpmRegistry {
     async fn fetch(&self, package: &Package) -> Result<NpmPackage, NetworkError> {
         log::info!("Fetching package: {}", package.to_string());
 
-        if package.version.is_exact() {
-            let pkg = self.get_exact_package(package).await?;
-
-            return Ok(pkg);
-        }
 
         let pkg = self.get_full_package(package).await?;
+        let mut highest_satisfied_version: Option<NpmPackage> = None;
 
         for (version, remote_package) in pkg.versions.iter() {
-            if package.version.satisfies(version) {
-                return Ok(remote_package.clone());
+            if package.satisfies(version) {
+                match highest_satisfied_version {
+                    Some(ref sv) => {
+                        let selected_version = nodejs_semver::Version::parse(&sv.version).unwrap();
+                        let current_version = nodejs_semver::Version::parse(&remote_package.version).unwrap();
+                        if selected_version < current_version {
+                            highest_satisfied_version = Some(remote_package.clone());
+                        }
+                    }
+                    None => {
+                        highest_satisfied_version = Some(remote_package.clone());
+                    }
+                }
             }
+        }
+
+        if let Some(v) = highest_satisfied_version {
+            return Ok(v.clone())
         }
 
         println!("Failed to fetch version: {}", package);

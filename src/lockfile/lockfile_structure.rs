@@ -1,6 +1,6 @@
 use crate::package::PackageMetaHandler;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ResolvedDependency {
@@ -125,7 +125,7 @@ pub struct LockfileStructure {
     pub time: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub catalogs: Option<HashMap<CatalogName, HashMap<DependencyName, ResolvedCatalogEntry>>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none",serialize_with = "ordered_map")]
     pub packages: Option<HashMap<String, PackageMetaHandler>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub never_built_dependencies: Option<Vec<String>>,
@@ -141,6 +141,22 @@ pub struct LockfileStructure {
     pub patched_dependencies: Option<HashMap<String, PatchFile>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pnpmfile_checksum: Option<String>,
+}
+
+
+fn ordered_map<S>(value: &Option<HashMap<String, PackageMetaHandler>>, serializer: S) ->
+                                                                                    Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+
+    return match value {
+        None => return serializer.serialize_none(),
+        Some(v) => {
+            let ordered: BTreeMap<_, _> = v.iter().collect();
+            ordered.serialize(serializer)
+        }
+    }
 }
 
 impl Default for LockfileStructure {

@@ -224,6 +224,8 @@ impl PersistentCache<NpmPackage> for RegistryCache {
     async fn get(&mut self, key: &RegistryKey) -> Option<NpmPackage> {
         self.perform_preload(key);
 
+        log::info!("Getting key: {}", key);
+
         // We have a range
         let range: Range = key.version.parse().unwrap();
         let mut selected_version: Option<NpmPackage> = None;
