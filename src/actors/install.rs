@@ -15,6 +15,7 @@ use crate::{
     pipeline::{DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
     ui::UIProgress,
 };
+use crate::pipeline::BinaryLinkerPipeline;
 
 #[derive(Debug, Clone)]
 pub enum PackageType {
@@ -141,13 +142,18 @@ impl Actor<PipeResult> for InstallActor {
         .await?;
 
         // ─── Sync Lock File ────────────────────────
-        LockFileActor::new(resolve_artifacts.0.get_artifacts(), resolve_artifacts.1)
+        LockFileActor::new(resolve_artifacts.0.get_artifacts(), resolve_artifacts.1.clone())
             .run()
             .expect("Error writing lockfile");
 
         // ─── Cleanup ────────────────────────────────
 
         ExtractorPipe::cleanup(resolve_artifacts.0.get_artifacts()).await?;
+
+
+        // ─── Link binaries ────────────────────────────────
+        let bin_linker = BinaryLinkerPipeline::new(resolve_artifacts.1.main_packages);
+
 
         drop(tx);
         ui_thread.join().unwrap();

@@ -2,6 +2,7 @@ use crate::package::npm_package::{EnginesType, PeerDependencyMeta};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use crate::package::BinType;
 
 #[derive(Clone, Default, Debug)]
 pub struct PackageMetaRecorder {
@@ -16,6 +17,7 @@ pub struct PackageMetaRecorder {
     pub os: Option<Vec<String>>,
     pub dependencies: Option<HashMap<String, String>>,
     pub resolved_dependencies: Option<HashMap<String, String>>,
+    pub bin: Option<BinType>
 }
 
 impl Display for PackageMetaRecorder {
@@ -36,6 +38,7 @@ impl From<PackageMetaRecorder> for PackageMetaHandler {
             peer_dependencies_meta: val.peer_dependencies_meta,
             dependencies: val.dependencies,
             resolved_dependencies: val.resolved_dependencies,
+            bin: val.bin
         }
     }
 }
@@ -61,6 +64,9 @@ pub struct PackageMetaHandler {
     pub dependencies: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolved_dependencies: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bin: Option<BinType>
+
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]

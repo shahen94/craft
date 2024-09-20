@@ -108,6 +108,7 @@ impl From<NpmPackage> for PackageMetaRecorder {
             cpu: val.cpu,
             engines: val.engines,
             os: val.os,
+            bin: val.bin.clone(),
             ..Default::default()
         };
 
