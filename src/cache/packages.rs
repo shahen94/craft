@@ -91,7 +91,6 @@ impl Default for PackagesCache {
 #[async_trait]
 impl PersistentCache<PathBuf> for PackagesCache {
     async fn init(&mut self) -> Result<(), CacheError> {
-
         self.cache = Self::read_cache_directory(&self.directory).await?;
         self.downloaded_modules = Self::read_node_modules(&self.directory).await?;
 

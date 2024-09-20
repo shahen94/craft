@@ -323,7 +323,11 @@ mod tests_registry {
             version: "0.9.0".to_string(),
             name: UNKNOWN_PACKAGE.to_string(),
         };
-        let npm_package = NpmPackage { name: inserted_key.name.to_string(), version: inserted_key.version.to_string(), ..Default::default() };
+        let npm_package = NpmPackage {
+            name: inserted_key.name.to_string(),
+            version: inserted_key.version.to_string(),
+            ..Default::default()
+        };
         cache.set(&inserted_key, npm_package).await;
         let retrieved_key = cache.get(&key).await;
         assert_eq!(retrieved_key, None);
@@ -340,7 +344,11 @@ mod tests_registry {
             version: "0.9.0".to_string(),
             name: UNKNOWN_PACKAGE.to_string(),
         };
-        let npm_package = NpmPackage { name: inserted_key.name.to_string(), version: inserted_key.version.to_string(), ..Default::default() };
+        let npm_package = NpmPackage {
+            name: inserted_key.name.to_string(),
+            version: inserted_key.version.to_string(),
+            ..Default::default()
+        };
         cache.set(&inserted_key, npm_package).await;
         let retrieved_key = cache.get(&key).await;
         assert_eq!(retrieved_key, None);
@@ -357,7 +365,11 @@ mod tests_registry {
             version: "0.9.0".to_string(),
             name: UNKNOWN_PACKAGE.to_string(),
         };
-        let npm_package = NpmPackage { name: inserted_key.name.to_string(), version: inserted_key.version.to_string(), ..Default::default() };
+        let npm_package = NpmPackage {
+            name: inserted_key.name.to_string(),
+            version: inserted_key.version.to_string(),
+            ..Default::default()
+        };
         cache.set(&inserted_key, npm_package).await;
         let retrieved_key = cache.get(&key).await;
         assert!(retrieved_key.is_some());
