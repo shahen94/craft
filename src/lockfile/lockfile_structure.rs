@@ -1,8 +1,7 @@
-use crate::package::PackageMetaHandler;
+use crate::lockfile::constants::{AUTO_INSTALL_PEERS, CPU, DEPENDENCIES, DEV_DEPENDENCIES, ENGINES, EXCLUDE_LINKS_FROM_LOCKFILE, HAS_BIN, LOCKFILE_VERSION, OPTIONAL, OPT_DEPENDENCIES, OS, PACKAGES, PEER_DEPENDENCIES, PEER_DEPENDENCIES_META, PEER_SUFFIX_MAX_LENGTH, RESOLUTION, SETTINGS, SNAPSHOTS, SPECIFIER, VERSION};
+use crate::package::{PackageMetaHandler, PackageRecorder};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
-use std::fmt::format;
-use crate::lockfile::constants::{AUTO_INSTALL_PEERS, DEPENDENCIES, DEV_DEPENDENCIES, ENGINES, EXCLUDE_LINKS_FROM_LOCKFILE, LOCKFILE_VERSION, OPT_DEPENDENCIES, PEER_DEPENDENCIES, PEER_DEPENDENCIES_META, RESOLUTION, SETTINGS, SPECIFIER, VERSION};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ResolvedDependency {
@@ -148,43 +147,41 @@ pub struct LockfileStructure {
     pub pnpmfile_checksum: Option<String>,
 }
 
-
 impl LockfileStructure {
-    const ESCAPE_CHARS: [char; 3] = ['@', '<', '>', ];
-
+    const ESCAPE_CHARS: [char; 3] = ['@', '<', '>'];
 
     fn starts_with_illegal_character(str: &str) -> bool {
         if let Some(c) = str.chars().next() {
             if Self::ESCAPE_CHARS.contains(&c) {
-                return true
+                return true;
             }
         }
         false
     }
 
     fn format_string(str: &str) -> String {
-        if Self::starts_with_illegal_character(&str) {
-            return format!("'{str}'")
+        if Self::starts_with_illegal_character(str) {
+            return format!("'{str}'");
         }
         str.to_string()
     }
 
     fn format_line(key: &str, value: Option<&str>, indent: i32) -> String {
         let mut str = "".to_string();
-        for _ in 0..indent*2 {
-            str.push_str(" ")
+        for _ in 0..indent * 2 {
+            str.push(' ')
         }
-        let key_format;
+
         let key = Self::format_string(key);
-        match value {
-            Some(v)=>{
+        let key_format = match value {
+            Some(v) => {
                 let v = Self::format_string(v);
-                key_format = format!("{key}: {v}\n");
+                format!("{key}: {v}\n")
             }
-            None=>{
-                key_format = format!("{key}:\n");
+            None => {
+                format!("{key}:\n")
             }
-        }
+        };
 
         str.push_str(&key_format);
         str
@@ -193,49 +190,59 @@ impl LockfileStructure {
     fn format_settings(&self) -> String {
         let mut settings_str = "".to_string();
         let setting = self.settings.clone().unwrap();
-        settings_str.push_str(&Self::format_line(SETTINGS, None,0));
+        settings_str.push_str(&Self::format_line(SETTINGS, None, 0));
 
         if let Some(a) = setting.auto_install_peers {
             let auto_install = Self::format_line(AUTO_INSTALL_PEERS, Some(&*a.to_string()), 1);
-            settings_str.push_str(&*auto_install);
+            settings_str.push_str(&auto_install);
         }
 
         if let Some(e) = setting.exclude_links_from_lockfile {
-            let exclude_link = Self::format_line(EXCLUDE_LINKS_FROM_LOCKFILE, Some(&*e.to_string()), 1);
-            settings_str.push_str(&*exclude_link);
+            let exclude_link =
+                Self::format_line(EXCLUDE_LINKS_FROM_LOCKFILE, Some(&*e.to_string()), 1);
+            settings_str.push_str(&exclude_link);
         }
 
         if let Some(peer) = setting.peers_suffix_max_length {
-            let exclude_link = Self::format_line(EXCLUDE_LINKS_FROM_LOCKFILE, Some(&*peer.to_string()), 1);
-            settings_str.push_str(&*exclude_link);
+            let exclude_link =
+                Self::format_line(PEER_SUFFIX_MAX_LENGTH, Some(&*peer.to_string()), 1);
+            settings_str.push_str(&exclude_link);
         }
-
 
         settings_str
     }
 
     fn format_lockfile_version(&self) -> String {
-        Self::format_line(LOCKFILE_VERSION, Some(&format!("'{}'",self.lockfile_version)),0)
+        Self::format_line(
+            LOCKFILE_VERSION,
+            Some(&format!("'{}'", self.lockfile_version)),
+            0,
+        )
     }
 
     fn format_dependencies(title: &str, indent: i32, deps: &ResolvedDependencies) -> String {
         let mut dependency_serialized = "".to_string();
         dependency_serialized.push_str(&Self::format_line(title, None, indent));
 
-        deps.iter().for_each(|d|{
-           dependency_serialized.push_str(&Self::format_line(d.0, None, indent+1));
-            dependency_serialized.push_str(&Self::format_line(SPECIFIER, Some(&d.1.specifier),indent+2));
-            dependency_serialized.push_str(&Self::format_line(VERSION, Some(&d.1.version),indent+2));
+        deps.iter().for_each(|d| {
+            dependency_serialized.push_str(&Self::format_line(d.0, None, indent + 1));
+            dependency_serialized.push_str(&Self::format_line(
+                SPECIFIER,
+                Some(&d.1.specifier),
+                indent + 2,
+            ));
+            dependency_serialized.push_str(&Self::format_line(
+                VERSION,
+                Some(&d.1.version),
+                indent + 2,
+            ));
         });
-
 
         dependency_serialized
     }
 
     fn format_importer(importer: (&ProjectId, &ImporterSections)) -> String {
-        let mut importer_serialized = "\n".to_string();
-
-        importer_serialized = Self::format_line(importer.0, None, 1);
+        let mut importer_serialized = Self::format_line(importer.0, None, 1);
 
         if let Some(dep) = &importer.1.dependencies {
             importer_serialized.push_str(&Self::format_dependencies(DEPENDENCIES, 2, dep))
@@ -246,16 +253,18 @@ impl LockfileStructure {
         }
 
         if let Some(peer_deps) = &importer.1.peer_dependencies {
-            importer_serialized.push_str(&Self::format_dependencies(PEER_DEPENDENCIES, 2, peer_deps))
+            importer_serialized.push_str(&Self::format_dependencies(
+                PEER_DEPENDENCIES,
+                2,
+                peer_deps,
+            ))
         }
 
         if let Some(opt_deps) = &importer.1.optional_dependencies {
             importer_serialized.push_str(&Self::format_dependencies(OPT_DEPENDENCIES, 2, opt_deps))
         }
 
-
         importer_serialized
-
     }
 
     fn format_importers(&self) -> String {
@@ -264,64 +273,148 @@ impl LockfileStructure {
 
         let importers = self.importers.clone().unwrap();
 
-
-        importers.iter().for_each(|i|{
+        importers.iter().for_each(|i| {
             let serialized_importer = Self::format_importer(i);
             importers_serialized.push_str(&serialized_importer);
         });
 
-
         importers_serialized
     }
 
-    fn format_packages(&self) -> String {
-        let mut packages_serialized = "packages:\n".to_string();
-
-        let packages = self.packages.clone().unwrap();
-        let packages: BTreeMap<_, _> = packages.iter().collect();
-        let index = 1;
-        packages.iter().for_each(|p|{
-            packages_serialized.push_str("\n");
+    fn format_package(packages_serialized: &mut String, p: (&&String, &&PackageMetaHandler), index: i32, snapshot: bool) {
+        packages_serialized.push('\n');
+        if snapshot && p.1.dependencies.is_none() && p.1.peer_dependencies.is_none() {
+            packages_serialized.push_str(&Self::format_line(p.0, Some("{}"), index));
+        } else {
             packages_serialized.push_str(&Self::format_line(p.0, None, index));
+        }
+
+
+        if !snapshot {
             if let Some(res) = &p.1.resolution {
                 let integrity = format!("{{integrity: {}}}", res.integrity);
-                packages_serialized.push_str(&Self::format_line(RESOLUTION, Some(&integrity), index+1));
+                packages_serialized.push_str(&Self::format_line(
+                    RESOLUTION,
+                    Some(&integrity),
+                    index + 1,
+                ));
             }
+        }
 
-            if let Some(peer) = &p.1.peer_dependencies {
-                packages_serialized.push_str(&Self::format_line(PEER_DEPENDENCIES,None, index+1));
-                peer.iter().for_each(|(k,v)| {
-                    packages_serialized.push_str(&Self::format_line(k,Some(v), index+2));
+
+        if snapshot {
+            if let Some(deps) = &p.1.resolved_dependencies {
+                packages_serialized.push_str(&Self::format_line(
+                    DEPENDENCIES,
+                    None,
+                    index + 1,
+                ));
+                deps.iter().for_each(|(k, v)| {
+                    packages_serialized.push_str(&Self::format_line(k, Some(v), index + 2));
                 })
             }
-
-            if let Some(peer_meta) = &p.1.peer_dependencies_meta {
-                packages_serialized.push_str(&Self::format_line(PEER_DEPENDENCIES_META,None, index+1));
-                peer_meta.iter().for_each(|(k,v)| {
-                    packages_serialized.push_str(&Self::format_line(k,None, index+2));
-                })
-            }
+        }
 
 
+        if let Some(peer) = &p.1.peer_dependencies {
+            packages_serialized.push_str(&Self::format_line(
+                PEER_DEPENDENCIES,
+                None,
+                index + 1,
+            ));
+            peer.iter().for_each(|(k, v)| {
+                packages_serialized.push_str(&Self::format_line(k, Some(v), index + 2));
+            })
+        }
+
+        if let Some(peer_meta) = &p.1.peer_dependencies_meta {
+            packages_serialized.push_str(&Self::format_line(
+                PEER_DEPENDENCIES_META,
+                None,
+                index + 1,
+            ));
+            peer_meta.iter().for_each(|(k, v)| {
+                packages_serialized.push_str(&Self::format_line(k, None, index + 2));
+                if let Some(opt) = v.optional {
+                    packages_serialized.push_str(&Self::format_line(OPTIONAL, Some(&opt.to_string()), index + 3));
+                }
+            })
+        }
+
+        if !snapshot {
             if let Some(engines) = &p.1.engines {
                 match engines.len() == 1 {
-                    true=>{
+                    true => {
                         let engine_val = engines.iter().next().unwrap();
-                        let node = format!("{{{}: {}}}",engine_val.0, Self::format_string(engine_val.1));
-                        packages_serialized.push_str(&Self::format_line(ENGINES, Some(&node), index+1));
-                    },
-                    false =>{
-                        packages_serialized.push_str(&Self::format_line(ENGINES, None, index+1));
+                        let node = format!(
+                            "{{{}: {}}}",
+                            engine_val.0,
+                            Self::format_string(engine_val.1)
+                        );
+                        packages_serialized.push_str(&Self::format_line(
+                            ENGINES,
+                            Some(&node),
+                            index + 1,
+                        ));
+                    }
+                    false => {
+                        packages_serialized.push_str(&Self::format_line(ENGINES, None, index + 1));
 
-                        engines.iter().for_each(|e|{
-                            packages_serialized.push_str(&Self::format_line(e.0, Some(e.1), index+2))
+                        engines.iter().for_each(|e| {
+                            packages_serialized.push_str(&Self::format_line(
+                                e.0,
+                                Some(e.1),
+                                index + 2,
+                            ))
                         })
                     }
                 }
             }
+        }
+
+        if let Some(cpu) = &p.1.cpu {
+            packages_serialized.push_str(&Self::format_line(CPU, Some(&Self::format_inline_vector(cpu)), index + 1));
+        }
+
+        if let Some(os) = &p.1.os {
+            packages_serialized.push_str(&Self::format_line(OS, Some(&Self::format_inline_vector(os)), index + 1));
+        }
+
+        if let Some(bin) = &p.1.has_bin {
+            packages_serialized.push_str(&Self::format_line(HAS_BIN, Some(&bin.to_string()), index + 1));
+        }
+    }
+
+
+    fn format_packages(&self) -> String {
+        let mut packages_serialized = format!("{}:\n", PACKAGES);
+
+        let packages = self.packages.clone().unwrap();
+        let packages: BTreeMap<_, _> = packages.iter().collect();
+        let index = 1;
+        packages.iter().for_each(|p| {
+            Self::format_package(&mut packages_serialized, p, index, false)
         });
 
+        packages_serialized
+    }
 
+
+    fn format_inline_vector(vec: &Vec<String>) -> String
+    {
+        format!("[{}]", vec.join(", "))
+    }
+
+    fn format_snapshots(&self) -> String {
+        // TODO calculate transitive peer dependencies
+        let mut packages_serialized = format!("{}:\n", SNAPSHOTS);
+
+        let packages = self.packages.clone().unwrap();
+        let packages: BTreeMap<_, _> = packages.iter().collect();
+        let index = 1;
+        packages.iter().for_each(|p| {
+            Self::format_package(&mut packages_serialized, p, index, true)
+        });
 
         packages_serialized
     }
@@ -330,27 +423,29 @@ impl LockfileStructure {
         let mut serialized_content = "".to_string();
         serialized_content.push_str(&self.format_lockfile_version());
 
-
         if self.settings.is_some() {
-            serialized_content.push_str("\n");
+            serialized_content.push('\n');
             serialized_content.push_str(&self.format_settings())
         }
 
         if self.importers.is_some() {
-            serialized_content.push_str("\n");
+            serialized_content.push('\n');
             serialized_content.push_str(&self.format_importers())
         }
 
         if self.packages.is_some() {
-            serialized_content.push_str("\n");
+            serialized_content.push('\n');
             serialized_content.push_str(&self.format_packages())
+        }
+
+        if self.packages.is_some() {
+            serialized_content.push('\n');
+            serialized_content.push_str(&self.format_snapshots())
         }
 
         serialized_content
     }
 }
-
-
 
 fn ordered_map<S>(
     value: &Option<HashMap<String, PackageMetaHandler>>,
@@ -370,12 +465,11 @@ where
 
 impl Default for LockfileStructure {
     fn default() -> Self {
-        let default_settings = LockfileSettings{
+        let default_settings = LockfileSettings {
             auto_install_peers: Some(true),
             exclude_links_from_lockfile: Some(false),
-            peers_suffix_max_length: None
+            peers_suffix_max_length: None,
         };
-
 
         LockfileStructure {
             lockfile_version: "9.0".to_string(),

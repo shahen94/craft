@@ -71,7 +71,7 @@ pub struct NpmPackage {
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]
 pub struct PeerDependencyMeta {
-    optional: Option<bool>,
+    pub optional: Option<bool>,
 }
 
 impl From<NpmPackage> for PackageMetaRecorder {
@@ -81,7 +81,10 @@ impl From<NpmPackage> for PackageMetaRecorder {
             version: val.version,
             peer_dependencies: val.peer_dependencies,
             peer_dependencies_meta: val.peer_dependencies_meta,
+            dependencies: val.dependencies,
+            cpu: val.cpu,
             engines: val.engines,
+            os: val.os,
             ..Default::default()
         };
 
@@ -90,14 +93,6 @@ impl From<NpmPackage> for PackageMetaRecorder {
         }
         if val.bin.is_some() {
             meta_recoder.has_bin = Some(true)
-        }
-
-        if let Some(cpu) = val.cpu {
-            meta_recoder.cpu = Some(cpu)
-        }
-
-        if let Some(os) = val.os {
-            meta_recoder.os = Some(os)
         }
 
         meta_recoder

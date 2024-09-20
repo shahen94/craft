@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::actors::PackageType;
 use crate::cache::{RegistryCache, RegistryKey};
 use crate::contracts::{PersistentCache, Phase, Pipe, ProgressAction, Registry};
@@ -49,7 +50,7 @@ impl ResolverPipe<RegistryCache> {
     #[async_recursion]
     async fn resolve_pkg(
         package: &Package,
-        parent: Option<String>,
+        parent: Option<Vec<RegistryKey>>,
         package_recorder: Arc<Mutex<PackageRecorder>>,
         cache_arc: Arc<Mutex<RegistryCache>>,
         artifacts: Arc<Mutex<ResolveArtifacts>>,
@@ -114,7 +115,46 @@ impl ResolverPipe<RegistryCache> {
                 None => {
                     package_recorder.main_packages.push(package.clone().into());
                 }
-                Some(_) => {
+                Some(ref parents) => {
+                    package_recorder.main_packages.iter_mut().for_each(|p|{
+                        if let Some(parent) = parents.last() {
+                            if parent.name == p.name && p.version == parent.version {
+                                match &mut p.resolved_dependencies {
+                                    Some(p)=>{
+                                        let final_key = final_key.clone();
+                                        p.insert(final_key.name, final_key.version);
+                                    },
+                                    None=>{
+                                        let final_key = final_key.clone();
+                                        let mut map = HashMap::new();
+                                        map.insert(final_key.name, final_key.version);
+                                        p.resolved_dependencies = Some(map);
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    package_recorder.sub_dependencies.iter_mut().for_each(|p|{
+                        if let Some(parent) = parents.last() {
+                            if parent.name == p.name && p.version == parent.version {
+                                match &mut p.resolved_dependencies {
+                                    Some(p)=>{
+                                        let final_key = final_key.clone();
+                                        p.insert(final_key.name, final_key.version);
+                                    },
+                                    None=>{
+                                        let final_key = final_key.clone();
+                                        let mut map = HashMap::new();
+                                        map.insert(final_key.name, final_key.version);
+                                        p.resolved_dependencies = Some(map);
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+
                     package_recorder
                         .sub_dependencies
                         .push(package.clone().into());
@@ -131,9 +171,11 @@ impl ResolverPipe<RegistryCache> {
                 let package = Package::new(PackageType::Prod(pkg));
 
                 let parent = if let Some(ref p) = parent {
-                    Some(format!("{}/{}", p, final_key.name))
+                    let mut p_cloned = p.clone();
+                    p_cloned.push(final_key.clone());
+                    Some(p_cloned)
                 } else {
-                    Some(final_key.name.clone())
+                    Some(vec![final_key.clone()])
                 };
                 let pra = package_recorder.clone();
                 let cache = cache_arc.clone();

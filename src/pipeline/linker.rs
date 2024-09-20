@@ -58,12 +58,11 @@ impl LinkerPipe {
             let from = self.extracted.get(&pkg.to_string()).unwrap().clone();
 
             // If it is a child
-            let to = if let Some(parent) = parent {
-                let path_vec = parent.split('/').collect::<Vec<&str>>();
+            let to = if let Some(path_vec) = parent {
                 let mut path = PathBuf::new();
 
                 for p in path_vec {
-                    path.push(p);
+                    path.push(&p.name);
                     path.push("node_modules")
                 }
                 NODE_MODULES.join(&path).join(&pkg.name)

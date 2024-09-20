@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::actors::PackageType;
 use crate::{contracts::PipeArtifact, package::NpmPackage};
+use crate::cache::RegistryKey;
 // --------------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
@@ -12,7 +13,7 @@ pub struct ResolveArtifacts {
 #[derive(Debug, Clone)]
 pub struct ResolvedItem {
     pub package: NpmPackage,
-    pub parent: Option<String>,
+    pub parent: Option<Vec<RegistryKey>>,
     pub specifier: String,
     pub package_type: PackageType,
 }
@@ -22,7 +23,7 @@ pub struct ResolvedItem {
 impl ResolvedItem {
     pub fn new(
         package: NpmPackage,
-        parent: Option<String>,
+        parent: Option<Vec<RegistryKey>>,
         mut specifier: String,
         package_type: PackageType,
     ) -> Self {

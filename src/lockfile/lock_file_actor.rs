@@ -27,9 +27,7 @@ impl LockFileActor {
         }
     }
 
-    fn persist_lockfile_structure(
-        content: &str
-    ) -> Result<(), LockfileError> {
+    fn persist_lockfile_structure(content: &str) -> Result<(), LockfileError> {
         fs::write("pnpm-lock.yaml", content)
             .map_err(|e| LockfileError::FileWriteError(e.to_string()))?;
         Ok(())

@@ -14,6 +14,8 @@ pub struct PackageMetaRecorder {
     pub peer_dependencies_meta: Option<HashMap<String, PeerDependencyMeta>>,
     pub cpu: Option<Vec<String>>,
     pub os: Option<Vec<String>>,
+    pub dependencies: Option<HashMap<String, String>>,
+    pub resolved_dependencies: Option<HashMap<String,String>>
 }
 
 impl Display for PackageMetaRecorder {
@@ -32,6 +34,8 @@ impl From<PackageMetaRecorder> for PackageMetaHandler {
             engines: val.engines,
             peer_dependencies: val.peer_dependencies,
             peer_dependencies_meta: val.peer_dependencies_meta,
+            dependencies: val.dependencies,
+            resolved_dependencies: val.resolved_dependencies
         }
     }
 }
@@ -53,6 +57,10 @@ pub struct PackageMetaHandler {
     pub cpu: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dependencies: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolved_dependencies: Option<HashMap<String, String>>
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
