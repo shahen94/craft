@@ -1,13 +1,12 @@
 use super::constants::PACKAGES_CACHE_FOLDER;
 use crate::cache::registry::convert_to_registry_key;
 use crate::cache::RegistryKey;
+use crate::fs::get_config_dir;
 use crate::{contracts::PersistentCache, errors::CacheError};
 use async_recursion::async_recursion;
 use async_trait::async_trait;
-use homedir::my_home;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-
 // ─── PackagesCache ───────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
@@ -77,12 +76,7 @@ impl PackagesCache {
 
 impl Default for PackagesCache {
     fn default() -> Self {
-        let directory = {
-            my_home()
-                .unwrap()
-                .unwrap()
-                .join(PACKAGES_CACHE_FOLDER.clone())
-        };
+        let directory = { get_config_dir(PACKAGES_CACHE_FOLDER.clone()) };
 
         Self {
             directory,

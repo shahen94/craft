@@ -1,7 +1,6 @@
+use crate::fs::get_config_dir;
 use crate::{cache::DEP_CACHE_FOLDER, contracts::PipeArtifact, package::NpmPackage};
-use homedir::my_home;
 use std::{collections::HashMap, path::PathBuf};
-
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub type ExtractArtifactsMap = HashMap<String, ExtractArtifactItem>;
@@ -37,7 +36,7 @@ impl ExtractArtifactItem {
 
 impl ExtractArtifacts {
     pub fn new() -> Self {
-        let tmp_cache_folder = Self::get_tmp_folder();
+        let tmp_cache_folder = get_config_dir(DEP_CACHE_FOLDER.clone());
         let tmp_cache = HashMap::new();
 
         Self {
@@ -49,10 +48,6 @@ impl ExtractArtifacts {
     #[allow(dead_code)]
     pub fn to_artifact(package: NpmPackage, extracted_at: PathBuf) -> ExtractArtifactItem {
         ExtractArtifactItem::new(package, extracted_at)
-    }
-
-    pub fn get_tmp_folder() -> PathBuf {
-        my_home().unwrap().unwrap().join(DEP_CACHE_FOLDER.clone())
     }
 
     pub fn add(&mut self, package: NpmPackage, unzip_at: PathBuf) {

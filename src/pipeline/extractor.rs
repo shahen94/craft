@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::{mpsc::Sender, Arc};
 
 use async_trait::async_trait;
@@ -5,6 +6,8 @@ use tokio::fs;
 use tokio::sync::Mutex;
 
 use super::artifacts::{ExtractArtifacts, StoredArtifact};
+use crate::cache::DEP_CACHE_FOLDER;
+use crate::fs::get_config_dir;
 use crate::pipeline::ResolvedItem;
 use crate::{
     contracts::{Phase, Pipe, PipeArtifact, ProgressAction},
@@ -16,7 +19,7 @@ use crate::{
 pub struct ExtractorPipe {
     packages: Vec<StoredArtifact>,
     artifacts: Arc<Mutex<ExtractArtifacts>>,
-
+    tmp_folder: PathBuf,
     tx: Sender<ProgressAction>,
 }
 
@@ -25,7 +28,10 @@ impl ExtractorPipe {
         artifacts: &dyn PipeArtifact<Vec<StoredArtifact>>,
         tx: Sender<ProgressAction>,
     ) -> Self {
+        let tmp_cache_folder = get_config_dir(DEP_CACHE_FOLDER.clone());
+
         Self {
+            tmp_folder: tmp_cache_folder,
             packages: artifacts.get_artifacts(),
             artifacts: Arc::new(Mutex::new(ExtractArtifacts::new())),
             tx,
@@ -68,8 +74,7 @@ impl ExtractorPipe {
     pub async fn unzip_archive(&self, artifact: &StoredArtifact) -> Result<(), ZipError> {
         let artifact_s = artifact.clone();
 
-        let tmp_folder = ExtractArtifacts::get_tmp_folder();
-
+        let tmp_folder = self.tmp_folder.clone();
         tokio::task::spawn_blocking(move || {
             let dest = tmp_folder.join(format!(
                 "{}-{}",
@@ -88,7 +93,7 @@ impl ExtractorPipe {
         .await
         .unwrap()?;
 
-        let extracted_at = ExtractArtifacts::get_tmp_folder().join(format!(
+        let extracted_at = self.tmp_folder.join(format!(
             "{}-{}",
             &artifact.package.name, &artifact.package.version
         ));

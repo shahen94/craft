@@ -7,7 +7,7 @@ use std::fmt::Display;
 /// This struct represents a package from the registry.
 ///
 /// It is used to deserialize the JSON response from the registry.
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct NpmPackage {
     pub name: String,
@@ -154,7 +154,7 @@ impl PartialEq for NpmPackage {
 /// This struct represents the distribution of a package.
 ///
 /// It is used to deserialize the JSON response from the registry.
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Default)]
 pub struct Distribution {
     pub integrity: Option<String>,
     pub shasum: String,

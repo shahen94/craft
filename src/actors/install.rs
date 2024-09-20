@@ -26,13 +26,42 @@ pub enum PackageType {
 }
 
 impl PackageType {
-    pub fn get_name(&self) -> String {
+    pub fn get_parts(&self) -> (String, String) {
+        fn split_name(key: &str) -> (String, String) {
+            let nums_of_ats = key.chars().filter(|c| *c == '@').count();
+            let is_scoped_package = key.starts_with("@");
+
+            // Normal case like is-even@1
+            if !is_scoped_package && nums_of_ats == 1 {
+                let parts = key.rsplitn(2, '@').collect::<Vec<_>>();
+                return (parts[1].to_string(), parts[0].to_string());
+            }
+
+            if is_scoped_package && nums_of_ats == 2 {
+                let parts = key.rsplitn(2, '@').collect::<Vec<_>>();
+                return (parts[1].to_string(), parts[0].to_string());
+            }
+
+            // Normal case like is-even => no version
+            if nums_of_ats == 0 {
+                return (key.to_string(), "*".to_string());
+            }
+
+            // Normal case like @babel/transform@1
+            if is_scoped_package && nums_of_ats == 1 {
+                // There is no version available
+                return (key.to_string(), "*".to_string());
+            }
+
+            // We can't have like 3 @s
+            panic!("Too many @s")
+        }
         match self {
-            PackageType::Dev(d) => d.to_string(),
-            PackageType::Optional(o) => o.to_string(),
-            PackageType::Prod(p) => p.to_string(),
-            PackageType::Peer(peer) => peer.to_string(),
-            PackageType::Global(g) => g.to_string(),
+            PackageType::Dev(d) => split_name(d),
+            PackageType::Optional(o) => split_name(o),
+            PackageType::Prod(p) => split_name(p),
+            PackageType::Peer(peer) => split_name(peer),
+            PackageType::Global(g) => split_name(g),
         }
     }
 }
@@ -123,5 +152,29 @@ impl Actor<PipeResult> for InstallActor {
         drop(tx);
         ui_thread.join().unwrap();
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::actors::PackageType;
+    use std::collections::HashMap;
+
+    #[test]
+    pub fn test_get_parts() {
+        let mut mappings = HashMap::new();
+        mappings.insert("@lodash/test@1", ("@lodash/test", "1"));
+        mappings.insert("@lodash/test", ("@lodash/test", "*"));
+        mappings.insert("is-even@~1", ("is-even", "~1"));
+        mappings.insert("is-even@~1.2.0", ("is-even", "~1.2.0"));
+        mappings.insert("is-even", ("is-even", "*"));
+
+        mappings.iter().for_each(|(k, v)| {
+            let pkg_type = PackageType::Dev(k.to_string());
+            let parts = pkg_type.get_parts();
+
+            assert_eq!(parts.0, v.0);
+            assert_eq!(parts.1, v.1);
+        })
     }
 }

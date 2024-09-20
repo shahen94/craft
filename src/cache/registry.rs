@@ -1,11 +1,10 @@
+use super::constants::REGISTRY_CACHE_FOLDER;
+use crate::fs::get_config_dir;
 use crate::{contracts::PersistentCache, errors::CacheError, package::NpmPackage};
 use async_trait::async_trait;
-use homedir::my_home;
 use nodejs_semver::{Range, Version};
 use std::fmt::Display;
 use std::{collections::HashMap, fs::File, io, path::PathBuf};
-
-use super::constants::REGISTRY_CACHE_FOLDER;
 
 //
 #[derive(Eq, Debug, Hash, PartialEq, Clone)]
@@ -122,12 +121,7 @@ impl RegistryCache {
 
 impl Default for RegistryCache {
     fn default() -> Self {
-        let directory = {
-            my_home()
-                .unwrap()
-                .unwrap()
-                .join(REGISTRY_CACHE_FOLDER.clone())
-        };
+        let directory = { get_config_dir(REGISTRY_CACHE_FOLDER.clone()) };
 
         Self {
             directory,
@@ -275,5 +269,97 @@ impl PersistentCache<NpmPackage> for RegistryCache {
                 .get(&key.name)
                 .unwrap()
                 .contains_key(&key.version)
+    }
+}
+
+#[cfg(test)]
+mod tests_registry {
+    use super::*;
+    use crate::cache::RegistryCache;
+    use crate::contracts::PersistentCache;
+    static UNKNOWN_PACKAGE: &str = "Test12323234234";
+
+    #[tokio::test]
+    async fn test_get_empty() {
+        let mut cache = RegistryCache::default();
+        let key = super::RegistryKey {
+            version: "1.0.0".to_string(),
+            name: "lodash".to_string(),
+        };
+        let retrieved_key = cache.get(&key).await;
+        assert_eq!(retrieved_key, None);
+    }
+
+    #[tokio::test]
+    async fn test_get_empty_head() {
+        let mut cache = RegistryCache::default();
+        let key = super::RegistryKey {
+            version: "^1.0.0".to_string(),
+            name: "lodash".to_string(),
+        };
+        let retrieved_key = cache.get(&key).await;
+        assert_eq!(retrieved_key, None);
+    }
+
+    #[tokio::test]
+    async fn test_get_empty_wildcard() {
+        let mut cache = RegistryCache::default();
+        let key = super::RegistryKey {
+            version: "*".to_string(),
+            name: "lodash".to_string(),
+        };
+        let retrieved_key = cache.get(&key).await;
+        assert_eq!(retrieved_key, None);
+    }
+
+    #[tokio::test]
+    async fn test_get_none_matching() {
+        let mut cache = RegistryCache::default();
+        let key = RegistryKey {
+            version: "1.0.0".to_string(),
+            name: UNKNOWN_PACKAGE.to_string(),
+        };
+        let inserted_key = RegistryKey {
+            version: "0.9.0".to_string(),
+            name: UNKNOWN_PACKAGE.to_string(),
+        };
+        let npm_package = NpmPackage { name: inserted_key.name.to_string(), version: inserted_key.version.to_string(), ..Default::default() };
+        cache.set(&inserted_key, npm_package).await;
+        let retrieved_key = cache.get(&key).await;
+        assert_eq!(retrieved_key, None);
+    }
+
+    #[tokio::test]
+    async fn test_get_none_matching_head() {
+        let mut cache = RegistryCache::default();
+        let key = RegistryKey {
+            version: "^1.0.0".to_string(),
+            name: UNKNOWN_PACKAGE.to_string(),
+        };
+        let inserted_key = RegistryKey {
+            version: "0.9.0".to_string(),
+            name: UNKNOWN_PACKAGE.to_string(),
+        };
+        let npm_package = NpmPackage { name: inserted_key.name.to_string(), version: inserted_key.version.to_string(), ..Default::default() };
+        cache.set(&inserted_key, npm_package).await;
+        let retrieved_key = cache.get(&key).await;
+        assert_eq!(retrieved_key, None);
+    }
+
+    #[tokio::test]
+    async fn test_get_none_matching_wildcard() {
+        let mut cache = RegistryCache::default();
+        let key = RegistryKey {
+            version: "*".to_string(),
+            name: UNKNOWN_PACKAGE.to_string(),
+        };
+        let inserted_key = RegistryKey {
+            version: "0.9.0".to_string(),
+            name: UNKNOWN_PACKAGE.to_string(),
+        };
+        let npm_package = NpmPackage { name: inserted_key.name.to_string(), version: inserted_key.version.to_string(), ..Default::default() };
+        cache.set(&inserted_key, npm_package).await;
+        let retrieved_key = cache.get(&key).await;
+        assert!(retrieved_key.is_some());
     }
 }

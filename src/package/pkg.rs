@@ -40,13 +40,12 @@ impl Package {
     }
 
     pub fn new(package: PackageType) -> Self {
-        let binding = package.get_name();
-        let parts = binding.rsplitn(2, '@').collect::<Vec<_>>();
+        let binding = package.get_parts();
 
         Self {
-            name: parts[1].to_string(),
+            name: binding.0,
             registry: Registry::Npm,
-            raw_version: parts[0].to_string(),
+            raw_version: binding.1,
             package_type: package,
         }
     }
