@@ -91,13 +91,6 @@ impl Default for PackagesCache {
 #[async_trait]
 impl PersistentCache<PathBuf> for PackagesCache {
     async fn init(&mut self) -> Result<(), CacheError> {
-        if !self.directory.exists() {
-            tokio::fs::create_dir_all(&self.directory)
-                .await
-                .map_err(CacheError::FileSystemError)?;
-
-            return Ok(());
-        }
 
         self.cache = Self::read_cache_directory(&self.directory).await?;
         self.downloaded_modules = Self::read_node_modules(&self.directory).await?;

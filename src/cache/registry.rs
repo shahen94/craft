@@ -107,7 +107,7 @@ impl RegistryCache {
         let cache_file = File::create(path_to_use);
 
         if cache_file.is_err() {
-            println!("ERror for key {}", key)
+            println!("Error for key {}", key)
         }
 
         let key_to_save = self.cache.get(&key.name).unwrap();
