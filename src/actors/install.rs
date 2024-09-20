@@ -15,7 +15,7 @@ use crate::{
     pipeline::{DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
     ui::UIProgress,
 };
-use crate::pipeline::BinaryLinkerPipeline;
+use crate::actors::PeerResolver::PeerResolver;
 
 #[derive(Debug, Clone)]
 pub enum PackageType {
@@ -106,6 +106,14 @@ impl Actor<PipeResult> for InstallActor {
             resolve_artifacts.0.get_artifacts().len()
         ));
 
+
+        // ─── Start Mutating ───────────────────────
+        let recorder = PeerResolver::new(resolve_artifacts.1)
+            .run()
+            .await?;
+
+
+
         // ─── Start Downloading ──────────────────────
 
         CraftLogger::verbose("Downloading dependencies");
@@ -117,6 +125,8 @@ impl Actor<PipeResult> for InstallActor {
             "Downloaded {:?}",
             download_artifacts.get_artifacts().len()
         ));
+
+
 
         // ─── Start Extracting ───────────────────────
 
@@ -137,12 +147,14 @@ impl Actor<PipeResult> for InstallActor {
             tx.clone(),
             resolve_artifacts.0.get_artifacts(),
             extracted_artifacts.get_artifacts(),
+            recorder.clone()
         )
         .run()
         .await?;
 
+
         // ─── Sync Lock File ────────────────────────
-        LockFileActor::new(resolve_artifacts.0.get_artifacts(), resolve_artifacts.1.clone())
+        LockFileActor::new(resolve_artifacts.0.get_artifacts(), recorder)
             .run()
             .expect("Error writing lockfile");
 
@@ -152,7 +164,6 @@ impl Actor<PipeResult> for InstallActor {
 
 
         // ─── Link binaries ────────────────────────────────
-        let bin_linker = BinaryLinkerPipeline::new(resolve_artifacts.1.main_packages);
 
 
         drop(tx);

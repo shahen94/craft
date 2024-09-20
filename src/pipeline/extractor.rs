@@ -15,6 +15,8 @@ use crate::{
     logger::CraftLogger,
     tar::Gzip,
 };
+use crate::package::{BinType, NpmPackage};
+use crate::pipeline::binary_templates::get_bash_script;
 
 pub struct ExtractorPipe {
     packages: Vec<StoredArtifact>,
@@ -57,7 +59,7 @@ impl ExtractorPipe {
             let dir_name = entry.file_name().to_str().unwrap().to_string();
             let meta = metadata(entry.path())
                 .map_err(|e| ExecutionError::JobExecutionFailed(e.to_string(), e.to_string()))?;
-            if !mapped_str.contains(&dir_name) && meta.is_dir() {
+            if !mapped_str.contains(&dir_name) && meta.is_dir() && dir_name != ".bin" {
                 fs::remove_dir_all(entry.path()).await.map_err(|e| {
                     ExecutionError::JobExecutionFailed(e.to_string(), e.to_string())
                 })?;

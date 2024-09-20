@@ -5,9 +5,10 @@ use async_trait::async_trait;
 use nodejs_semver::{Range, Version};
 use std::fmt::Display;
 use std::{collections::HashMap, fs::File, io, path::PathBuf};
+use serde::{Deserialize, Serialize};
 
 //
-#[derive(Eq, Debug, Hash, PartialEq, Clone)]
+#[derive(Eq, Debug, Hash, PartialEq, Clone, Serialize, Deserialize)]
 pub struct RegistryKey {
     pub name: String,
     pub version: String,

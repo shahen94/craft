@@ -15,3 +15,4 @@ pub use package_recorder::PackageRecorder;
 pub use pkg::Package;
 pub use npm_package::BinType;
 pub use package_recorder::PackageMetaRecorder;
+pub use package_recorder::ResolvedBinary;

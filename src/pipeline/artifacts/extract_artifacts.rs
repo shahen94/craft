@@ -51,13 +51,11 @@ impl ExtractArtifacts {
     }
 
     pub fn add(&mut self, package: NpmPackage, unzip_at: PathBuf) {
-        let name = format!("{}@{}", package.name.clone(), package.version.clone());
         let item = ExtractArtifactItem::new(package.clone(), unzip_at);
 
-        self.tmp_cache.insert(name, item);
+        self.tmp_cache.insert(package.to_string(), item);
     }
 
-    #[cfg(test)]
     pub fn get(&self, package_name: &str) -> Option<&ExtractArtifactItem> {
         self.tmp_cache.get(package_name)
     }

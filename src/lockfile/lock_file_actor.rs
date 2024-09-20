@@ -177,13 +177,13 @@ impl LockFileActor {
         let mut hashmap: HashMap<String, PackageMetaHandler> = HashMap::new();
 
         self.recorder.main_packages.iter().for_each(|p| {
-            let pm_handler: PackageMetaHandler = p.clone().into();
-            hashmap.insert(p.to_string(), pm_handler);
+            let pm_handler: PackageMetaHandler = p.1.clone().into();
+            hashmap.insert(p.0.to_string(), pm_handler);
         });
 
         self.recorder.sub_dependencies.iter().for_each(|p| {
-            let pm_handler: PackageMetaHandler = p.clone().into();
-            hashmap.insert(p.to_string(), pm_handler);
+            let pm_handler: PackageMetaHandler = p.1.clone().into();
+            hashmap.insert(p.0.to_string(), pm_handler);
         });
 
         lockfile_structure.packages = Some(hashmap)
