@@ -29,9 +29,11 @@ pub struct NpmPackage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bugs: Option<Bugs>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub license: Option<String>,
+    pub licenses: Option<Vec<License>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub funding: Option<LicenseType>,
+    pub license: Option<LicenseType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub funding: Option<FundingType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub files: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -57,7 +59,7 @@ pub struct NpmPackage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub overrides: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub engines: Option<HashMap<String, String>>,
+    pub engines: Option<EnginesType>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -67,6 +69,27 @@ pub struct NpmPackage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workspaces: Option<Vec<String>>,
     pub dist: Distribution,
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum EnginesType {
+    EngineMap(HashMap<String, String>),
+    Engine(Vec<String>),
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum FundingType {
+    Funding(Funding),
+    FundingVec(Vec<Funding>),
+    String(String),
+}
+
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct Funding {
+    r#type: Option<String>,
+    url: Option<String>,
 }
 
 #[derive(Clone, Default, Serialize, Deserialize, Debug)]

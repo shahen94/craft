@@ -21,13 +21,11 @@ pub const PACKAGES: &str = "packages";
 pub const RESOLUTION: &str = "resolution";
 pub const ENGINES: &str = "engines";
 
-
 pub const OPTIONAL: &str = "optional";
 pub const OS: &str = "os";
 pub const CPU: &str = "cpu";
 
 pub const HAS_BIN: &str = "hasBin";
-
 
 // snapshots
 pub const SNAPSHOTS: &str = "snapshots";

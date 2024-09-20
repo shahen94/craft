@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use crate::actors::PackageType;
 use crate::cache::{RegistryCache, RegistryKey};
 use crate::contracts::{PersistentCache, Phase, Pipe, ProgressAction, Registry};
@@ -12,6 +11,7 @@ use async_trait::async_trait;
 use futures::future;
 use futures::future::join_all;
 use futures::lock::Mutex;
+use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 
@@ -116,15 +116,15 @@ impl ResolverPipe<RegistryCache> {
                     package_recorder.main_packages.push(package.clone().into());
                 }
                 Some(ref parents) => {
-                    package_recorder.main_packages.iter_mut().for_each(|p|{
+                    package_recorder.main_packages.iter_mut().for_each(|p| {
                         if let Some(parent) = parents.last() {
                             if parent.name == p.name && p.version == parent.version {
                                 match &mut p.resolved_dependencies {
-                                    Some(p)=>{
+                                    Some(p) => {
                                         let final_key = final_key.clone();
                                         p.insert(final_key.name, final_key.version);
-                                    },
-                                    None=>{
+                                    }
+                                    None => {
                                         let final_key = final_key.clone();
                                         let mut map = HashMap::new();
                                         map.insert(final_key.name, final_key.version);
@@ -135,15 +135,15 @@ impl ResolverPipe<RegistryCache> {
                         }
                     });
 
-                    package_recorder.sub_dependencies.iter_mut().for_each(|p|{
+                    package_recorder.sub_dependencies.iter_mut().for_each(|p| {
                         if let Some(parent) = parents.last() {
                             if parent.name == p.name && p.version == parent.version {
                                 match &mut p.resolved_dependencies {
-                                    Some(p)=>{
+                                    Some(p) => {
                                         let final_key = final_key.clone();
                                         p.insert(final_key.name, final_key.version);
-                                    },
-                                    None=>{
+                                    }
+                                    None => {
                                         let final_key = final_key.clone();
                                         let mut map = HashMap::new();
                                         map.insert(final_key.name, final_key.version);
@@ -153,7 +153,6 @@ impl ResolverPipe<RegistryCache> {
                             }
                         }
                     });
-
 
                     package_recorder
                         .sub_dependencies
@@ -190,9 +189,16 @@ impl ResolverPipe<RegistryCache> {
         let results: Vec<_> = future::join_all(jobs).await;
         // Iterate over the results
         for result in results.into_iter() {
-            let jh_handle = result.unwrap();
-            if let Err(e) = jh_handle {
-                log::error!("Error is {}", e.to_string())
+            let jh_handle = result;
+            match jh_handle {
+                Ok(jh_handle) => {
+                    if let Err(e) = jh_handle {
+                        log::error!("Error is {}", e.to_string())
+                    }
+                }
+                Err(e) => {
+                    log::error!("{}", e)
+                }
             }
         }
 

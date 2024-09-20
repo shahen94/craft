@@ -1,5 +1,10 @@
-use crate::lockfile::constants::{AUTO_INSTALL_PEERS, CPU, DEPENDENCIES, DEV_DEPENDENCIES, ENGINES, EXCLUDE_LINKS_FROM_LOCKFILE, HAS_BIN, LOCKFILE_VERSION, OPTIONAL, OPT_DEPENDENCIES, OS, PACKAGES, PEER_DEPENDENCIES, PEER_DEPENDENCIES_META, PEER_SUFFIX_MAX_LENGTH, RESOLUTION, SETTINGS, SNAPSHOTS, SPECIFIER, VERSION};
-use crate::package::{PackageMetaHandler, PackageRecorder};
+use crate::lockfile::constants::{
+    AUTO_INSTALL_PEERS, CPU, DEPENDENCIES, DEV_DEPENDENCIES, ENGINES, EXCLUDE_LINKS_FROM_LOCKFILE,
+    HAS_BIN, LOCKFILE_VERSION, OPTIONAL, OPT_DEPENDENCIES, OS, PACKAGES, PEER_DEPENDENCIES,
+    PEER_DEPENDENCIES_META, PEER_SUFFIX_MAX_LENGTH, RESOLUTION, SETTINGS, SNAPSHOTS, SPECIFIER,
+    VERSION,
+};
+use crate::package::{EnginesType, PackageMetaHandler};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 
@@ -148,7 +153,7 @@ pub struct LockfileStructure {
 }
 
 impl LockfileStructure {
-    const ESCAPE_CHARS: [char; 3] = ['@', '<', '>'];
+    const ESCAPE_CHARS: [char; 4] = ['@', '<', '>', '*'];
 
     fn starts_with_illegal_character(str: &str) -> bool {
         if let Some(c) = str.chars().next() {
@@ -281,14 +286,22 @@ impl LockfileStructure {
         importers_serialized
     }
 
-    fn format_package(packages_serialized: &mut String, p: (&&String, &&PackageMetaHandler), index: i32, snapshot: bool) {
+    fn format_package(
+        packages_serialized: &mut String,
+        p: (&&String, &&PackageMetaHandler),
+        index: i32,
+        snapshot: bool,
+    ) {
         packages_serialized.push('\n');
-        if snapshot && p.1.dependencies.is_none() && p.1.peer_dependencies.is_none() {
+        if snapshot
+            && p.1.dependencies.is_none()
+            && p.1.peer_dependencies.is_none()
+            && p.1.has_bin.is_none()
+        {
             packages_serialized.push_str(&Self::format_line(p.0, Some("{}"), index));
         } else {
             packages_serialized.push_str(&Self::format_line(p.0, None, index));
         }
-
 
         if !snapshot {
             if let Some(res) = &p.1.resolution {
@@ -301,27 +314,17 @@ impl LockfileStructure {
             }
         }
 
-
         if snapshot {
             if let Some(deps) = &p.1.resolved_dependencies {
-                packages_serialized.push_str(&Self::format_line(
-                    DEPENDENCIES,
-                    None,
-                    index + 1,
-                ));
+                packages_serialized.push_str(&Self::format_line(DEPENDENCIES, None, index + 1));
                 deps.iter().for_each(|(k, v)| {
                     packages_serialized.push_str(&Self::format_line(k, Some(v), index + 2));
                 })
             }
         }
 
-
         if let Some(peer) = &p.1.peer_dependencies {
-            packages_serialized.push_str(&Self::format_line(
-                PEER_DEPENDENCIES,
-                None,
-                index + 1,
-            ));
+            packages_serialized.push_str(&Self::format_line(PEER_DEPENDENCIES, None, index + 1));
             peer.iter().for_each(|(k, v)| {
                 packages_serialized.push_str(&Self::format_line(k, Some(v), index + 2));
             })
@@ -336,55 +339,84 @@ impl LockfileStructure {
             peer_meta.iter().for_each(|(k, v)| {
                 packages_serialized.push_str(&Self::format_line(k, None, index + 2));
                 if let Some(opt) = v.optional {
-                    packages_serialized.push_str(&Self::format_line(OPTIONAL, Some(&opt.to_string()), index + 3));
+                    packages_serialized.push_str(&Self::format_line(
+                        OPTIONAL,
+                        Some(&opt.to_string()),
+                        index + 3,
+                    ));
                 }
             })
         }
 
         if !snapshot {
             if let Some(engines) = &p.1.engines {
-                match engines.len() == 1 {
-                    true => {
-                        let engine_val = engines.iter().next().unwrap();
-                        let node = format!(
-                            "{{{}: {}}}",
-                            engine_val.0,
-                            Self::format_string(engine_val.1)
-                        );
+                match engines {
+                    EnginesType::EngineMap(engines) => match engines.len() == 1 {
+                        true => {
+                            let engine_val = engines.iter().next().unwrap();
+                            let node = format!(
+                                "{{{}: {}}}",
+                                engine_val.0,
+                                Self::format_string(engine_val.1)
+                            );
+                            packages_serialized.push_str(&Self::format_line(
+                                ENGINES,
+                                Some(&node),
+                                index + 1,
+                            ));
+                        }
+                        false => {
+                            packages_serialized.push_str(&Self::format_line(
+                                ENGINES,
+                                None,
+                                index + 1,
+                            ));
+
+                            engines.iter().for_each(|e| {
+                                packages_serialized.push_str(&Self::format_line(
+                                    e.0,
+                                    Some(e.1),
+                                    index + 2,
+                                ))
+                            })
+                        }
+                    },
+                    EnginesType::Engine(e) => {
+                        let engines = Self::format_inline_vector(e);
                         packages_serialized.push_str(&Self::format_line(
                             ENGINES,
-                            Some(&node),
+                            Some(&engines),
                             index + 1,
                         ));
-                    }
-                    false => {
-                        packages_serialized.push_str(&Self::format_line(ENGINES, None, index + 1));
-
-                        engines.iter().for_each(|e| {
-                            packages_serialized.push_str(&Self::format_line(
-                                e.0,
-                                Some(e.1),
-                                index + 2,
-                            ))
-                        })
                     }
                 }
             }
         }
 
         if let Some(cpu) = &p.1.cpu {
-            packages_serialized.push_str(&Self::format_line(CPU, Some(&Self::format_inline_vector(cpu)), index + 1));
+            packages_serialized.push_str(&Self::format_line(
+                CPU,
+                Some(&Self::format_inline_vector(cpu)),
+                index + 1,
+            ));
         }
 
         if let Some(os) = &p.1.os {
-            packages_serialized.push_str(&Self::format_line(OS, Some(&Self::format_inline_vector(os)), index + 1));
+            packages_serialized.push_str(&Self::format_line(
+                OS,
+                Some(&Self::format_inline_vector(os)),
+                index + 1,
+            ));
         }
 
         if let Some(bin) = &p.1.has_bin {
-            packages_serialized.push_str(&Self::format_line(HAS_BIN, Some(&bin.to_string()), index + 1));
+            packages_serialized.push_str(&Self::format_line(
+                HAS_BIN,
+                Some(&bin.to_string()),
+                index + 1,
+            ));
         }
     }
-
 
     fn format_packages(&self) -> String {
         let mut packages_serialized = format!("{}:\n", PACKAGES);
@@ -392,16 +424,14 @@ impl LockfileStructure {
         let packages = self.packages.clone().unwrap();
         let packages: BTreeMap<_, _> = packages.iter().collect();
         let index = 1;
-        packages.iter().for_each(|p| {
-            Self::format_package(&mut packages_serialized, p, index, false)
-        });
+        packages
+            .iter()
+            .for_each(|p| Self::format_package(&mut packages_serialized, p, index, false));
 
         packages_serialized
     }
 
-
-    fn format_inline_vector(vec: &Vec<String>) -> String
-    {
+    fn format_inline_vector(vec: &[String]) -> String {
         format!("[{}]", vec.join(", "))
     }
 
@@ -412,9 +442,9 @@ impl LockfileStructure {
         let packages = self.packages.clone().unwrap();
         let packages: BTreeMap<_, _> = packages.iter().collect();
         let index = 1;
-        packages.iter().for_each(|p| {
-            Self::format_package(&mut packages_serialized, p, index, true)
-        });
+        packages
+            .iter()
+            .for_each(|p| Self::format_package(&mut packages_serialized, p, index, true));
 
         packages_serialized
     }

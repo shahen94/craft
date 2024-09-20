@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::actors::PackageType;
-use crate::{contracts::PipeArtifact, package::NpmPackage};
 use crate::cache::RegistryKey;
+use crate::{contracts::PipeArtifact, package::NpmPackage};
 // --------------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]

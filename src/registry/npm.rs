@@ -36,9 +36,7 @@ impl NpmRegistry {
             Ok(pkg) => pkg,
             Err(e) => {
                 println!("Error: {:?}", e);
-                return Err(NetworkError::FailedToFetchVersion(
-                    package.raw_version.clone(),
-                ));
+                return Err(NetworkError::FailedToFetchVersion(url));
             }
         };
 

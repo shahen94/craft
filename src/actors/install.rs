@@ -143,7 +143,7 @@ impl Actor<PipeResult> for InstallActor {
         // ─── Sync Lock File ────────────────────────
         LockFileActor::new(resolve_artifacts.0.get_artifacts(), resolve_artifacts.1)
             .run()
-            .unwrap();
+            .expect("Error writing lockfile");
 
         // ─── Cleanup ────────────────────────────────
 

@@ -8,6 +8,7 @@ mod registry;
 
 pub use full_package::FullPackage;
 pub use json::PackageJson;
+pub use npm_package::EnginesType;
 pub use npm_package::NpmPackage;
 pub use package_recorder::PackageMetaHandler;
 pub use package_recorder::PackageRecorder;
