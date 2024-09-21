@@ -1,4 +1,4 @@
-use crate::actors::{PackageType, PreprocessDependencyInstall, RunActor};
+use crate::actors::{ExecActor, PackageType, PreprocessDependencyInstall, RunActor};
 use crate::command::ProgramDesire;
 use crate::contracts::Logger;
 use crate::logger::CraftLogger;
@@ -95,6 +95,13 @@ impl Program {
                         r.script
                     )))
                 }
+            }
+            SubCommand::Exec(e) => {
+                CraftLogger::info(format!("Running command: {}", e.command));
+                CraftLogger::info(format!("Args: {:?}", e.args));
+                ExecActor::new(e.command, e.args).start().await?;
+
+                Ok(())
             }
         }
     }

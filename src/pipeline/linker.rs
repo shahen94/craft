@@ -10,7 +10,7 @@ use crate::{
     fs::copy_dir,
     logger::CraftLogger,
 };
-use path_clean::{clean, PathClean};
+use path_clean::{clean};
 
 use crate::package::{BinType, PackageRecorder, ResolvedBinary};
 use crate::pipeline::binary_templates::{get_bash_script, get_cmd_script, get_pwsh_script};

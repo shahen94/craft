@@ -1,7 +1,6 @@
-use std::sync::mpsc::Sender;
 use async_trait::async_trait;
 use crate::cache::RegistryKey;
-use crate::contracts::{Pipe, PipeArtifact};
+use crate::contracts::{Pipe};
 use crate::errors::ExecutionError;
 use crate::package::{BinType, PackageMetaRecorder, PackageRecorder, ResolvedBinary};
 
@@ -87,7 +86,7 @@ impl Pipe<PackageRecorder> for PeerResolver {
        self.recorder.sub_dependencies.clone().iter().for_each(|outer_dep|{
            if let Some(mut deps) = outer_dep.1.depth_traces.clone() {
                // Iterate over the traces
-                deps.iter_mut().for_each(|mut d|{
+                deps.iter_mut().for_each(|d|{
                      d.reverse();
                     for (i, parent_of_outer_dep) in d.iter().enumerate() {
                         // This is a direct parent

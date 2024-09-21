@@ -15,8 +15,6 @@ use crate::{
     logger::CraftLogger,
     tar::Gzip,
 };
-use crate::package::{BinType, NpmPackage};
-use crate::pipeline::binary_templates::get_bash_script;
 
 pub struct ExtractorPipe {
     packages: Vec<StoredArtifact>,

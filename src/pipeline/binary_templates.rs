@@ -1,6 +1,4 @@
-use std::fmt::format;
 use std::path::PathBuf;
-use crate::package::PackageJson;
 
 /// Get the bash script for the chosen binary
 /// node_path: The path of the node modules
@@ -117,5 +115,5 @@ if (Test-Path "$basedir/node$exe") {{
 }}
 $env:NODE_PATH=$env_node_path
 exit $ret
-    ""#))
+    "#))
 }

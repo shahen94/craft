@@ -15,7 +15,7 @@ use crate::{
     pipeline::{DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
     ui::UIProgress,
 };
-use crate::actors::PeerResolver::PeerResolver;
+use crate::actors::peer_resolver::PeerResolver;
 
 #[derive(Debug, Clone)]
 pub enum PackageType {
