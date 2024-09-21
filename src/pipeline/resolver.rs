@@ -11,7 +11,6 @@ use async_trait::async_trait;
 use futures::future;
 use futures::future::join_all;
 use futures::lock::Mutex;
-use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 
@@ -114,7 +113,7 @@ impl ResolverPipe<RegistryCache> {
             match parent {
                 None => {
                     // This is okay as we only insert the same version
-                    if package_recorder.main_packages.get(&final_key).is_none() {
+                    if !package_recorder.main_packages.contains_key(&final_key) {
                         package_recorder.main_packages.insert(final_key.clone(), package.clone().into());
                     }
 

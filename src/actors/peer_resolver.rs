@@ -32,7 +32,7 @@ impl PeerResolver {
                 Some(b) => {
                     match bin {
                         BinType::Bin(s) => {
-                            let splitted_name = s.rsplitn(2, '/').next().unwrap().replace(".js", "");
+                            let splitted_name = s.rsplit('/').next().unwrap().replace(".js", "");
                             b.push(ResolvedBinary{
                                 name: splitted_name,
                                 path: format!("{}/{}", outer_dep.1.name, s),
@@ -53,7 +53,7 @@ impl PeerResolver {
                 None => {
                     match bin {
                         BinType::Bin(s) => {
-                            let splitted_name = s.rsplitn(2, '/').next().unwrap().replace("\
+                            let splitted_name = s.rsplit('/').next().unwrap().replace("\
                                 .js", "");
                             let vec = vec![ResolvedBinary{
                                 name: splitted_name,
