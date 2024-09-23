@@ -11,7 +11,6 @@ use async_trait::async_trait;
 use futures::future;
 use futures::future::join_all;
 use futures::lock::Mutex;
-use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 
@@ -104,7 +103,7 @@ impl ResolverPipe<RegistryCache> {
             }
         }
 
-        let package = {
+        let mut package = {
             let mut cache = cache_arc.lock().await;
             cache.get(&final_key).await.clone().unwrap()
         };
@@ -113,50 +112,38 @@ impl ResolverPipe<RegistryCache> {
             let mut package_recorder = package_recorder.lock().await;
             match parent {
                 None => {
-                    package_recorder.main_packages.push(package.clone().into());
+                    // This is okay as we only insert the same version
+                    if !package_recorder.main_packages.contains_key(&final_key) {
+                        package_recorder.main_packages.insert(final_key.clone(), package.clone().into());
+                    }
+
+                    // Else can be skipped because we won't update the parent as a consequence
+
                 }
                 Some(ref parents) => {
-                    package_recorder.main_packages.iter_mut().for_each(|p| {
-                        if let Some(parent) = parents.last() {
-                            if parent.name == p.name && p.version == parent.version {
-                                match &mut p.resolved_dependencies {
-                                    Some(p) => {
-                                        let final_key = final_key.clone();
-                                        p.insert(final_key.name, final_key.version);
-                                    }
-                                    None => {
-                                        let final_key = final_key.clone();
-                                        let mut map = HashMap::new();
-                                        map.insert(final_key.name, final_key.version);
-                                        p.resolved_dependencies = Some(map);
-                                    }
+                    // It can be that multiple dependencies have this as a sub dependency
+                    match package_recorder.sub_dependencies.get_mut(&final_key) {
+                        None => {
+                            package.depth_traces = Some(vec![parents.clone()]);
+
+                            package_recorder
+                                .sub_dependencies
+                                .insert(final_key.clone(), package.clone().into());
+                        }
+                        Some(p) => {
+                            match p.depth_traces {
+                                None => {
+                                    p.depth_traces = Some(vec![parents.clone()]);
+                                }
+                                Some(ref mut d) => {
+                                    d.push(parents.clone());
                                 }
                             }
                         }
-                    });
-
-                    package_recorder.sub_dependencies.iter_mut().for_each(|p| {
-                        if let Some(parent) = parents.last() {
-                            if parent.name == p.name && p.version == parent.version {
-                                match &mut p.resolved_dependencies {
-                                    Some(p) => {
-                                        let final_key = final_key.clone();
-                                        p.insert(final_key.name, final_key.version);
-                                    }
-                                    None => {
-                                        let final_key = final_key.clone();
-                                        let mut map = HashMap::new();
-                                        map.insert(final_key.name, final_key.version);
-                                        p.resolved_dependencies = Some(map);
-                                    }
-                                }
-                            }
-                        }
-                    });
-
+                    }
                     package_recorder
                         .sub_dependencies
-                        .push(package.clone().into());
+                        .insert(package.clone().into(),package.clone().into());
                 }
             }
         }

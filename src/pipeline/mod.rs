@@ -4,6 +4,7 @@ mod downloader;
 mod extractor;
 mod linker;
 mod resolver;
+pub mod binary_templates;
 
 pub use resolver::ResolverPipe;
 

@@ -69,6 +69,8 @@ pub struct NpmPackage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub workspaces: Option<Vec<String>>,
     pub dist: Distribution,
+    #[serde(skip_serializing)]
+    pub depth_traces: Option<Vec<Vec<RegistryKey>>>
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -108,6 +110,8 @@ impl From<NpmPackage> for PackageMetaRecorder {
             cpu: val.cpu,
             engines: val.engines,
             os: val.os,
+            bin: val.bin.clone(),
+            depth_traces: val.depth_traces,
             ..Default::default()
         };
 
