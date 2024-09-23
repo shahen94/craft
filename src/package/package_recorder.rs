@@ -1,11 +1,11 @@
+use crate::cache::{RegistryKey, DEP_CACHE_FOLDER};
+use crate::fs::get_config_dir;
 use crate::package::npm_package::{EnginesType, PeerDependencyMeta};
+use crate::package::BinType;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-use crate::cache::{RegistryKey, DEP_CACHE_FOLDER};
-use crate::fs::get_config_dir;
-use crate::package::BinType;
 
 #[derive(Clone, Default, Debug)]
 pub struct PackageMetaRecorder {
@@ -23,8 +23,6 @@ pub struct PackageMetaRecorder {
     pub bin: Option<BinType>,
     pub depth_traces: Option<Vec<Vec<RegistryKey>>>,
     pub resolved_binaries: Option<Vec<ResolvedBinary>>,
-    // This involves transitive dependencies
-    pub resolved_peer_dependencies: Option<HashMap<String, String>>,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
@@ -41,7 +39,6 @@ impl PackageMetaRecorder {
             .join("package")
     }
 }
-
 
 impl Display for PackageMetaRecorder {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -62,9 +59,6 @@ impl From<PackageMetaRecorder> for PackageMetaHandler {
             dependencies: val.dependencies,
             resolved_dependencies: val.resolved_dependencies,
             bin: val.bin,
-            depth_traces: val.depth_traces,
-            resolved_binaries: val.resolved_binaries,
-            resolved_peer_dependencies: val.resolved_peer_dependencies
         }
     }
 }
@@ -90,14 +84,8 @@ pub struct PackageMetaHandler {
     pub dependencies: Option<HashMap<String, String>>,
     #[serde(skip_serializing)]
     pub resolved_dependencies: Option<HashMap<String, String>>,
-    #[serde(skip_serializing)]
-    pub resolved_peer_dependencies: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bin: Option<BinType>,
-    #[serde(skip_serializing)]
-    pub resolved_binaries: Option<Vec<ResolvedBinary>>,
-    #[serde(skip_serializing)]
-    pub depth_traces: Option<Vec<Vec<RegistryKey>>>
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
@@ -107,6 +95,6 @@ pub struct PackageResolution {
 
 #[derive(Clone, Default, Debug)]
 pub struct PackageRecorder {
-    pub main_packages: HashMap<RegistryKey,PackageMetaRecorder>,
-    pub sub_dependencies: HashMap<RegistryKey,PackageMetaRecorder>,
+    pub main_packages: HashMap<RegistryKey, PackageMetaRecorder>,
+    pub sub_dependencies: HashMap<RegistryKey, PackageMetaRecorder>,
 }

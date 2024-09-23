@@ -70,7 +70,7 @@ pub struct NpmPackage {
     pub workspaces: Option<Vec<String>>,
     pub dist: Distribution,
     #[serde(skip_serializing)]
-    pub depth_traces: Option<Vec<Vec<RegistryKey>>>
+    pub depth_traces: Option<Vec<Vec<RegistryKey>>>,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

@@ -10,7 +10,7 @@ use crate::{
     fs::copy_dir,
     logger::CraftLogger,
 };
-use path_clean::{clean};
+use path_clean::clean;
 
 use crate::package::{BinType, PackageRecorder, ResolvedBinary};
 use crate::pipeline::binary_templates::{get_bash_script, get_cmd_script, get_pwsh_script};
@@ -21,7 +21,7 @@ pub struct LinkerPipe {
     tx: Sender<ProgressAction>,
     resolved: Vec<ResolvedItem>,
     extracted: ExtractArtifactsMap,
-    recorder: PackageRecorder
+    recorder: PackageRecorder,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -43,7 +43,7 @@ impl LinkerPipe {
             tx,
             resolved,
             extracted,
-            recorder
+            recorder,
         }
     }
 
@@ -108,9 +108,12 @@ impl LinkerPipe {
         if fs::metadata(bin_dir_to_create).is_err() {
             let result = fs::create_dir(bin_dir_to_create);
             if let Err(e) = result {
-                log::error!("Failed to create directory: {}", bin_dir_to_create.display());
+                log::error!(
+                    "Failed to create directory: {}",
+                    bin_dir_to_create.display()
+                );
                 log::error!("Error: {}", e);
-                return
+                return;
             }
         }
         if fs::metadata(bin_dir_to_create.join(&rb.name)).is_err() {
@@ -120,20 +123,22 @@ impl LinkerPipe {
                 abs_path = env::current_dir().unwrap().join(abs_path);
             }
 
-
             let result = fs::write(
                 bin_dir_to_create.join(&rb.name),
-                get_bash_script(vec![abs_path.display().to_string()], &rb
-                    .package_name, &rb.path),
+                get_bash_script(
+                    vec![abs_path.display().to_string()],
+                    &rb.package_name,
+                    &rb.path,
+                ),
             );
             if let Err(e) = result {
                 log::error!("Failed to write file: {}", bin_dir_to_create.display());
                 log::error!("Error: {}", e);
-                return
+                return;
             }
         }
 
-        if fs::metadata(bin_dir_to_create.join(format!("{}.CMD",rb.name))).is_err() {
+        if fs::metadata(bin_dir_to_create.join(format!("{}.CMD", rb.name))).is_err() {
             let mut abs_path = clean(bin_dir_to_create.join(".."));
 
             if !abs_path.is_absolute() {
@@ -141,18 +146,21 @@ impl LinkerPipe {
             }
 
             let result = fs::write(
-                bin_dir_to_create.join(format!("{}.CMD",rb.name)),
-                get_cmd_script(vec![abs_path.display().to_string()], &rb
-                    .package_name, &rb.path),
+                bin_dir_to_create.join(format!("{}.CMD", rb.name)),
+                get_cmd_script(
+                    vec![abs_path.display().to_string()],
+                    &rb.package_name,
+                    &rb.path,
+                ),
             );
             if let Err(e) = result {
                 log::error!("Failed to write file: {}", bin_dir_to_create.display());
                 log::error!("Error: {}", e);
-                return
+                return;
             }
         }
 
-        if fs::metadata(bin_dir_to_create.join(format!("{}.ps1",rb.name))).is_err() {
+        if fs::metadata(bin_dir_to_create.join(format!("{}.ps1", rb.name))).is_err() {
             let mut abs_path = clean(bin_dir_to_create.join(".."));
 
             if !abs_path.is_absolute() {
@@ -160,25 +168,29 @@ impl LinkerPipe {
             }
 
             let result = fs::write(
-                bin_dir_to_create.join(format!("{}.ps1",rb.name)),
-                get_pwsh_script(vec![abs_path.display().to_string()], &rb
-                    .package_name, &rb.path),
+                bin_dir_to_create.join(format!("{}.ps1", rb.name)),
+                get_pwsh_script(
+                    vec![abs_path.display().to_string()],
+                    &rb.package_name,
+                    &rb.path,
+                ),
             );
             if let Err(e) = result {
                 log::error!("Failed to write file: {}", bin_dir_to_create.display());
                 log::error!("Error: {}", e);
             }
         }
-
-
     }
 
     async fn link_binaries(&self) {
-        self.recorder.main_packages.iter().for_each(|p|{
+        self.recorder.main_packages.iter().for_each(|p| {
             if let Some(r_opt) = &p.1.resolved_binaries {
-                let path_to_bin = p.1.resolve_path_to_package().join("node_modules").join(".bin");
+                let path_to_bin =
+                    p.1.resolve_path_to_package()
+                        .join("node_modules")
+                        .join(".bin");
                 for r in r_opt {
-                    log::info!("{:?}",p.1.resolve_path_to_package());
+                    log::info!("{:?}", p.1.resolve_path_to_package());
                     Self::prepare_bin_dir(&path_to_bin, r);
                 }
             }
@@ -187,19 +199,19 @@ impl LinkerPipe {
                 match bin {
                     BinType::Bin(s) => {
                         let path_to_bin = PathBuf::from("node_modules").join(".bin");
-                        let resolved_binary = ResolvedBinary{
+                        let resolved_binary = ResolvedBinary {
                             name: s.rsplit('/').next().unwrap().replace(".js", ""),
                             path: s.clone(),
-                            package_name: p.1.name.clone()
+                            package_name: p.1.name.clone(),
                         };
                         Self::prepare_bin_dir(&path_to_bin, &resolved_binary);
                     }
                     BinType::BinMappings(a) => {
                         a.iter().for_each(|s| {
-                            let resolved_binary = ResolvedBinary{
+                            let resolved_binary = ResolvedBinary {
                                 name: s.0.to_string(),
                                 path: s.1.clone(),
-                                package_name: p.1.name.clone()
+                                package_name: p.1.name.clone(),
                             };
                             let path_to_bin = PathBuf::from("node_modules").join(".bin");
                             Self::prepare_bin_dir(&path_to_bin, &resolved_binary);
@@ -207,8 +219,6 @@ impl LinkerPipe {
                     }
                 }
             }
-
-
         })
     }
 }

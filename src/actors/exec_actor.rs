@@ -1,10 +1,10 @@
-use std::env;
-use std::path::PathBuf;
-use std::process::{Command, Stdio};
-use async_trait::async_trait;
 use crate::actors::install::PipeResult;
 use crate::contracts::Actor;
 use crate::errors::ExecutionError;
+use async_trait::async_trait;
+use std::env;
+use std::path::PathBuf;
+use std::process::{Command, Stdio};
 
 pub struct ExecActor {
     pub script: String,
@@ -22,7 +22,6 @@ pub enum ScriptType {
     Cmd,
     Pwsh,
 }
-
 
 impl ScriptType {
     pub fn get_script_ending(&self) -> String {
@@ -53,26 +52,25 @@ fn find_file_to_execute(script: &str, path_to_scan: &PathBuf) -> Option<(ScriptT
 
     let bin_dir = std::fs::read_dir(path_to_scan).unwrap();
 
-    for entry in bin_dir {
-        if let Ok(entry) = entry {
-            let path_to_file = entry.path();
-            let file_name = entry.file_name();
-            if let Some(file_name) = file_name.to_str() {
-                if file_name_to_find == file_name && entry.metadata().unwrap().is_file() {
-                    return Some((file_ending, path_to_file));
-                }
+    for entry in bin_dir.flatten() {
+        let path_to_file = entry.path();
+        let file_name = entry.file_name();
+        if let Some(file_name) = file_name.to_str() {
+            if file_name_to_find == file_name && entry.metadata().unwrap().is_file() {
+                return Some((file_ending, path_to_file));
             }
         }
     }
     None
 }
 
-
 fn get_possible_script_paths() -> Vec<PathBuf> {
     let mut paths = vec![];
 
-    let bin_path = env::current_dir().unwrap().join("node_modules").join("\
-        .bin");
+    let bin_path = env::current_dir().unwrap().join("node_modules").join(
+        "\
+        .bin",
+    );
     let bin_dir = std::fs::metadata(&bin_path);
 
     if bin_dir.is_ok() {
@@ -105,22 +103,25 @@ impl Actor<PipeResult> for ExecActor {
         match shell {
             ScriptType::Bash => {
                 command_to_execute = Command::new("sh");
-                command_to_execute.arg("-c")
+                command_to_execute
+                    .arg("-c")
                     .stdout(Stdio::inherit())
                     .current_dir(exec_path)
                     .stderr(Stdio::inherit())
                     .arg(script);
             }
             ScriptType::Cmd => {
-                command_to_execute =  Command::new("cmd");
-                command_to_execute.args(["/C", script.to_str().unwrap()])
+                command_to_execute = Command::new("cmd");
+                command_to_execute
+                    .args(["/C", script.to_str().unwrap()])
                     .current_dir(exec_path)
                     .stdout(Stdio::inherit())
                     .stderr(Stdio::inherit());
             }
             ScriptType::Pwsh => {
                 command_to_execute = Command::new("pwsh");
-                command_to_execute.args(["-File", script.to_str().unwrap()])
+                command_to_execute
+                    .args(["-File", script.to_str().unwrap()])
                     .current_dir(exec_path)
                     .stdout(Stdio::inherit())
                     .stderr(Stdio::inherit());
@@ -131,8 +132,9 @@ impl Actor<PipeResult> for ExecActor {
             command_to_execute.args(args);
         }
 
-        let mut child = command_to_execute.spawn().expect("failed to execute process");
-
+        let mut child = command_to_execute
+            .spawn()
+            .expect("failed to execute process");
 
         let _ = child.wait().expect("child process wasn't running");
 

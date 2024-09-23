@@ -114,11 +114,12 @@ impl ResolverPipe<RegistryCache> {
                 None => {
                     // This is okay as we only insert the same version
                     if !package_recorder.main_packages.contains_key(&final_key) {
-                        package_recorder.main_packages.insert(final_key.clone(), package.clone().into());
+                        package_recorder
+                            .main_packages
+                            .insert(final_key.clone(), package.clone().into());
                     }
 
                     // Else can be skipped because we won't update the parent as a consequence
-
                 }
                 Some(ref parents) => {
                     // It can be that multiple dependencies have this as a sub dependency
@@ -130,20 +131,18 @@ impl ResolverPipe<RegistryCache> {
                                 .sub_dependencies
                                 .insert(final_key.clone(), package.clone().into());
                         }
-                        Some(p) => {
-                            match p.depth_traces {
-                                None => {
-                                    p.depth_traces = Some(vec![parents.clone()]);
-                                }
-                                Some(ref mut d) => {
-                                    d.push(parents.clone());
-                                }
+                        Some(p) => match p.depth_traces {
+                            None => {
+                                p.depth_traces = Some(vec![parents.clone()]);
                             }
-                        }
+                            Some(ref mut d) => {
+                                d.push(parents.clone());
+                            }
+                        },
                     }
                     package_recorder
                         .sub_dependencies
-                        .insert(package.clone().into(),package.clone().into());
+                        .insert(package.clone().into(), package.clone().into());
                 }
             }
         }

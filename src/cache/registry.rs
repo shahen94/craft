@@ -3,9 +3,9 @@ use crate::fs::get_config_dir;
 use crate::{contracts::PersistentCache, errors::CacheError, package::NpmPackage};
 use async_trait::async_trait;
 use nodejs_semver::{Range, Version};
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::{collections::HashMap, fs::File, io, path::PathBuf};
-use serde::{Deserialize, Serialize};
 
 //
 #[derive(Eq, Debug, Hash, PartialEq, Clone, Serialize, Deserialize)]

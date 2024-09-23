@@ -3,14 +3,17 @@ use std::path::PathBuf;
 /// Get the bash script for the chosen binary
 /// node_path: The path of the node modules
 ///
-pub fn get_bash_script(node_path: Vec<String>, name_of_package: &str, package_json_binary_path:
-&str) -> String {
-
+pub fn get_bash_script(
+    node_path: Vec<String>,
+    name_of_package: &str,
+    package_json_binary_path: &str,
+) -> String {
     let node_path = node_path.join(":").replace("\\", "/");
     let path_to_bin = PathBuf::from(name_of_package).join(package_json_binary_path);
     let path_to_bin = path_to_bin.to_str().unwrap().replace("\\", "/");
 
-    remove_indentation(&format!(r#"
+    remove_indentation(&format!(
+        r#"
     #!/bin/sh
 
     basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
@@ -29,7 +32,8 @@ pub fn get_bash_script(node_path: Vec<String>, name_of_package: &str, package_js
         else
           exec node  "$basedir/../{path_to_bin}" "$@"
         fi
-    "#, ))
+    "#,
+    ))
 }
 
 fn remove_indentation(s: &str) -> String {
@@ -45,15 +49,21 @@ fn remove_indentation(s: &str) -> String {
     result
 }
 
-
-pub fn get_cmd_script(node_path: Vec<String>, name_of_package: &str,
-                      package_json_binary_path: &str) -> String {
+pub fn get_cmd_script(
+    node_path: Vec<String>,
+    name_of_package: &str,
+    package_json_binary_path: &str,
+) -> String {
     let node_path = node_path.join(";");
     let path_to_bin = PathBuf::from(name_of_package).join(package_json_binary_path);
-    let path_to_bin = path_to_bin.into_os_string().into_string().unwrap().replace("/", "\\");
+    let path_to_bin = path_to_bin
+        .into_os_string()
+        .into_string()
+        .unwrap()
+        .replace("/", "\\");
 
-
-    remove_indentation(&format!(r#"
+    remove_indentation(&format!(
+        r#"
         @SETLOCAL
     @IF NOT DEFINED NODE_PATH (
       @SET "NODE_PATH={node_path}"
@@ -66,18 +76,22 @@ pub fn get_cmd_script(node_path: Vec<String>, name_of_package: &str,
       @SET PATHEXT=%PATHEXT:;.JS;=;%
       node  "%~dp0\..\{path_to_bin}" %*
     )
-    "#))
+    "#
+    ))
 }
 
-
-pub fn get_pwsh_script(node_path_orig: Vec<String>, name_of_package: &str,
-                       package_json_binary_path: &str) -> String {
+pub fn get_pwsh_script(
+    node_path_orig: Vec<String>,
+    name_of_package: &str,
+    package_json_binary_path: &str,
+) -> String {
     let node_path = node_path_orig.join(";").replace("\\", "/");
     let old_node_path = node_path_orig.join(":").replace("/", "\\");
     let path_to_bin = PathBuf::from(name_of_package).join(package_json_binary_path);
     let path_to_bin = path_to_bin.into_os_string().into_string().unwrap();
 
-    remove_indentation(&format!(r#"
+    remove_indentation(&format!(
+        r#"
 #!/usr/bin/env pwsh
 $basedir=Split-Path $MyInvocation.MyCommand.Definition -Parent
 
@@ -115,5 +129,6 @@ if (Test-Path "$basedir/node$exe") {{
 }}
 $env:NODE_PATH=$env_node_path
 exit $ret
-    "#))
+    "#
+    ))
 }

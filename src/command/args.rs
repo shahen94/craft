@@ -110,7 +110,7 @@ pub enum SubCommand {
     #[clap(subcommand)]
     Cache(CacheAction),
     #[clap(name = "exec")]
-    Exec(Exec)
+    Exec(Exec),
 }
 
 /// Install sub command
@@ -174,10 +174,14 @@ pub struct Run {
 pub struct Exec {
     #[arg(required = true, index = 1)]
     pub command: String,
-    #[arg(trailing_var_arg = true, allow_hyphen_values = true, hide = true, index=2)]
+    #[arg(
+        trailing_var_arg = true,
+        allow_hyphen_values = true,
+        hide = true,
+        index = 2
+    )]
     pub args: Option<Vec<String>>,
 }
-
 
 #[derive(Debug, Parser, Clone)]
 pub enum CacheAction {
