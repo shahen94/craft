@@ -1,6 +1,6 @@
 use crate::cache::{RegistryKey, DEP_CACHE_FOLDER};
 use crate::fs::get_config_dir;
-use crate::package::npm_package::{EnginesType, PeerDependencyMeta};
+use crate::package::npm_package::PeerDependencyMeta;
 use crate::package::BinType;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -12,7 +12,6 @@ pub struct PackageMetaRecorder {
     pub name: String,
     pub version: String,
     pub resolution: Option<PackageResolution>,
-    pub engines: Option<EnginesType>,
     pub peer_dependencies: Option<HashMap<String, String>>,
     pub has_bin: Option<bool>,
     pub peer_dependencies_meta: Option<HashMap<String, PeerDependencyMeta>>,
@@ -53,7 +52,6 @@ impl From<PackageMetaRecorder> for PackageMetaHandler {
             os: val.os,
             cpu: val.cpu,
             has_bin: val.has_bin,
-            engines: val.engines,
             peer_dependencies: val.peer_dependencies,
             peer_dependencies_meta: val.peer_dependencies_meta,
             dependencies: val.dependencies,
@@ -68,8 +66,7 @@ impl From<PackageMetaRecorder> for PackageMetaHandler {
 pub struct PackageMetaHandler {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resolution: Option<PackageResolution>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub engines: Option<EnginesType>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub peer_dependencies: Option<HashMap<String, String>>,
     #[serde(skip_serializing_if = "Option::is_none")]

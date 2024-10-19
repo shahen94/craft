@@ -1,10 +1,10 @@
 use crate::lockfile::constants::{
-    AUTO_INSTALL_PEERS, CPU, DEPENDENCIES, DEV_DEPENDENCIES, ENGINES, EXCLUDE_LINKS_FROM_LOCKFILE,
+    AUTO_INSTALL_PEERS, CPU, DEPENDENCIES, DEV_DEPENDENCIES, EXCLUDE_LINKS_FROM_LOCKFILE,
     HAS_BIN, LOCKFILE_VERSION, OPTIONAL, OPT_DEPENDENCIES, OS, PACKAGES, PEER_DEPENDENCIES,
     PEER_DEPENDENCIES_META, PEER_SUFFIX_MAX_LENGTH, RESOLUTION, SETTINGS, SNAPSHOTS, SPECIFIER,
     VERSION,
 };
-use crate::package::{EnginesType, PackageMetaHandler};
+use crate::package::PackageMetaHandler;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 
@@ -348,51 +348,6 @@ impl LockfileStructure {
             })
         }
 
-        if !snapshot {
-            if let Some(engines) = &p.1.engines {
-                match engines {
-                    EnginesType::EngineMap(engines) => match engines.len() == 1 {
-                        true => {
-                            let engine_val = engines.iter().next().unwrap();
-                            let node = format!(
-                                "{{{}: {}}}",
-                                engine_val.0,
-                                Self::format_string(engine_val.1)
-                            );
-                            packages_serialized.push_str(&Self::format_line(
-                                ENGINES,
-                                Some(&node),
-                                index + 1,
-                            ));
-                        }
-                        false => {
-                            packages_serialized.push_str(&Self::format_line(
-                                ENGINES,
-                                None,
-                                index + 1,
-                            ));
-
-                            engines.iter().for_each(|e| {
-                                packages_serialized.push_str(&Self::format_line(
-                                    e.0,
-                                    Some(e.1),
-                                    index + 2,
-                                ))
-                            })
-                        }
-                    },
-                    EnginesType::Engine(e) => {
-                        let engines = Self::format_inline_vector(e);
-                        packages_serialized.push_str(&Self::format_line(
-                            ENGINES,
-                            Some(&engines),
-                            index + 1,
-                        ));
-                    }
-                }
-            }
-        }
-
         if let Some(cpu) = &p.1.cpu {
             packages_serialized.push_str(&Self::format_line(
                 CPU,
@@ -502,7 +457,7 @@ impl Default for LockfileStructure {
         };
 
         LockfileStructure {
-            lockfile_version: "9.0".to_string(),
+            lockfile_version: "1.0".to_string(),
             importers: None,
             ignored_optional_dependencies: None,
             overrides: None,

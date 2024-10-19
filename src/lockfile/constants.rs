@@ -19,7 +19,6 @@ pub const PEER_DEPENDENCIES_META: &str = "peerDependenciesMeta";
 // packages
 pub const PACKAGES: &str = "packages";
 pub const RESOLUTION: &str = "resolution";
-pub const ENGINES: &str = "engines";
 
 pub const OPTIONAL: &str = "optional";
 pub const OS: &str = "os";
