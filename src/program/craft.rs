@@ -41,29 +41,31 @@ impl Program {
                     if let Err(err) = err {
                         CraftLogger::error(format!("{}", err));
                     }
-                } else {
-                    let packages = args_install
-                        .packages
-                        .clone()
-                        .unwrap()
-                        .iter()
-                        .map(|p| {
-                            if args_install.save_global {
-                                PackageType::Global(p.to_string())
-                            } else if args_install.save_prod {
-                                PackageType::Prod(p.to_string())
-                            } else if args_install.save_dev {
-                                PackageType::Dev(p.to_string())
-                            } else if args_install.save_optional {
-                                PackageType::Optional(p.to_string())
-                            } else {
-                                PackageType::Prod(p.to_string())
-                            }
-                        })
-                        .collect::<Vec<PackageType>>();
 
-                    InstallActor::new(packages).start().await.unwrap();
+                    return Ok(());
                 }
+
+                let packages = args_install
+                    .packages
+                    .clone()
+                    .unwrap()
+                    .iter()
+                    .map(|p| {
+                        if args_install.save_global {
+                            PackageType::Global(p.to_string())
+                        } else if args_install.save_prod {
+                            PackageType::Prod(p.to_string())
+                        } else if args_install.save_dev {
+                            PackageType::Dev(p.to_string())
+                        } else if args_install.save_optional {
+                            PackageType::Optional(p.to_string())
+                        } else {
+                            PackageType::Prod(p.to_string())
+                        }
+                    })
+                    .collect::<Vec<PackageType>>();
+
+                InstallActor::new(packages).start().await.unwrap();
 
                 Ok(())
             }

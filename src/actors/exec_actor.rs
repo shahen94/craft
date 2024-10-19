@@ -17,6 +17,7 @@ impl ExecActor {
     }
 }
 
+#[derive(Debug)]
 pub enum ScriptType {
     Bash,
     Cmd,
@@ -24,11 +25,11 @@ pub enum ScriptType {
 }
 
 impl ScriptType {
-    pub fn get_script_ending(&self) -> String {
+    pub fn get_script_file_command(&self, script: &str) -> String {
         match self {
-            ScriptType::Bash => "".to_string(),
-            ScriptType::Cmd => "cmd".to_string(),
-            ScriptType::Pwsh => "ps1".to_string(),
+            ScriptType::Bash => script.to_string(),
+            ScriptType::Cmd => format!("{}.cmd", script),
+            ScriptType::Pwsh => format!("{}.ps1", script),
         }
     }
 }
@@ -48,7 +49,7 @@ fn get_file_ending_for_running() -> ScriptType {
 fn find_file_to_execute(script: &str, path_to_scan: &PathBuf) -> Option<(ScriptType, PathBuf)> {
     let file_ending = get_file_ending_for_running();
 
-    let file_name_to_find = format!("{}.{}", script, file_ending.get_script_ending());
+    let file_name_to_find = file_ending.get_script_file_command(script);
 
     let bin_dir = std::fs::read_dir(path_to_scan).unwrap();
 
@@ -67,10 +68,10 @@ fn find_file_to_execute(script: &str, path_to_scan: &PathBuf) -> Option<(ScriptT
 fn get_possible_script_paths() -> Vec<PathBuf> {
     let mut paths = vec![];
 
-    let bin_path = env::current_dir().unwrap().join("node_modules").join(
-        "\
-        .bin",
-    );
+    let bin_path = env::current_dir()
+        .unwrap()
+        .join("node_modules")
+        .join(".bin");
     let bin_dir = std::fs::metadata(&bin_path);
 
     if bin_dir.is_ok() {
@@ -102,13 +103,20 @@ impl Actor<PipeResult> for ExecActor {
         let (shell, script) = &possible_scripts[0];
         match shell {
             ScriptType::Bash => {
+                let args = match &self.args {
+                    Some(args) => args,
+                    None => &Vec::<String>::new(),
+                };
+
+                let arg_full = format!("{} {}", script.to_str().unwrap(), args.join(" "));
+
                 command_to_execute = Command::new("sh");
                 command_to_execute
                     .arg("-c")
                     .stdout(Stdio::inherit())
                     .current_dir(exec_path)
                     .stderr(Stdio::inherit())
-                    .arg(script);
+                    .arg(arg_full);
             }
             ScriptType::Cmd => {
                 command_to_execute = Command::new("cmd");

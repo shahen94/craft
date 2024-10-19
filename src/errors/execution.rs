@@ -8,6 +8,6 @@ pub enum ExecutionError {
     PackageJsonNotFound,
     #[error("Failed to find script {0}")]
     ScriptNotFound(String),
-    #[error("Failed to find a script in package.json")]
+    #[error("Failed to find a script in node_modules/.bin")]
     NoScriptsFound,
 }
