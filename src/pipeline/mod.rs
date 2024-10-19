@@ -1,4 +1,5 @@
 mod artifacts;
+pub mod binary_templates;
 mod cache_clean;
 mod downloader;
 mod extractor;
@@ -11,4 +12,5 @@ pub use downloader::DownloaderPipe;
 pub use extractor::ExtractorPipe;
 pub use linker::LinkerPipe;
 
+pub use artifacts::ResolvedItem;
 pub use cache_clean::CacheCleanPipe;

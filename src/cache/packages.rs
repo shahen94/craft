@@ -1,34 +1,32 @@
-use std::{
-    collections::HashMap,
-    env,
-    path::{Path, PathBuf},
-};
-
+use super::constants::PACKAGES_CACHE_FOLDER;
+use crate::cache::registry::convert_to_registry_key;
+use crate::cache::RegistryKey;
+use crate::fs::get_config_dir;
+use crate::{contracts::PersistentCache, errors::CacheError};
 use async_recursion::async_recursion;
 use async_trait::async_trait;
-
-use crate::{contracts::PersistentCache, errors::CacheError};
-
-use super::constants::PACKAGES_CACHE_FOLDER;
-
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 // ─── PackagesCache ───────────────────────────────────────────────────────────────
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PackagesCache {
     pub directory: PathBuf,
-    pub cache: HashMap<String, bool>,
+    pub cache: HashSet<RegistryKey>,
+    pub downloaded_modules: HashSet<String>,
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
 
 impl PackagesCache {
     #[async_recursion]
-    pub async fn read_cache_directory(dir: &Path) -> Result<HashMap<String, bool>, CacheError> {
-        let mut cache = HashMap::new();
+    pub async fn read_cache_directory(dir: &Path) -> Result<HashSet<RegistryKey>, CacheError> {
+        let mut cache: HashSet<RegistryKey> = HashSet::new();
 
         let mut entries = tokio::fs::read_dir(dir).await?;
 
         while let Some(entry) = entries.next_entry().await? {
+            // Nested is e.g. @types/node etc.
             if entry.file_type().await?.is_dir() {
                 let dirname = entry
                     .file_name()
@@ -38,19 +36,32 @@ impl PackagesCache {
                 let p = dir.join(&dirname);
                 let nested_cache = Self::read_cache_directory(&p).await?;
 
-                for (k, v) in nested_cache {
+                for k in nested_cache {
                     let key = format!("{}/{}", dirname, k);
-                    cache.insert(key, v);
+                    let key_with_subdir = convert_to_registry_key(&key);
+                    cache.insert(key_with_subdir);
                 }
-            }
-
-            cache.insert(
-                entry
+            } else {
+                let filename = entry
                     .file_name()
                     .into_string()
-                    .map_err(|_| CacheError::CacheError)?,
-                true,
-            );
+                    .map_err(|_| CacheError::CacheError)?;
+                let reg_key = convert_to_registry_key(&filename);
+
+                cache.insert(reg_key);
+            }
+        }
+
+        Ok(cache)
+    }
+
+    pub async fn read_node_modules(dir: &Path) -> Result<HashSet<String>, CacheError> {
+        let mut entries = tokio::fs::read_dir(dir).await?;
+        let mut cache = HashSet::new();
+
+        while let Some(entry) = entries.next_entry().await? {
+            let file_name = entry.file_name().to_os_string().into_string().unwrap();
+            cache.insert(file_name);
         }
 
         Ok(cache)
@@ -59,26 +70,18 @@ impl PackagesCache {
     pub fn get_cache_directory(&self) -> &PathBuf {
         &self.directory
     }
-
-    pub fn to_path_buf(&self, key: &str) -> PathBuf {
-        self.directory.join(key)
-    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 impl Default for PackagesCache {
     fn default() -> Self {
-        let directory = {
-            let mut home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
-            home.push_str(PACKAGES_CACHE_FOLDER);
-
-            PathBuf::from(home)
-        };
+        let directory = { get_config_dir(PACKAGES_CACHE_FOLDER.clone()) };
 
         Self {
             directory,
-            cache: HashMap::new(),
+            cache: HashSet::new(),
+            downloaded_modules: HashSet::new(),
         }
     }
 }
@@ -88,15 +91,8 @@ impl Default for PackagesCache {
 #[async_trait]
 impl PersistentCache<PathBuf> for PackagesCache {
     async fn init(&mut self) -> Result<(), CacheError> {
-        if !self.directory.exists() {
-            tokio::fs::create_dir_all(&self.directory)
-                .await
-                .map_err(CacheError::FileSystemError)?;
-
-            return Ok(());
-        }
-
         self.cache = Self::read_cache_directory(&self.directory).await?;
+        self.downloaded_modules = Self::read_node_modules(&self.directory).await?;
 
         Ok(())
     }
@@ -111,18 +107,18 @@ impl PersistentCache<PathBuf> for PackagesCache {
         Ok(())
     }
 
-    async fn get(&self, key: &str) -> Option<PathBuf> {
+    async fn has(&mut self, key: &RegistryKey) -> bool {
+        self.cache.contains(&key.to_owned())
+    }
+    async fn get(&mut self, key: &RegistryKey) -> Option<PathBuf> {
         if self.has(key).await {
-            return Some(self.to_path_buf(key));
+            return Some(self.directory.join::<PathBuf>(key.clone().into()));
         }
 
         None
     }
-    async fn set(&mut self, key: &str, _: PathBuf) -> () {
-        self.cache.insert(key.to_string(), true);
-    }
 
-    async fn has(&self, key: &str) -> bool {
-        self.cache.contains_key(&key.to_owned())
+    async fn set(&mut self, key: &RegistryKey, _: PathBuf) -> () {
+        self.cache.insert(key.clone());
     }
 }

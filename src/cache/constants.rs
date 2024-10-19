@@ -1,9 +1,12 @@
 // ─── Folders ─────────────────────────────────────────────────────────────────
 
-pub const PACKAGES_CACHE_FOLDER: &str = "/.craft/cache/packages";
-pub const REGISTRY_CACHE_FOLDER: &str = "/.craft/cache/registry";
-pub const TMP_CACHE_FOLDER: &str = "/.craft/cache/tmp";
+use lazy_static::lazy_static;
+use std::path::PathBuf;
+
+lazy_static! {
+    pub static ref PACKAGES_CACHE_FOLDER: PathBuf = PathBuf::from(".craft/cache/packages");
+    pub static ref REGISTRY_CACHE_FOLDER: PathBuf = PathBuf::from(".craft/cache/registry");
+    pub static ref DEP_CACHE_FOLDER: PathBuf = PathBuf::from(".craft/cache/node_modules");
+}
 
 // ─── Files ───────────────────────────────────────────────────────────────────
-
-pub const REGISTRY_CACHE_FILE: &str = "cache.json";

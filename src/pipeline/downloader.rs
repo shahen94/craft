@@ -1,3 +1,4 @@
+use futures::future;
 use std::{
     path::{Path, PathBuf},
     sync::{mpsc::Sender, Arc},
@@ -6,6 +7,8 @@ use std::{
 use async_trait::async_trait;
 use tokio::sync::Mutex;
 
+use super::artifacts::{DownloadArtifacts, ResolvedItem};
+use crate::contracts::Logger;
 use crate::{
     cache::PackagesCache,
     contracts::{PersistentCache, Phase, Pipe, PipeArtifact, ProgressAction},
@@ -14,8 +17,6 @@ use crate::{
     network::Http,
     package::NpmPackage,
 };
-
-use super::artifacts::{DownloadArtifacts, ResolvedItem};
 
 // ─── DownloaderPipe ─────────────────────────────────────────────────────────────
 
@@ -50,46 +51,47 @@ impl DownloaderPipe<PackagesCache> {
         tokio::fs::create_dir_all(download_path.parent().unwrap()).await
     }
 
-    pub async fn download_pkg(&self, package: &NpmPackage) -> Result<(), ExecutionError> {
+    pub async fn download_pkg(
+        package: &NpmPackage,
+        mut cache: PackagesCache,
+        artifacts: Arc<Mutex<DownloadArtifacts>>,
+    ) -> Result<(), ExecutionError> {
         let pkg = package.clone();
 
-        if self.cache.lock().await.has(&pkg.to_string()).await {
-            CraftLogger::verbose(format!("Package already downloaded: {}", pkg.to_string()));
-            let cache = self.cache.lock().await;
+        if cache.has(&pkg.clone().into()).await {
+            log::info!("{}", format!("Package already downloaded: {}", pkg));
+            let cache_dir = { cache.get_cache_directory().join(pkg.to_string()) };
 
-            self.artifacts.lock().await.insert(
-                pkg.to_string(),
-                DownloadArtifacts::to_artifact(
-                    pkg.clone(),
-                    cache.get_cache_directory().join(pkg.to_string()),
-                ),
-            );
+            {
+                artifacts.lock().await.insert(
+                    pkg.to_string(),
+                    DownloadArtifacts::to_artifact(pkg.clone(), cache_dir),
+                );
+            }
 
             return Ok(());
         }
 
-        let cache = self.cache.clone();
-        let artifacts = self.artifacts.clone();
+        let path = { &cache.get_cache_directory().join(pkg.to_string()) };
 
-        tokio::spawn(async move {
-            let path = &cache
-                .lock()
-                .await
-                .get_cache_directory()
-                .join(pkg.to_string());
+        if pkg.contains_org() {
+            Self::prepare_pkg_for_download(path).await.unwrap();
+        }
+        let result = Http::download_file(&pkg.dist.tarball, path, &pkg.dist.shasum).await;
+        if result.is_err() {
+            CraftLogger::warn(format!("Failed to download package: {}", pkg));
+            return Err(ExecutionError::JobExecutionFailed(
+                "Failed to download package".parse().unwrap(),
+                "Failed to download package".parse().unwrap(),
+            ));
+        }
 
-            if pkg.contains_org() {
-                Self::prepare_pkg_for_download(path).await.unwrap();
-            }
-            Http::download_file(&pkg.dist.tarball, path).await.unwrap();
-
+        {
             artifacts.lock().await.insert(
                 pkg.to_string(),
                 DownloadArtifacts::to_artifact(pkg.clone(), path.clone()),
             );
-        })
-        .await
-        .unwrap();
+        }
 
         Ok(())
     }
@@ -98,27 +100,42 @@ impl DownloaderPipe<PackagesCache> {
 #[async_trait]
 impl Pipe<DownloadArtifacts> for DownloaderPipe<PackagesCache> {
     async fn run(&mut self) -> Result<DownloadArtifacts, ExecutionError> {
-        let _ = self.cache.lock().await.init().await;
+        {
+            let mut cache = self.cache.lock().await;
+            cache
+                .init()
+                .await
+                .map_err(|e| ExecutionError::JobExecutionFailed(e.to_string(), e.to_string()))?;
+        }
 
         let _ = self.tx.send(ProgressAction::new(Phase::Downloading));
 
-        let _ = tokio::join! {
-          async {
-            CraftLogger::verbose("Downloading packages");
-            for pkg in self.packages.iter() {
+        let mut jobs = vec![];
 
-              CraftLogger::verbose(format!("Downloading package: {}", pkg.to_string()));
-              match self.download_pkg(pkg).await {
-                Ok(_) => {},
-                Err(err) => {
-                  return Err(err);
+        let pkgs = self.packages.clone();
+        let cache = { self.cache.lock().await.clone() };
+
+        for pkg in pkgs {
+            let cache = cache.clone();
+            let artifacts = self.artifacts.clone();
+            let job = tokio::spawn(async move {
+                CraftLogger::verbose(format!("Downloading package: {}", pkg));
+                match Self::download_pkg(&pkg, cache, artifacts).await {
+                    Ok(_) => Ok(()),
+                    Err(err) => Err(err),
                 }
-              }
-            }
+            });
+            jobs.push(job);
+        }
 
-            Ok(())
-          }
-        };
+        let results: Vec<_> = future::join_all(jobs).await;
+        // Iterate over the results
+        for result in results.into_iter() {
+            let jh_handle = result.unwrap();
+            if let Err(e) = jh_handle {
+                log::error!("Error is {}", e.to_string())
+            }
+        }
 
         Ok(self.artifacts.lock().await.clone())
     }

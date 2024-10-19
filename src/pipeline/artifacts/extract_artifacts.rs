@@ -1,7 +1,6 @@
-use std::{collections::HashMap, env, path::PathBuf};
-
-use crate::{cache::TMP_CACHE_FOLDER, contracts::PipeArtifact, package::NpmPackage};
-
+use crate::fs::get_config_dir;
+use crate::{cache::DEP_CACHE_FOLDER, contracts::PipeArtifact, package::NpmPackage};
+use std::{collections::HashMap, path::PathBuf};
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub type ExtractArtifactsMap = HashMap<String, ExtractArtifactItem>;
@@ -37,7 +36,7 @@ impl ExtractArtifactItem {
 
 impl ExtractArtifacts {
     pub fn new() -> Self {
-        let tmp_cache_folder = Self::get_tmp_folder();
+        let tmp_cache_folder = get_config_dir(DEP_CACHE_FOLDER.clone());
         let tmp_cache = HashMap::new();
 
         Self {
@@ -51,18 +50,10 @@ impl ExtractArtifacts {
         ExtractArtifactItem::new(package, extracted_at)
     }
 
-    pub fn get_tmp_folder() -> PathBuf {
-        let mut home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
-        home.push_str(TMP_CACHE_FOLDER);
-
-        PathBuf::from(home)
-    }
-
     pub fn add(&mut self, package: NpmPackage, unzip_at: PathBuf) {
-        let name = format!("{}@{}", package.name.clone(), package.version.clone());
         let item = ExtractArtifactItem::new(package.clone(), unzip_at);
 
-        self.tmp_cache.insert(name, item);
+        self.tmp_cache.insert(package.to_string(), item);
     }
 
     #[cfg(test)]

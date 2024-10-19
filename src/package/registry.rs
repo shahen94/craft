@@ -1,5 +1,7 @@
 // ─── Registry ────────────────────────────────────────────────────────────────
 
+use std::fmt::Display;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Registry {
     Npm,
@@ -32,12 +34,13 @@ impl Registry {
     }
 }
 
-impl ToString for Registry {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for Registry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             Registry::Npm => "npm".to_string(),
             Registry::Git => "git".to_string(),
-        }
+        };
+        write!(f, "{}", str)
     }
 }
 

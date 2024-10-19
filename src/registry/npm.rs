@@ -3,10 +3,7 @@ use async_trait::async_trait;
 use crate::{
     contracts::Registry,
     errors::NetworkError,
-    package::{
-        contracts::{Satisfies, Version},
-        FullPackage, NpmPackage, Package,
-    },
+    package::{FullPackage, NpmPackage, Package},
 };
 
 const NPM_REGISTRY_URL: &str = "https://registry.npmjs.org";
@@ -25,21 +22,6 @@ impl NpmRegistry {
 }
 
 impl NpmRegistry {
-    async fn get_exact_package(&self, package: &Package) -> Result<NpmPackage, NetworkError> {
-        let url = format!(
-            "{}/{}/{}",
-            NPM_REGISTRY_URL,
-            package.name,
-            package.raw_version.replace('=', "").replace('*', "latest")
-        );
-
-        let response = self.http.get(&url).send().await?;
-
-        let remote_package = response.json::<NpmPackage>().await?;
-
-        Ok(remote_package)
-    }
-
     async fn get_full_package(&self, package: &Package) -> Result<FullPackage, NetworkError> {
         let url = format!("{}/{}", NPM_REGISTRY_URL, package.name);
 
@@ -54,9 +36,7 @@ impl NpmRegistry {
             Ok(pkg) => pkg,
             Err(e) => {
                 println!("Error: {:?}", e);
-                return Err(NetworkError::FailedToFetchVersion(
-                    package.raw_version.clone(),
-                ));
+                return Err(NetworkError::FailedToFetchVersion(url));
             }
         };
 
@@ -67,21 +47,34 @@ impl NpmRegistry {
 #[async_trait]
 impl Registry for NpmRegistry {
     async fn fetch(&self, package: &Package) -> Result<NpmPackage, NetworkError> {
-        if package.version.is_exact() {
-            let pkg = self.get_exact_package(package).await?;
-
-            return Ok(pkg);
-        }
+        log::info!("Fetching package: {}", package.to_string());
 
         let pkg = self.get_full_package(package).await?;
+        let mut highest_satisfied_version: Option<NpmPackage> = None;
 
         for (version, remote_package) in pkg.versions.iter() {
-            if package.version.satisfies(version) {
-                return Ok(remote_package.clone());
+            if package.satisfies(version) {
+                match highest_satisfied_version {
+                    Some(ref sv) => {
+                        let selected_version = nodejs_semver::Version::parse(&sv.version).unwrap();
+                        let current_version =
+                            nodejs_semver::Version::parse(&remote_package.version).unwrap();
+                        if selected_version < current_version {
+                            highest_satisfied_version = Some(remote_package.clone());
+                        }
+                    }
+                    None => {
+                        highest_satisfied_version = Some(remote_package.clone());
+                    }
+                }
             }
         }
 
-        println!("Failed to fetch version: {}", package.to_string());
+        if let Some(v) = highest_satisfied_version {
+            return Ok(v.clone());
+        }
+
+        println!("Failed to fetch version: {}", package);
 
         Err(NetworkError::FailedToFetchVersion(package.to_string()))
     }

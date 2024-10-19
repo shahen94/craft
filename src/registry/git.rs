@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use crate::{
     contracts::Registry,
     errors::NetworkError,
-    package::{contracts::Satisfies, FullPackage, NpmPackage, Package},
+    package::{FullPackage, NpmPackage, Package},
 };
 
 #[allow(unused_variables)]
@@ -32,13 +32,11 @@ impl Registry for GitRegistry {
     async fn fetch(&self, package: &Package) -> Result<NpmPackage, NetworkError> {
         let pkg = self.get_archive(package).await?;
 
-        for (version, remote_package) in pkg.versions.iter() {
-            if package.version.satisfies(version) {
-                return Ok(remote_package.clone());
-            }
+        if let Some((_, remote_package)) = pkg.versions.iter().next() {
+            return Ok(remote_package.clone());
         }
 
-        println!("Failed to fetch version: {}", package.to_string());
+        println!("Failed to fetch version: {}", package);
 
         Err(NetworkError::FailedToFetchVersion(
             package.raw_version.clone(),

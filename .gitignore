@@ -1,3 +1,5 @@
 /target
 craft.lock
 node_modules
+.idea
+pnpm-lock.yaml
