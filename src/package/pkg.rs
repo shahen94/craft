@@ -3,6 +3,7 @@ use crate::actors::PackageType;
 use crate::cache::RegistryKey;
 use nodejs_semver::Range;
 use std::fmt::Display;
+
 // ─── Package ───────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]

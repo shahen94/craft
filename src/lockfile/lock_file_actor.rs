@@ -28,7 +28,7 @@ impl LockFileActor {
     }
 
     fn persist_lockfile_structure(content: &str) -> Result<(), LockfileError> {
-        fs::write("pnpm-lock.yaml", content)
+        fs::write("craft-lock.yaml", content)
             .map_err(|e| LockfileError::FileWriteError(e.to_string()))?;
         Ok(())
     }
@@ -200,8 +200,8 @@ impl Lockfile<LockfileStructure> for LockFileActor {
     }
 
     fn run(&self) -> Result<(), LockfileError> {
-        if fs::exists("pnpm-lock.yaml").expect("Can't check existence of file does_not_exist.txt") {
-            let mut lockfile_structure = Self::read_lock_file(Path::new("pnpm-lock.yaml"))?;
+        if fs::exists("craft-lock.yaml").expect("Can't check existence of file does_not_exist.txt") {
+            let mut lockfile_structure = Self::read_lock_file(Path::new("craft-lock.yaml"))?;
             self.handle_importers(&mut lockfile_structure)?;
             self.handle_packages(&mut lockfile_structure);
             Self::persist_lockfile_structure(&lockfile_structure.write_to_string())?;

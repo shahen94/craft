@@ -149,7 +149,7 @@ pub struct LockfileStructure {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub patched_dependencies: Option<HashMap<String, PatchFile>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pnpmfile_checksum: Option<String>,
+    pub craftfile_checksum: Option<String>,
 }
 
 impl LockfileStructure {
@@ -512,7 +512,7 @@ impl Default for LockfileStructure {
             settings: Some(default_settings),
             time: None,
             patched_dependencies: None,
-            pnpmfile_checksum: None,
+            craftfile_checksum: None,
             never_built_dependencies: None,
             packages: None,
         }

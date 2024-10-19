@@ -35,12 +35,12 @@ impl From<Install> for ProgramDesire {
             prod_install: true,
             optional_install: true,
             package_json_available: false,
-            pnpm_lock_yaml_available: false,
+            craft_lock_available: false,
         };
 
         // This needs to be done before all the other checks
         program_desire.package_json_available = fs::exists("package.json").unwrap_or(false);
-        program_desire.pnpm_lock_yaml_available = fs::exists("pnpm-lock.yaml").unwrap_or(false);
+        program_desire.craft_lock_available = fs::exists("craft-lock.yaml").unwrap_or(false);
 
         // In that case we only install dev dependencies
         if val.dev {
@@ -86,7 +86,7 @@ pub struct ProgramDesire {
     pub prod_install: bool,
     pub optional_install: bool,
     pub package_json_available: bool,
-    pub pnpm_lock_yaml_available: bool,
+    pub craft_lock_available: bool,
 }
 
 /// Sub commands

@@ -2,4 +2,4 @@
 craft.lock
 node_modules
 .idea
-pnpm-lock.yaml
+craft-lock.yaml
