@@ -12,7 +12,7 @@ $ craft install react@latest
 ![example](https://github.com/shahen94/craft/assets/13334788/2f721425-7e7d-4892-83b3-3cfe6133fe7c)
 
 # Roadmap
-- [ ] Use Symlinks for linking
+- [x] Use Symlinks for linking
 - [ ] Workspaces support
 - [ ] Hook support
-- [ ] Lockfile support
+- [x] Lockfile support
