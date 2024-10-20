@@ -34,8 +34,7 @@ impl Program {
                     let program_desire: ProgramDesire = args_install.into();
                     let deps_to_install = PreprocessDependencyInstall::new(program_desire)
                         .run()
-                        .await
-                        .unwrap();
+                        .await?;
 
                     let err = InstallActor::new(deps_to_install).start().await;
                     if let Err(err) = err {

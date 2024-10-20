@@ -95,6 +95,11 @@ impl Actor<PipeResult> for InstallActor {
         cache.init().await.unwrap();
         let ui_thread = self.start_progress(rx);
 
+        // ─── Read configuration ─────────────────────────
+
+
+
+
         // ─── Start Resolving ─────────────────────────
 
         CraftLogger::verbose("Resolving dependencies");

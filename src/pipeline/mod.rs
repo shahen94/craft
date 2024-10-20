@@ -5,6 +5,7 @@ mod downloader;
 mod extractor;
 mod linker;
 mod resolver;
+mod config_reader;
 
 pub use resolver::ResolverPipe;
 
