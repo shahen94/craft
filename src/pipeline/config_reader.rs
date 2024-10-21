@@ -1,7 +1,11 @@
 use std::collections::HashMap;
 use std::env;
 use std::path::PathBuf;
+use async_trait::async_trait;
 use homedir::my_home;
+use crate::conf::NpmConfig;
+use crate::contracts::Pipe;
+use crate::errors::ExecutionError;
 
 const CONFIG_PNPM: &str = "pnpm/rc";
 
@@ -24,11 +28,6 @@ pub fn determine_config_file_location() -> PathBuf {
     } else if cfg!(target_os = "macos") {
         home_dir.push("Library");
         home_dir.push("Preferences");
-        home_dir.push("pnpm");
-        home_dir.push("rc");
-        home_dir
-    } else if cfg!(target_os = "linux") {
-        home_dir.push(".config");
         home_dir.push("pnpm");
         home_dir.push("rc");
         home_dir
@@ -59,17 +58,40 @@ fn parse_config(conf: String) -> HashMap<String, Option<String>> {
     config_map
 }
 
-pub fn read_config_file() -> Result<HashMap<String, Option<String>>, std::io::Error> {
+pub struct ConfigReader;
+
+// ─── Implementations ─────────────────────────────────────────────────────────
+
+impl ConfigReader {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[async_trait]
+impl Pipe<NpmConfig> for ConfigReader {
+    async fn run(&mut self) -> Result<NpmConfig, ExecutionError> {
+        let conf = read_config_file();
+        match conf {
+            Ok(conf) => Ok(conf),
+            Err(e) => Err(ExecutionError::ConfigError(e.to_string())),
+        }
+    }
+}
+
+pub fn read_config_file() -> Result<NpmConfig, std::io::Error> {
     let config_file = determine_config_file_location();
     let result_conf_read = std::fs::read_to_string(&config_file);
     match result_conf_read {
         Ok(conf) => {
-            Ok(parse_config(conf))
+            let read_conf = parse_config(conf);
+            let npm_conf = NpmConfig::new(read_conf);
+            Ok(npm_conf)
         },
         Err(e) => {
             if e.kind() == std::io::ErrorKind::NotFound {
                 std::fs::File::create(&config_file)?;
-                return Ok(HashMap::new());
+                return Ok(NpmConfig::new(HashMap::new()));
             }
             Err(e)
         }

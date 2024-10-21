@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::string::ToString;
 use chrono::NaiveDate;
-use crate::conf::constants;
+use crate::conf::constants::*;
 
 pub enum Access {
     Public,
@@ -169,18 +169,13 @@ pub struct NpmConfig {
     cache_max: i32,
     cache_min: i32,
     cert: Option<String>,
-    dev: bool,
-    global_style: bool,
     key: Option<String>,
-    legacy_bundling: bool,
-    only: Option<bool>,
-    shrinkwrap: bool
 }
 
 enum Location {
-    USER,
-    GLOBAL,
-    PROJECT
+    User,
+    Global,
+    Project
 }
 
 
@@ -210,7 +205,7 @@ enum LogLevel {
 
 
 fn create_omit() -> Option<String> {
-    if let Some(e) = std::env::var("NODE_ENV").ok() {
+    if let Ok(e) = std::env::var("NODE_ENV") {
         if e == "production" {
             return Some("dev".parse().unwrap());
         }
@@ -220,11 +215,11 @@ fn create_omit() -> Option<String> {
 }
 
 fn create_no_proxy() -> Option<String> {
-    if let Some(e) = std::env::var("NO_PROXY").ok() {
+    if let Ok(e) = std::env::var("NO_PROXY") {
         return Some(e);
     }
 
-    if let Some(e) = std::env::var("no_proxy").ok() {
+    if let Ok(e) = std::env::var("no_proxy") {
         return Some(e);
     }
 
@@ -233,7 +228,7 @@ fn create_no_proxy() -> Option<String> {
 
 
 fn create_node_options() -> Option<String> {
-    if let Some(e) = std::env::var("NODE_OPTIONS").ok() {
+    if let Ok(e) = std::env::var("NODE_OPTIONS") {
         return Some(e);
     }
 
@@ -241,19 +236,19 @@ fn create_node_options() -> Option<String> {
 }
 
 fn create_https_proxy_conf() -> Option<String> {
-    if let Some(e) = std::env::var("HTTPS_PROXY").ok() {
+    if let Ok(e) = std::env::var("HTTPS_PROXY") {
         return Some(e);
     }
 
-    if let Some(e) = std::env::var("https_proxy").ok() {
+    if let Ok(e) = std::env::var("https_proxy") {
         return Some(e);
     }
 
-    if let Some(e) = std::env::var("HTTP_PROXY").ok() {
+    if let Ok(e) = std::env::var("HTTP_PROXY") {
         return Some(e);
     }
 
-    if let Some(e) = std::env::var("http_proxy").ok() {
+    if let Ok(e) = std::env::var("http_proxy") {
         return Some(e);
     }
 
@@ -262,11 +257,11 @@ fn create_https_proxy_conf() -> Option<String> {
 
 
 fn create_editor() -> String {
-    if let Some(e) = std::env::var("EDITOR").ok() {
+    if let Ok(e) = std::env::var("EDITOR") {
         return e;
     }
 
-    if let Some(e) = std::env::var("VISUAL").ok() {
+    if let Ok(e) = std::env::var("VISUAL") {
         return e;
     }
 
@@ -306,7 +301,7 @@ fn create_script_shell() -> String {
 }
 
 fn create_shell() -> String {
-    if let Some(e) = std::env::var("SHELL").ok() {
+    if let Ok(e) = std::env::var("SHELL") {
         return e;
     }
 
@@ -318,11 +313,7 @@ fn create_shell() -> String {
 }
 
 fn create_unicode() -> bool {
-    if cfg!(target_os = "windows") {
-        false
-    } else {
-        true
-    }
+    !cfg!(target_os = "windows")
 }
 
 
@@ -340,7 +331,7 @@ impl NpmConfig {
 
         let npm_config_defaults = NpmConfig {
             _auth: None,
-            access: Access::Null,
+            access: Access::Public,
             all: false,
             allow_same_version: false,
             audit: true,
@@ -406,7 +397,7 @@ impl NpmConfig {
             link: false,
             local_address: None,
             lockfile_version: 9,
-            location: Location::USER,
+            location: Location::User,
             log_level: LogLevel::Notice,
             logs_dir: "_logs".into(),
             logs_max: 10,
@@ -480,12 +471,7 @@ impl NpmConfig {
             cache_max: 20000000,
             cache_min: 0,
             cert: None,
-            dev: false,
-            global_style: false,
             key: None,
-            legacy_bundling: false,
-            only: None,
-            shrinkwrap: false,
         };
 
 
@@ -537,65 +523,71 @@ impl NpmConfig {
                 continue;
             }
             match key.as_str() {
-                constants::AUTH=>{
+                AUTH=>{
                     conf_struct._auth = Self::parse_string(&conf_struct._auth, value);
                 }
-                constants::ACCESS=>{
-                    conf_struct._auth = Self::parse_string(&conf_struct._auth, value);
+                ACCESS=>{
+                    if let Some(v) = value {
+                        match v.as_str() {
+                            "public" => conf_struct.access = Access::Public,
+                            "restricted" => conf_struct.access = Access::Restricted,
+                            _ => conf_struct.access = Access::Null
+                        }
+                    }
                 }
-                constants::ALL=>{
+                ALL=>{
                     conf_struct.all = Self::parse_bool(conf_struct.all, value);
                 }
-                constants::ALLOW_SAME_VERSION=>{
+                ALLOW_SAME_VERSION=>{
                     conf_struct.allow_same_version = Self::parse_bool(conf_struct.allow_same_version, value);
                 }
-                constants::AUDIT=>{
+                AUDIT=>{
                     conf_struct.audit = Self::parse_bool(conf_struct.audit, value);
                 }
-                constants::AUDIT_LEVEL=>{
+                AUDIT_LEVEL=>{
                     conf_struct.audit_level = Self::parse_string(&conf_struct.audit_level, value);
                 }
-                constants::AUTH_TYPE=>{
+                AUTH_TYPE=>{
                     match value.unwrap().as_str() {
                         "web" => conf_struct.auth_type = AuthType::Web,
                         "legacy" => conf_struct.auth_type = AuthType::Legacy,
                         _ => conf_struct.auth_type = AuthType::Web
                     }
                 }
-                constants::BEFORE=>{
+                BEFORE=>{
                     conf_struct.before = Self::parse_date(conf_struct.before, value);
                 }
-                constants::BIN_LINKS=>{
+                BIN_LINKS=>{
                     conf_struct.bin_links = Self::parse_bool(conf_struct.bin_links, value);
                 }
-                constants::BROWSER=>{
+                BROWSER=>{
                     conf_struct.browser = Self::parse_set_string(&conf_struct.browser, value);
                 }
-                constants::CA=>{
+                CA=>{
                     conf_struct.ca = Self::parse_string(&conf_struct.ca, value);
                 }
-                constants::CACHE=>{
+                CACHE=>{
                     conf_struct.cache = Self::parse_set_string(&conf_struct.cache, value);
                 }
-                constants::CA_FILE=>{
+                CA_FILE=>{
                     conf_struct.ca_file = Self::parse_string(&conf_struct.ca_file, value);
                 }
-                constants::CALL=>{
+                CALL=>{
                     conf_struct.call = Self::parse_string(&conf_struct.call, value);
                 }
-                constants::CIDR=>{
+                CIDR=>{
                     conf_struct.cidr = Self::parse_string(&conf_struct.cidr, value);
                 }
-                constants::COLOR=>{
+                COLOR=>{
                     conf_struct.color = Self::parse_bool(conf_struct.color, value);
                 }
-                constants::COMMIT_HOOKS=>{
+                COMMIT_HOOKS=>{
                     conf_struct.commit_hooks = Self::parse_bool(conf_struct.commit_hooks, value);
                 }
-                constants::CPU=>{
+                CPU=>{
                     conf_struct.cpu = Self::parse_string(&conf_struct.cpu, value);
                 }
-                constants::DEPTH=>{
+                DEPTH=>{
                     if let Some(val) = value {
                         if val.parse::<i32>().is_ok() {
                             conf_struct.depth = Depth::IntVal(val.parse().unwrap());
@@ -604,128 +596,128 @@ impl NpmConfig {
                         }
                     }
                 }
-                constants::DESCRIPTION=>{
+                DESCRIPTION=>{
                     conf_struct.description = Self::parse_bool(conf_struct.description, value);
                 }
-                constants::DIFF=>{
+                DIFF=>{
                     conf_struct.diff = Self::parse_set_string(&conf_struct.diff, value);
                 }
-                constants::DIFF_DST_PREFIX=>{
+                DIFF_DST_PREFIX=>{
                     conf_struct.diff_dst_prefix = Self::parse_set_string(&conf_struct
                         .diff_dst_prefix, value);
                 }
-                constants::DIFF_IGNORE_ALL_SPACE=>{
+                DIFF_IGNORE_ALL_SPACE=>{
                     conf_struct.diff_ignore_all_space = Self::parse_bool(conf_struct.diff_ignore_all_space, value);
                 }
-                constants::DIFF_NAME_ONLY=>{
+                DIFF_NAME_ONLY=>{
                     conf_struct.diff_name_only = Self::parse_bool(conf_struct.diff_name_only, value);
                 }
-                constants::DIFF_NO_PREFIX=>{
+                DIFF_NO_PREFIX=>{
                     conf_struct.diff_no_prefix = Self::parse_bool(conf_struct.diff_no_prefix, value);
                 }
-                constants::DIFF_SRC_PREFIX=>{
+                DIFF_SRC_PREFIX=>{
                     conf_struct.diff_src_prefix = Self::parse_set_string(&conf_struct
                         .diff_src_prefix, value);
                 }
-                constants::DIFF_TEXT=>{
+                DIFF_TEXT=>{
                     conf_struct.diff_text = Self::parse_bool(conf_struct.diff_text, value);
                 }
-                constants::DIFF_UNIFIED=>{
+                DIFF_UNIFIED=>{
                     if let Ok(val) = value.unwrap().parse::<i32>() {
                         conf_struct.diff_unified = val;
                     }
                 }
-                constants::DRY_RUN=>{
+                DRY_RUN=>{
                     conf_struct.dry_run = Self::parse_bool(conf_struct.dry_run, value);
                 }
-                constants::EDITOR=>{
+                EDITOR=>{
                     conf_struct.editor = Self::parse_set_string(&conf_struct.editor, value);
                 }
-                constants::ENGINE_STRICT=>{
+                ENGINE_STRICT=>{
                     conf_struct.engine_strict = Self::parse_bool(conf_struct.engine_strict, value);
                 }
-                constants::EXPECT_RESULT_COUNT=>{
+                EXPECT_RESULT_COUNT=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.expect_result_count = Some(val);
                         }
                     }
                 }
-                constants::EXPECT_RESULTS=>{
+                EXPECT_RESULTS=>{
                     conf_struct.expect_results = Some(Self::parse_bool(false, value));
                 }
-                constants::FETCH_RETRIES=>{
+                FETCH_RETRIES=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.fetch_retries = val;
                         }
                     }
                 },
-                constants::FETCH_RETRY_FACTOR=>{
+                FETCH_RETRY_FACTOR=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.fetch_retry_factor = val;
                         }
                     }
                 },
-                constants::FETCH_RETRY_MAXTIMEOUT=>{
+                FETCH_RETRY_MAXTIMEOUT=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.fetch_retry_maxtimeout = val;
                         }
                     }
                 },
-                constants::FETCH_RETRY_MINTIMEOUT=>{
+                FETCH_RETRY_MINTIMEOUT=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.fetch_retry_mintimeout = val;
                         }
                     }
                 },
-                constants::FETCH_TIMEOUT=>{
+                FETCH_TIMEOUT=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.fetch_timeout = val;
                         }
                     }
                 },
-                constants::FORCE=>{
+                FORCE=>{
                     conf_struct.force = Self::parse_bool(conf_struct.force, value);
                 }
-                constants::FOREGROUND_SCRIPTS=>{
+                FOREGROUND_SCRIPTS=>{
                     conf_struct.foreground_scripts = Self::parse_bool(conf_struct.foreground_scripts, value);
                 }
-                constants::FORMAT_PACKAGE_LOCK=>{
+                FORMAT_PACKAGE_LOCK=>{
                     conf_struct.format_package_lock = Self::parse_bool(conf_struct.format_package_lock, value);
                 }
-                constants::FUND=>{
+                FUND=>{
                     conf_struct.fund = Self::parse_bool(conf_struct.fund, value);
                 }
-                constants::GIT=>{
+                GIT=>{
                     conf_struct.git = Self::parse_set_string(&conf_struct.git, value);
                 }
-                constants::GIT_TAG_VERSION=>{
+                GIT_TAG_VERSION=>{
                     conf_struct.git_tag_version = Self::parse_bool(conf_struct.git_tag_version, value);
                 }
-                constants::GLOBAL=>{
+                GLOBAL=>{
                     conf_struct.global = Self::parse_bool(conf_struct.global, value);
                 }
-                constants::GLOBAL_CONFIG=>{
+                GLOBAL_CONFIG=>{
                     conf_struct.globalconfig = Self::parse_string(&conf_struct.globalconfig, value);
                 }
-                constants::HEADING=>{
+                HEADING=>{
                     conf_struct.heading = Self::parse_set_string(&conf_struct.heading, value);
                 }
-                constants::HTTPS_PROXY=>{
+                HTTPS_PROXY=>{
                     conf_struct.https_proxy = Self::parse_string(&conf_struct.https_proxy, value);
                 }
-                constants::IF_PRESENT=>{
+                IF_PRESENT=>{
                     conf_struct.if_present = Self::parse_bool(conf_struct.if_present, value);
                 }
-                constants::IGNORE_SCRIPTS=>{
+                IGNORE_SCRIPTS=>{
                     conf_struct.ignore_scripts = Self::parse_bool(conf_struct.ignore_scripts, value);
                 }
-                constants::INCLUDE=>{
+                INCLUDE=>{
                     if let Some(v) = value {
                         match v.as_str() {
                             "dev" => conf_struct.include = Some(Include::Dev),
@@ -736,35 +728,35 @@ impl NpmConfig {
                         }
                     }
                 },
-                constants::INCLUDE_STAGED=>{
+                INCLUDE_STAGED=>{
                     conf_struct.include_staged = Self::parse_bool(conf_struct.include_staged, value);
                 }
-                constants::INCLUDE_WORKSPACE_ROOT=>{
+                INCLUDE_WORKSPACE_ROOT=>{
                     conf_struct.include_workspace_root = Self::parse_bool(conf_struct.include_workspace_root, value);
                 }
-                constants::INIT_AUTHOR_EMAIL=>{
+                INIT_AUTHOR_EMAIL=>{
                     conf_struct.init_author_email = Self::parse_string(&conf_struct.init_author_email, value);
                 }
-                constants::INIT_AUTHOR_NAME=>{
+                INIT_AUTHOR_NAME=>{
                     conf_struct.init_author_name = Self::parse_string(&conf_struct.init_author_name, value);
                 }
-                constants::INIT_AUTHOR_URL=>{
+                INIT_AUTHOR_URL=>{
                     conf_struct.init_author_url = Self::parse_string(&conf_struct.init_author_url, value);
                 }
-                constants::INIT_LICENSE=>{
+                INIT_LICENSE=>{
                     conf_struct.init_license = Self::parse_set_string(&conf_struct.init_license, value);
                 }
-                constants::INIT_MODULE=>{
+                INIT_MODULE=>{
                     conf_struct.init_module = Self::parse_set_string(&conf_struct.init_module, value);
                 }
-                constants::INIT_VERSION=>{
+                INIT_VERSION=>{
                     conf_struct.init_version = Self::parse_set_string(&conf_struct.init_version,
                                                                        value);
                 }
-                constants::INSTALL_LINKS=>{
+                INSTALL_LINKS=>{
                     conf_struct.install_links = Self::parse_bool(conf_struct.install_links, value);
                 }
-                constants::INSTALL_STRATEGY=>{
+                INSTALL_STRATEGY=>{
                     if let Some(v) = value {
                         match v.as_str() {
                             "hoisted" => conf_struct.install_strategy = InstallStrategy::Hoisted,
@@ -775,40 +767,40 @@ impl NpmConfig {
                         }
                     }
                 }
-                constants::JSON=>{
+                JSON=>{
                     conf_struct.json = Self::parse_bool(conf_struct.json, value);
                 }
-                constants::LEGACY_PEER_DEPS=>{
+                LEGACY_PEER_DEPS=>{
                     conf_struct.legacy_peer_deps = Self::parse_bool(conf_struct.legacy_peer_deps, value);
                 }
-                constants::LIBC=>{
+                LIBC=>{
                     conf_struct.libc = Self::parse_string(&conf_struct.libc, value);
                 }
-                constants::LINK=>{
+                LINK=>{
                     conf_struct.link = Self::parse_bool(conf_struct.link, value);
                 }
-                constants::LOCAL_ADDRESS=>{
+                LOCAL_ADDRESS=>{
                     conf_struct.local_address = Self::parse_string(&conf_struct.local_address,
                                                                    value);
                 }
-                constants::LOCATION=>{
+                LOCATION=>{
                     if let Some(v) = value {
                         match v.as_str() {
-                            "user" => conf_struct.location = Location::USER,
-                            "global" => conf_struct.location = Location::GLOBAL,
-                            "project" => conf_struct.location = Location::PROJECT,
-                            _ => conf_struct.location = Location::USER
+                            "user" => conf_struct.location = Location::User,
+                            "global" => conf_struct.location = Location::Global,
+                            "project" => conf_struct.location = Location::Project,
+                            _ => conf_struct.location = Location::User
                         }
                     }
                 }
-                constants::LOCKFILE_VERSION=>{
+                LOCKFILE_VERSION=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.lockfile_version = val;
                         }
                     }
                 }
-                constants::LOGLEVEL=>{
+                LOGLEVEL=>{
                     if let Some(v) = value {
                         match v.as_str() {
                             "silent" => conf_struct.log_level = LogLevel::Silent,
@@ -826,252 +818,252 @@ impl NpmConfig {
                         }
                     }
                 }
-                constants::LOGS_DIR=>{
+                LOGS_DIR=>{
                     conf_struct.logs_dir = Self::parse_set_string(&conf_struct.logs_dir, value);
                 }
-                constants::LOGS_MAX=>{
+                LOGS_MAX=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.logs_max = val;
                         }
                     }
                 }
-                constants::LONG=>{
+                LONG=>{
                     conf_struct.long = Self::parse_bool(conf_struct.long, value);
                 }
-                constants::MAX_SOCKETS=>{
+                MAX_SOCKETS=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.max_sockets = val;
                         }
                     }
                 }
-                constants::MESSAGE=>{
+                MESSAGE=>{
                     conf_struct.message = Self::parse_set_string(&conf_struct.message, value);
                 }
-                constants::NODE_OPTIONS=>{
+                NODE_OPTIONS=>{
                     conf_struct.node_options = Self::parse_string(&conf_struct.node_options, value);
                 }
-                constants::NO_PROXY=>{
+                NO_PROXY=>{
                     conf_struct.no_proxy = Self::parse_string(&conf_struct.no_proxy, value);
                 }
-                constants::OFFLINE=>{
+                OFFLINE=>{
                     conf_struct.offline = Self::parse_bool(conf_struct.offline, value);
                 }
-                constants::OMIT=>{
+                OMIT=>{
                     conf_struct.omit = Self::parse_string(&conf_struct.omit, value);
                 }
-                constants::OMIT_LOCKFILE_REGISTRY_RESOLVED=>{
+                OMIT_LOCKFILE_REGISTRY_RESOLVED=>{
                     conf_struct.omit_lockfile_registry_resolved = Self::parse_bool(conf_struct.omit_lockfile_registry_resolved, value);
                 }
-                constants::OS=>{
+                OS=>{
                     conf_struct.os = Self::parse_string(&conf_struct.os, value);
                 }
-                constants::OTP=>{
+                OTP=>{
                     conf_struct.otp = Self::parse_string(&conf_struct.otp, value);
                 }
-                constants::PACK_DESTINATION=>{
+                PACK_DESTINATION=>{
                     conf_struct.pack_destination = Self::parse_string(&conf_struct.pack_destination, value);
                 }
-                constants::PACKAGE=>{
+                PACKAGE=>{
                     conf_struct.package = Self::parse_set_string(&conf_struct.package, value);
                 }
-                constants::PACKAGE_LOCK=>{
+                PACKAGE_LOCK=>{
                     conf_struct.package_lock = Self::parse_bool(conf_struct.package_lock, value);
                 }
-                constants::PACKAGE_LOCK_ONLY=>{
+                PACKAGE_LOCK_ONLY=>{
                     conf_struct.package_lock_only = Self::parse_bool(conf_struct.package_lock_only, value);
                 }
-                constants::PARSEABLE=>{
+                PARSEABLE=>{
                     conf_struct.parseable = Self::parse_bool(conf_struct.parseable, value);
                 }
-                constants::PREFER_DEDUPE=>{
+                PREFER_DEDUPE=>{
                     conf_struct.prefer_dedupe = Self::parse_bool(conf_struct.prefer_dedupe, value);
                 }
-                constants::PREFER_OFFLINE=>{
+                PREFER_OFFLINE=>{
                     conf_struct.prefer_offline = Self::parse_bool(conf_struct.prefer_offline, value);
                 }
-                constants::PREFER_ONLINE=>{
+                PREFER_ONLINE=>{
                     conf_struct.prefer_online = Self::parse_bool(conf_struct.prefer_online, value);
                 }
-                constants::PREFIX=>{
+                PREFIX=>{
                     conf_struct.prefix = Self::parse_set_string(&conf_struct.prefix, value);
                 }
-                constants::PREID=>{
+                PREID=>{
                     conf_struct.preid = Self::parse_string(&conf_struct.preid, value);
                 }
-                constants::PROGRESS=>{
+                PROGRESS=>{
                     conf_struct.progress = Self::parse_bool(conf_struct.progress, value);
                 }
-                constants::PROVENANCE=>{
+                PROVENANCE=>{
                     conf_struct.provenance = Self::parse_bool(conf_struct.provenance, value);
                 }
-                constants::PROVENANCE_FILE=>{
+                PROVENANCE_FILE=>{
                     conf_struct.provenance_file = Self::parse_string(&conf_struct.provenance_file, value);
                 }
-                constants::PROXY=>{
+                PROXY=>{
                     conf_struct.proxy = Self::parse_string(&conf_struct.proxy, value);
                 }
-                constants::READ_ONLY=>{
+                READ_ONLY=>{
                     conf_struct.read_only = Self::parse_bool(conf_struct.read_only, value);
                 }
-                constants::REBUILD_BUNDLE=>{
+                REBUILD_BUNDLE=>{
                     conf_struct.rebuild_bundle = Self::parse_bool(conf_struct.rebuild_bundle, value);
                 }
-                constants::REGISTRY=>{
+                REGISTRY=>{
                     conf_struct.registry = Self::parse_set_string(&conf_struct.registry, value);
                 }
-                constants::REPLACE_REGISTRY_HOST=>{
+                REPLACE_REGISTRY_HOST=>{
                     conf_struct.replace_registry_host = Self::parse_set_string(&conf_struct.replace_registry_host, value);
                 }
-                constants::SAVE=>{
+                SAVE=>{
                     conf_struct.save = Self::parse_bool(conf_struct.save, value);
                 }
-                constants::SAVE_BUNDLE=>{
+                SAVE_BUNDLE=>{
                     conf_struct.save_bundle = Self::parse_bool(conf_struct.save_bundle, value);
                 }
-                constants::SAVE_DEV=>{
+                SAVE_DEV=>{
                     conf_struct.save_dev = Self::parse_bool(conf_struct.save_dev, value);
                 }
-                constants::SAVE_EXACT=>{
+                SAVE_EXACT=>{
                     conf_struct.save_exact = Self::parse_bool(conf_struct.save_exact, value);
                 }
-                constants::SAVE_OPTIONAL=>{
+                SAVE_OPTIONAL=>{
                     conf_struct.save_optional = Self::parse_bool(conf_struct.save_optional, value);
                 }
-                constants::SAVE_PEER=>{
+                SAVE_PEER=>{
                     conf_struct.save_peer = Self::parse_bool(conf_struct.save_peer, value);
                 }
-                constants::SAVE_PREFIX=>{
+                SAVE_PREFIX=>{
                     conf_struct.save_prefix = Self::parse_set_string(&conf_struct.save_prefix, value);
                 }
-                constants::SAVE_PROD=>{
+                SAVE_PROD=>{
                     conf_struct.save_prod = Self::parse_bool(conf_struct.save_prod, value);
                 }
-                constants::SBOM_FORMAT=>{
+                SBOM_FORMAT=>{
                     conf_struct.sbom_format = Self::parse_string(&conf_struct.sbom_format, value);
                 }
-                constants::SBOM_TYPE=>{
+                SBOM_TYPE=>{
                     conf_struct.sbom_type = Self::parse_set_string(&conf_struct.sbom_type, value);
                 }
-                constants::SCOPE=>{
+                SCOPE=>{
                     conf_struct.scope = Self::parse_string(&conf_struct.scope, value);
                 }
-                constants::SCRIPT_SHELL=>{
+                SCRIPT_SHELL=>{
                     conf_struct.script_shell = Self::parse_set_string(&conf_struct.script_shell, value);
                 }
-                constants::SEARCH_EXCLUDE=>{
+                SEARCH_EXCLUDE=>{
                     conf_struct.search_exclude = Self::parse_string(&conf_struct.search_exclude, value);
                 }
-                constants::SEARCH_LIMIT=>{
+                SEARCH_LIMIT=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.search_limit = val;
                         }
                     }
                 }
-                constants::SEARCH_OPTS=>{
+                SEARCH_OPTS=>{
                     conf_struct.search_opts = Self::parse_string(&conf_struct.search_opts, value);
                 }
-                constants::SEARCH_STALENESS=>{
+                SEARCH_STALENESS=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.search_staleness = val;
                         }
                     }
                 }
-                constants::SHELL=>{
+                SHELL=>{
                     conf_struct.shell = Self::parse_set_string(&conf_struct.shell, value);
                 }
-                constants::SIGN_GIT_COMMIT=>{
+                SIGN_GIT_COMMIT=>{
                     conf_struct.sign_git_commit = Self::parse_bool(conf_struct.sign_git_commit, value);
                 }
-                constants::SIGN_GIT_TAG=>{
+                SIGN_GIT_TAG=>{
                     conf_struct.sign_git_tag = Self::parse_bool(conf_struct.sign_git_tag, value);
                 }
-                constants::STRICT_PEER_DEPS=>{
+                STRICT_PEER_DEPS=>{
                     conf_struct.strict_peer_deps = Self::parse_bool(conf_struct.strict_peer_deps, value);
                 }
-                constants::STRICT_SSL=>{
+                STRICT_SSL=>{
                     conf_struct.strict_ssl = Self::parse_bool(conf_struct.strict_ssl, value);
                 }
-                constants::TAG=>{
+                TAG=>{
                     conf_struct.tag = Self::parse_set_string(&conf_struct.tag, value);
                 }
-                constants::TAG_VERSION_PREFIX=>{
+                TAG_VERSION_PREFIX=>{
                     conf_struct.tag_version_prefix = Self::parse_set_string(&conf_struct.tag_version_prefix, value);
                 }
-                constants::TIMING=>{
+                TIMING=>{
                     conf_struct.timing = Self::parse_bool(conf_struct.timing, value);
                 }
-                constants::UMASK=>{
+                UMASK=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.umask = val;
                         }
                     }
                 }
-                constants::UNICODE=>{
+                UNICODE=>{
                     conf_struct.unicode = Self::parse_bool(conf_struct.unicode, value);
                 }
-                constants::UPDATE_NOTIFIER=>{
+                UPDATE_NOTIFIER=>{
                     conf_struct.update_notifier = Self::parse_bool(conf_struct.update_notifier, value);
                 }
-                constants::USAGE=>{
+                USAGE=>{
                     conf_struct.usage = Self::parse_bool(conf_struct.usage, value);
                 }
-                constants::USER_AGENT=>{
+                USER_AGENT=>{
                     conf_struct.user_agent = Self::parse_set_string(&conf_struct.user_agent, value);
                 }
-                constants::USER_CONFIG=>{
+                USER_CONFIG=>{
                     conf_struct.user_config = Self::parse_set_string(&conf_struct.user_config, value);
                 },
-                constants::VERSION=>{
+                VERSION=>{
                     conf_struct.version = Self::parse_bool(conf_struct.version, value);
                 }
-                constants::VERSIONS=>{
+                VERSIONS=>{
                     conf_struct.versions = Self::parse_bool(conf_struct.versions, value);
                 }
-                constants::VIEWER=>{
+                VIEWER=>{
                     conf_struct.viewer = Self::parse_set_string(&conf_struct.viewer, value);
                 }
-                constants::WHICH=>{
+                WHICH=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.which = Some(val);
                         }
                     }
                 }
-                constants::WORKSPACE=>{
+                WORKSPACE=>{
                     conf_struct.workspace = Self::parse_string(&conf_struct.workspace, value);
                 }
-                constants::WORKSPACES=>{
+                WORKSPACES=>{
                     conf_struct.workspaces = Some(Self::parse_bool(false, value));
                 }
-                constants::WORKSPACES_UPDATE=>{
+                WORKSPACES_UPDATE=>{
                     conf_struct.workspaces_update = Self::parse_bool(conf_struct.workspaces_update, value);
                 }
-                constants::YES=>{
+                YES=>{
                     conf_struct.yes = Some(Self::parse_bool(false, value));
                 }
-                constants::ALSO=>{
+                ALSO=>{
                     conf_struct.also = Self::parse_string(&conf_struct.also, value);
                 }
-                constants::CACHE_MAX=>{
+                CACHE_MAX=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.cache_max = val;
                         }
                     }
                 }
-                constants::CACHE_MIN=>{
+                CACHE_MIN=>{
                     if let Some(val) = value {
                         if let Ok(val) = val.parse::<i32>() {
                             conf_struct.cache_min = val;
                         }
                     }
                 }
-                constants::CERT=>{
+                CERT=>{
                     conf_struct.cert = Self::parse_string(&conf_struct.cert, value);
                 }
                 _=>{

@@ -16,6 +16,7 @@ use crate::{
     pipeline::{DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
     ui::UIProgress,
 };
+use crate::pipeline::ConfigReader;
 
 #[derive(Debug, Clone)]
 pub enum PackageType {
@@ -96,7 +97,7 @@ impl Actor<PipeResult> for InstallActor {
         let ui_thread = self.start_progress(rx);
 
         // ─── Read configuration ─────────────────────────
-
+        let _conf = ConfigReader::new().run().await?;
 
 
 

@@ -15,3 +15,4 @@ pub use linker::LinkerPipe;
 
 pub use artifacts::ResolvedItem;
 pub use cache_clean::CacheCleanPipe;
+pub use config_reader::ConfigReader;
