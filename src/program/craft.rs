@@ -64,7 +64,7 @@ impl Program {
                     })
                     .collect::<Vec<PackageType>>();
 
-                InstallActor::new(packages).start().await.unwrap();
+                InstallActor::new(packages).start().await?;
 
                 Ok(())
             }

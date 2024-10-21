@@ -20,11 +20,11 @@ impl Logger for CraftLogger {
         log::info!("{}", message)
     }
 
-    fn error<S: AsRef<str> + std::fmt::Display>(message: S) {
-        log::error!("{}", message)
-    }
-
     fn warn<S: AsRef<str> + std::fmt::Display>(message: S) {
         log::warn!("{}", message)
+    }
+
+    fn error<S: AsRef<str> + std::fmt::Display>(message: S) {
+        log::error!("{}", message)
     }
 }
