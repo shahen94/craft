@@ -111,7 +111,45 @@ pub enum SubCommand {
     Cache(CacheAction),
     #[clap(name = "exec")]
     Exec(Exec),
+    #[clap(subcommand)]
+    Config(ConfigSubCommand),
 }
+
+#[derive(Debug, Parser, Clone)]
+pub enum ConfigSubCommand {
+    #[clap(name = "set")]
+    Set(ConfigSet),
+    #[clap(name = "get")]
+    Get(ConfigGet),
+    #[clap(name = "delete")]
+    Delete,
+    #[clap(name = "list")]
+    List(ConfigList),
+}
+
+#[derive(Debug, Parser, Clone)]
+pub struct ConfigGet {
+    pub key: String,
+}
+
+#[derive(Debug, Parser, Clone)]
+pub struct ConfigList {
+    #[clap(name = "json", default_missing_value="true", long)]
+    pub json: Option<String>,
+}
+
+#[derive(Debug, Parser, Clone)]
+pub struct ConfigSet {
+    pub key: String,
+    pub value: String,
+    #[clap(name = "--location")]
+    pub location: Option<String>,
+    #[clap(name = "--json")]
+    pub json: Option<String>,
+    #[clap(name = "--global")]
+    pub global: Option<String>,
+}
+
 
 /// Install sub command
 ///

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::env;
 use std::path::PathBuf;
 use async_trait::async_trait;
@@ -39,8 +39,8 @@ pub fn determine_config_file_location() -> PathBuf {
     }
 }
 
-fn parse_config(conf: String) -> HashMap<String, Option<String>> {
-    let mut config_map = HashMap::new();
+pub fn parse_config(conf: String) -> BTreeMap<String, Option<String>> {
+    let mut config_map = BTreeMap::new();
     let lines = conf.split("\n");
     for line in lines {
         let parts = line.split("=");
@@ -71,7 +71,7 @@ impl ConfigReader {
 #[async_trait]
 impl Pipe<NpmConfig> for ConfigReader {
     async fn run(&mut self) -> Result<NpmConfig, ExecutionError> {
-        let conf = read_config_file();
+        let conf = read_config_file(determine_config_file_location());
         match conf {
             Ok(conf) => Ok(conf),
             Err(e) => Err(ExecutionError::ConfigError(e.to_string())),
@@ -79,8 +79,7 @@ impl Pipe<NpmConfig> for ConfigReader {
     }
 }
 
-pub fn read_config_file() -> Result<NpmConfig, std::io::Error> {
-    let config_file = determine_config_file_location();
+pub fn read_config_file(config_file: PathBuf) -> Result<NpmConfig, std::io::Error> {
     let result_conf_read = std::fs::read_to_string(&config_file);
     match result_conf_read {
         Ok(conf) => {
@@ -91,7 +90,7 @@ pub fn read_config_file() -> Result<NpmConfig, std::io::Error> {
         Err(e) => {
             if e.kind() == std::io::ErrorKind::NotFound {
                 std::fs::File::create(&config_file)?;
-                return Ok(NpmConfig::new(HashMap::new()));
+                return Ok(NpmConfig::new(BTreeMap::new()));
             }
             Err(e)
         }
