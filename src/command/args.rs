@@ -134,8 +134,8 @@ pub struct ConfigGet {
 
 #[derive(Debug, Parser, Clone)]
 pub struct ConfigList {
-    #[clap(name = "json", default_missing_value="true", long)]
-    pub json: Option<String>,
+    #[clap(name = "json", default_missing_value="true", long, num_args=0)]
+    pub json: Option<bool>,
 }
 
 #[derive(Debug, Parser, Clone)]

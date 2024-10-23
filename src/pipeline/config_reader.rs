@@ -43,6 +43,9 @@ pub fn parse_config(conf: String) -> BTreeMap<String, Option<String>> {
     let mut config_map = BTreeMap::new();
     let lines = conf.split("\n");
     for line in lines {
+        if line.trim().is_empty() {
+            continue;
+        }
         let parts = line.split("=");
         let mut parts_iter = parts.into_iter();
 
@@ -51,8 +54,8 @@ pub fn parse_config(conf: String) -> BTreeMap<String, Option<String>> {
             continue;
         }
 
-        let key = parts_iter.next().unwrap();
-        let value = parts_iter.next();
+        let key = parts_iter.next().unwrap().trim();
+        let value = parts_iter.next().map(|s| s.trim());
         config_map.insert(key.to_string(), value.map(|s| s.to_string()));
     }
     config_map

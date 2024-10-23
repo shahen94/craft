@@ -1171,8 +1171,11 @@ impl NpmConfig {
             let conf = parse_config(read_conf_string);
 
             if self.json {
-                println!("{{")
+                let serialized_json = serde_json::to_string_pretty(&conf).unwrap();
+                println!("{}", serialized_json);
+                return Ok(());
             }
+
 
             for (key, value) in conf {
                 if key.is_empty() {
@@ -1180,29 +1183,21 @@ impl NpmConfig {
                 }
                 match value {
                     Some(v) => {
-                        if self.json {
-                            println!("\"{}\": \"{}\",", key, v);
-                        } else {
                             println!("{}={}", key, v);
-                        }
                     }
                     None => {
-                        if self.json {
-                            println!("\"{}\": \"\",", key);
-                        } else {
                             println!("{}=", key);
                         }
                     }
-                }
             }
         }
         Ok(())
     }
 
-    pub fn switch_json(&mut self, json_val: Option<String>) {
+    pub fn switch_json(&mut self, json_val: Option<bool>) {
         if json_val.is_none() {
             return;
         }
-        self.json = Self::parse_bool(false, &json_val);
+        self.json = json_val.unwrap();
     }
 }
