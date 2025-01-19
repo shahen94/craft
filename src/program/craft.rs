@@ -2,6 +2,7 @@ use crate::actors::{ExecActor, PackageType, PreprocessDependencyInstall, RunActo
 use crate::command::{ConfigSubCommand, ProgramDesire};
 use crate::contracts::{Logger, Pipe};
 use crate::logger::CraftLogger;
+use crate::pipeline::ConfigReader;
 use crate::{
     actors::{CacheCleanActor, InstallActor},
     command::{Command, SubCommand},
@@ -13,8 +14,6 @@ use std::{
     sync::mpsc::Receiver,
     thread::{self, JoinHandle},
 };
-use crate::pipeline::ConfigReader;
-use crate::ui::init_logging;
 
 pub struct Program;
 
@@ -105,31 +104,31 @@ impl Program {
                 ExecActor::new(e.command, e.args).start().await?;
 
                 Ok(())
-            },
+            }
             SubCommand::Config(c) => {
                 UIProgress::default();
                 match c {
                     ConfigSubCommand::Set(s) => {
-                        log::info!("{}",format!("Setting configuration: {:?}", s));
+                        log::info!("{}", format!("Setting configuration: {:?}", s));
                         let mut conf = ConfigReader::new().run().await?;
                         conf.switch_global(s.global);
                         conf.switch_location(s.location);
                         conf.set_value(&s.key, Some(s.value))?;
                         Ok(())
-                    },
-                    ConfigSubCommand::Get(g)=>{
+                    }
+                    ConfigSubCommand::Get(g) => {
                         let mut conf = ConfigReader::new().run().await?;
                         conf.get_value(g.key)?;
                         Ok(())
-                    },
+                    }
                     ConfigSubCommand::List(l) => {
                         let mut conf = ConfigReader::new().run().await?;
                         conf.switch_json(l.json);
                         conf.list_value()?;
                         Ok(())
-                    },
+                    }
                     _ => {
-                        CraftLogger::info(format!("Reading configuration"));
+                        CraftLogger::info("Reading configuration".to_string());
                         Ok(())
                     }
                 }

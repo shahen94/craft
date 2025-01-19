@@ -134,7 +134,7 @@ pub struct ConfigGet {
 
 #[derive(Debug, Parser, Clone)]
 pub struct ConfigList {
-    #[clap(name = "json", default_missing_value="true", long, num_args=0)]
+    #[clap(name = "json", default_missing_value = "true", long, num_args = 0)]
     pub json: Option<bool>,
 }
 
@@ -149,7 +149,6 @@ pub struct ConfigSet {
     #[clap(name = "--global")]
     pub global: Option<String>,
 }
-
 
 /// Install sub command
 ///

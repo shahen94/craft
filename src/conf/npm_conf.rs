@@ -1,11 +1,10 @@
-use std::cmp::PartialEq;
-use std::collections::{BTreeMap};
-use std::string::ToString;
-use chrono::NaiveDate;
-use tokio::fs;
 use crate::conf::constants::*;
 use crate::errors::ExecutionError;
-use crate::pipeline::{determine_config_file_location, parse_config, read_config_file};
+use crate::pipeline::{determine_config_file_location, parse_config};
+use chrono::NaiveDate;
+use std::cmp::PartialEq;
+use std::collections::BTreeMap;
+use std::string::ToString;
 
 pub enum Access {
     Public,
@@ -22,7 +21,6 @@ pub enum Depth {
     StringVal(String),
     IntVal(i32),
 }
-
 
 pub enum Include {
     Dev,
@@ -180,17 +178,15 @@ pub struct NpmConfig {
 enum Location {
     User,
     Global,
-    Project
+    Project,
 }
-
 
 enum InstallStrategy {
     Hoisted,
     Nested,
     Shallow,
-    Linked
+    Linked,
 }
-
 
 enum LogLevel {
     Silent,
@@ -203,11 +199,8 @@ enum LogLevel {
     Info,
     Https,
     Silly,
-    None
+    None,
 }
-
-
-
 
 fn create_omit() -> Option<String> {
     if let Ok(e) = std::env::var("NODE_ENV") {
@@ -230,7 +223,6 @@ fn create_no_proxy() -> Option<String> {
 
     None
 }
-
 
 fn create_node_options() -> Option<String> {
     if let Ok(e) = std::env::var("NODE_OPTIONS") {
@@ -260,7 +252,6 @@ fn create_https_proxy_conf() -> Option<String> {
     None
 }
 
-
 fn create_editor() -> String {
     if let Ok(e) = std::env::var("EDITOR") {
         return e;
@@ -269,7 +260,6 @@ fn create_editor() -> String {
     if let Ok(e) = std::env::var("VISUAL") {
         return e;
     }
-
 
     if cfg!(target_os = "windows") {
         "%SYSTEMROOT%\notepad.exe".to_string()
@@ -287,7 +277,6 @@ fn create_browser_env() -> String {
         "xdg-open".into()
     }
 }
-
 
 fn create_cache_dir() -> String {
     if cfg!(target_os = "windows") {
@@ -321,7 +310,6 @@ fn create_unicode() -> bool {
     !cfg!(target_os = "windows")
 }
 
-
 fn create_viewer() -> String {
     if cfg!(target_os = "windows") {
         "browser".to_string()
@@ -333,7 +321,6 @@ fn create_viewer() -> String {
 impl NpmConfig {
     // https://docs.npmjs.com/cli/v10/using-npm/config
     pub fn new(conf: BTreeMap<String, Option<String>>) -> Self {
-
         let npm_config_defaults = NpmConfig {
             _auth: None,
             access: Access::Public,
@@ -479,7 +466,6 @@ impl NpmConfig {
             key: None,
         };
 
-
         let mut conf_struct = npm_config_defaults;
 
         Self::determine_config(&mut conf_struct, conf);
@@ -497,7 +483,7 @@ impl NpmConfig {
         match value.clone().unwrap().as_str() {
             "true" => true,
             "false" => false,
-            _ => default_value
+            _ => default_value,
         }
     }
 
@@ -514,7 +500,7 @@ impl NpmConfig {
         }
         match NaiveDate::parse_from_str(value.clone().unwrap().as_str(), "%Y-%m-%d") {
             Ok(date) => Some(date),
-            Err(_) => default_value
+            Err(_) => default_value,
         }
     }
 
@@ -544,7 +530,7 @@ impl NpmConfig {
                     match v.as_str() {
                         "public" => conf_struct.access = Access::Public,
                         "restricted" => conf_struct.access = Access::Restricted,
-                        _ => conf_struct.access = Access::Null
+                        _ => conf_struct.access = Access::Null,
                     }
                 }
             }
@@ -552,7 +538,8 @@ impl NpmConfig {
                 conf_struct.all = Self::parse_bool(conf_struct.all, value);
             }
             ALLOW_SAME_VERSION => {
-                conf_struct.allow_same_version = Self::parse_bool(conf_struct.allow_same_version, value);
+                conf_struct.allow_same_version =
+                    Self::parse_bool(conf_struct.allow_same_version, value);
             }
             AUDIT => {
                 conf_struct.audit = Self::parse_bool(conf_struct.audit, value);
@@ -560,13 +547,11 @@ impl NpmConfig {
             AUDIT_LEVEL => {
                 conf_struct.audit_level = Self::parse_string(&conf_struct.audit_level, value);
             }
-            AUTH_TYPE => {
-                match value.clone().unwrap().as_str() {
-                    "web" => conf_struct.auth_type = AuthType::Web,
-                    "legacy" => conf_struct.auth_type = AuthType::Legacy,
-                    _ => conf_struct.auth_type = AuthType::Web
-                }
-            }
+            AUTH_TYPE => match value.clone().unwrap().as_str() {
+                "web" => conf_struct.auth_type = AuthType::Web,
+                "legacy" => conf_struct.auth_type = AuthType::Legacy,
+                _ => conf_struct.auth_type = AuthType::Web,
+            },
             BEFORE => {
                 conf_struct.before = Self::parse_date(conf_struct.before, value);
             }
@@ -616,11 +601,12 @@ impl NpmConfig {
                 conf_struct.diff = Self::parse_set_string(&conf_struct.diff, value);
             }
             DIFF_DST_PREFIX => {
-                conf_struct.diff_dst_prefix = Self::parse_set_string(&conf_struct
-                    .diff_dst_prefix, value);
+                conf_struct.diff_dst_prefix =
+                    Self::parse_set_string(&conf_struct.diff_dst_prefix, value);
             }
             DIFF_IGNORE_ALL_SPACE => {
-                conf_struct.diff_ignore_all_space = Self::parse_bool(conf_struct.diff_ignore_all_space, value);
+                conf_struct.diff_ignore_all_space =
+                    Self::parse_bool(conf_struct.diff_ignore_all_space, value);
             }
             DIFF_NAME_ONLY => {
                 conf_struct.diff_name_only = Self::parse_bool(conf_struct.diff_name_only, value);
@@ -629,8 +615,8 @@ impl NpmConfig {
                 conf_struct.diff_no_prefix = Self::parse_bool(conf_struct.diff_no_prefix, value);
             }
             DIFF_SRC_PREFIX => {
-                conf_struct.diff_src_prefix = Self::parse_set_string(&conf_struct
-                    .diff_src_prefix, value);
+                conf_struct.diff_src_prefix =
+                    Self::parse_set_string(&conf_struct.diff_src_prefix, value);
             }
             DIFF_TEXT => {
                 conf_struct.diff_text = Self::parse_bool(conf_struct.diff_text, value);
@@ -665,43 +651,45 @@ impl NpmConfig {
                         conf_struct.fetch_retries = val;
                     }
                 }
-            },
+            }
             FETCH_RETRY_FACTOR => {
                 if let Some(val) = value {
                     if let Ok(val) = val.parse::<i32>() {
                         conf_struct.fetch_retry_factor = val;
                     }
                 }
-            },
+            }
             FETCH_RETRY_MAXTIMEOUT => {
                 if let Some(val) = value {
                     if let Ok(val) = val.parse::<i32>() {
                         conf_struct.fetch_retry_maxtimeout = val;
                     }
                 }
-            },
+            }
             FETCH_RETRY_MINTIMEOUT => {
                 if let Some(val) = value {
                     if let Ok(val) = val.parse::<i32>() {
                         conf_struct.fetch_retry_mintimeout = val;
                     }
                 }
-            },
+            }
             FETCH_TIMEOUT => {
                 if let Some(val) = value {
                     if let Ok(val) = val.parse::<i32>() {
                         conf_struct.fetch_timeout = val;
                     }
                 }
-            },
+            }
             FORCE => {
                 conf_struct.force = Self::parse_bool(conf_struct.force, value);
             }
             FOREGROUND_SCRIPTS => {
-                conf_struct.foreground_scripts = Self::parse_bool(conf_struct.foreground_scripts, value);
+                conf_struct.foreground_scripts =
+                    Self::parse_bool(conf_struct.foreground_scripts, value);
             }
             FORMAT_PACKAGE_LOCK => {
-                conf_struct.format_package_lock = Self::parse_bool(conf_struct.format_package_lock, value);
+                conf_struct.format_package_lock =
+                    Self::parse_bool(conf_struct.format_package_lock, value);
             }
             FUND => {
                 conf_struct.fund = Self::parse_bool(conf_struct.fund, value);
@@ -737,24 +725,28 @@ impl NpmConfig {
                         "optional" => conf_struct.include = Some(Include::Optional),
                         "prod" => conf_struct.include = Some(Include::Prod),
                         "peer" => conf_struct.include = Some(Include::Peer),
-                        _ => conf_struct.include = None
+                        _ => conf_struct.include = None,
                     }
                 }
-            },
+            }
             INCLUDE_STAGED => {
                 conf_struct.include_staged = Self::parse_bool(conf_struct.include_staged, value);
             }
             INCLUDE_WORKSPACE_ROOT => {
-                conf_struct.include_workspace_root = Self::parse_bool(conf_struct.include_workspace_root, value);
+                conf_struct.include_workspace_root =
+                    Self::parse_bool(conf_struct.include_workspace_root, value);
             }
             INIT_AUTHOR_EMAIL => {
-                conf_struct.init_author_email = Self::parse_string(&conf_struct.init_author_email, value);
+                conf_struct.init_author_email =
+                    Self::parse_string(&conf_struct.init_author_email, value);
             }
             INIT_AUTHOR_NAME => {
-                conf_struct.init_author_name = Self::parse_string(&conf_struct.init_author_name, value);
+                conf_struct.init_author_name =
+                    Self::parse_string(&conf_struct.init_author_name, value);
             }
             INIT_AUTHOR_URL => {
-                conf_struct.init_author_url = Self::parse_string(&conf_struct.init_author_url, value);
+                conf_struct.init_author_url =
+                    Self::parse_string(&conf_struct.init_author_url, value);
             }
             INIT_LICENSE => {
                 conf_struct.init_license = Self::parse_set_string(&conf_struct.init_license, value);
@@ -763,8 +755,7 @@ impl NpmConfig {
                 conf_struct.init_module = Self::parse_set_string(&conf_struct.init_module, value);
             }
             INIT_VERSION => {
-                conf_struct.init_version = Self::parse_set_string(&conf_struct.init_version,
-                                                                  value);
+                conf_struct.init_version = Self::parse_set_string(&conf_struct.init_version, value);
             }
             INSTALL_LINKS => {
                 conf_struct.install_links = Self::parse_bool(conf_struct.install_links, value);
@@ -776,7 +767,7 @@ impl NpmConfig {
                         "nested" => conf_struct.install_strategy = InstallStrategy::Nested,
                         "shallow" => conf_struct.install_strategy = InstallStrategy::Shallow,
                         "linked" => conf_struct.install_strategy = InstallStrategy::Linked,
-                        _ => conf_struct.install_strategy = InstallStrategy::Hoisted
+                        _ => conf_struct.install_strategy = InstallStrategy::Hoisted,
                     }
                 }
             }
@@ -784,7 +775,8 @@ impl NpmConfig {
                 conf_struct.json = Self::parse_bool(conf_struct.json, value);
             }
             LEGACY_PEER_DEPS => {
-                conf_struct.legacy_peer_deps = Self::parse_bool(conf_struct.legacy_peer_deps, value);
+                conf_struct.legacy_peer_deps =
+                    Self::parse_bool(conf_struct.legacy_peer_deps, value);
             }
             LIBC => {
                 conf_struct.libc = Self::parse_string(&conf_struct.libc, value);
@@ -793,8 +785,7 @@ impl NpmConfig {
                 conf_struct.link = Self::parse_bool(conf_struct.link, value);
             }
             LOCAL_ADDRESS => {
-                conf_struct.local_address = Self::parse_string(&conf_struct.local_address,
-                                                               value);
+                conf_struct.local_address = Self::parse_string(&conf_struct.local_address, value);
             }
             LOCATION => {
                 if let Some(v) = value {
@@ -802,7 +793,7 @@ impl NpmConfig {
                         "user" => conf_struct.location = Location::User,
                         "global" => conf_struct.location = Location::Global,
                         "project" => conf_struct.location = Location::Project,
-                        _ => conf_struct.location = Location::User
+                        _ => conf_struct.location = Location::User,
                     }
                 }
             }
@@ -827,7 +818,7 @@ impl NpmConfig {
                         "https" => conf_struct.log_level = LogLevel::Https,
                         "silly" => conf_struct.log_level = LogLevel::Silly,
                         "none" => conf_struct.log_level = LogLevel::None,
-                        _ => conf_struct.log_level = LogLevel::Notice
+                        _ => conf_struct.log_level = LogLevel::Notice,
                     }
                 }
             }
@@ -867,7 +858,8 @@ impl NpmConfig {
                 conf_struct.omit = Self::parse_string(&conf_struct.omit, value);
             }
             OMIT_LOCKFILE_REGISTRY_RESOLVED => {
-                conf_struct.omit_lockfile_registry_resolved = Self::parse_bool(conf_struct.omit_lockfile_registry_resolved, value);
+                conf_struct.omit_lockfile_registry_resolved =
+                    Self::parse_bool(conf_struct.omit_lockfile_registry_resolved, value);
             }
             OS => {
                 conf_struct.os = Self::parse_string(&conf_struct.os, value);
@@ -876,7 +868,8 @@ impl NpmConfig {
                 conf_struct.otp = Self::parse_string(&conf_struct.otp, value);
             }
             PACK_DESTINATION => {
-                conf_struct.pack_destination = Self::parse_string(&conf_struct.pack_destination, value);
+                conf_struct.pack_destination =
+                    Self::parse_string(&conf_struct.pack_destination, value);
             }
             PACKAGE => {
                 conf_struct.package = Self::parse_set_string(&conf_struct.package, value);
@@ -885,7 +878,8 @@ impl NpmConfig {
                 conf_struct.package_lock = Self::parse_bool(conf_struct.package_lock, value);
             }
             PACKAGE_LOCK_ONLY => {
-                conf_struct.package_lock_only = Self::parse_bool(conf_struct.package_lock_only, value);
+                conf_struct.package_lock_only =
+                    Self::parse_bool(conf_struct.package_lock_only, value);
             }
             PARSEABLE => {
                 conf_struct.parseable = Self::parse_bool(conf_struct.parseable, value);
@@ -912,7 +906,8 @@ impl NpmConfig {
                 conf_struct.provenance = Self::parse_bool(conf_struct.provenance, value);
             }
             PROVENANCE_FILE => {
-                conf_struct.provenance_file = Self::parse_string(&conf_struct.provenance_file, value);
+                conf_struct.provenance_file =
+                    Self::parse_string(&conf_struct.provenance_file, value);
             }
             PROXY => {
                 conf_struct.proxy = Self::parse_string(&conf_struct.proxy, value);
@@ -927,7 +922,8 @@ impl NpmConfig {
                 conf_struct.registry = Self::parse_set_string(&conf_struct.registry, value);
             }
             REPLACE_REGISTRY_HOST => {
-                conf_struct.replace_registry_host = Self::parse_set_string(&conf_struct.replace_registry_host, value);
+                conf_struct.replace_registry_host =
+                    Self::parse_set_string(&conf_struct.replace_registry_host, value);
             }
             SAVE => {
                 conf_struct.save = Self::parse_bool(conf_struct.save, value);
@@ -995,7 +991,8 @@ impl NpmConfig {
                 conf_struct.sign_git_tag = Self::parse_bool(conf_struct.sign_git_tag, value);
             }
             STRICT_PEER_DEPS => {
-                conf_struct.strict_peer_deps = Self::parse_bool(conf_struct.strict_peer_deps, value);
+                conf_struct.strict_peer_deps =
+                    Self::parse_bool(conf_struct.strict_peer_deps, value);
             }
             STRICT_SSL => {
                 conf_struct.strict_ssl = Self::parse_bool(conf_struct.strict_ssl, value);
@@ -1004,7 +1001,8 @@ impl NpmConfig {
                 conf_struct.tag = Self::parse_set_string(&conf_struct.tag, value);
             }
             TAG_VERSION_PREFIX => {
-                conf_struct.tag_version_prefix = Self::parse_set_string(&conf_struct.tag_version_prefix, value);
+                conf_struct.tag_version_prefix =
+                    Self::parse_set_string(&conf_struct.tag_version_prefix, value);
             }
             TIMING => {
                 conf_struct.timing = Self::parse_bool(conf_struct.timing, value);
@@ -1030,7 +1028,7 @@ impl NpmConfig {
             }
             USER_CONFIG => {
                 conf_struct.user_config = Self::parse_set_string(&conf_struct.user_config, value);
-            },
+            }
             VERSION => {
                 conf_struct.version = Self::parse_bool(conf_struct.version, value);
             }
@@ -1054,7 +1052,8 @@ impl NpmConfig {
                 conf_struct.workspaces = Some(Self::parse_bool(false, value));
             }
             WORKSPACES_UPDATE => {
-                conf_struct.workspaces_update = Self::parse_bool(conf_struct.workspaces_update, value);
+                conf_struct.workspaces_update =
+                    Self::parse_bool(conf_struct.workspaces_update, value);
             }
             YES => {
                 conf_struct.yes = Some(Self::parse_bool(false, value));
@@ -1100,7 +1099,7 @@ impl NpmConfig {
             "user" => self.location = Location::User,
             "global" => self.location = Location::Global,
             "project" => self.location = Location::Project,
-            _ => self.location = Location::User
+            _ => self.location = Location::User,
         }
     }
 
@@ -1134,10 +1133,10 @@ impl NpmConfig {
             let mut read_conf = parse_config(conf_content);
 
             match value {
-                Some(v)=>{
+                Some(v) => {
                     read_conf.insert(key.to_string(), Some(v));
                 }
-                None=>{
+                None => {
                     read_conf.insert(key.to_string(), None);
                 }
             }
@@ -1147,9 +1146,10 @@ impl NpmConfig {
         Ok(())
     }
 
-    pub fn get_value(&mut self, key: String)  -> Result<(), ExecutionError> {
+    pub fn get_value(&mut self, key: String) -> Result<(), ExecutionError> {
         if self.location == Location::User {
-            let read_conf_string = std::fs::read_to_string(determine_config_file_location()).unwrap();
+            let read_conf_string =
+                std::fs::read_to_string(determine_config_file_location()).unwrap();
             let conf = parse_config(read_conf_string);
             let retrieved_kv = conf.get(&key);
             match retrieved_kv {
@@ -1164,10 +1164,10 @@ impl NpmConfig {
         Ok(())
     }
 
-
     pub fn list_value(&self) -> Result<(), ExecutionError> {
         if self.location == Location::User {
-            let read_conf_string = std::fs::read_to_string(determine_config_file_location()).unwrap();
+            let read_conf_string =
+                std::fs::read_to_string(determine_config_file_location()).unwrap();
             let conf = parse_config(read_conf_string);
 
             if self.json {
@@ -1176,19 +1176,18 @@ impl NpmConfig {
                 return Ok(());
             }
 
-
             for (key, value) in conf {
                 if key.is_empty() {
                     continue;
                 }
                 match value {
                     Some(v) => {
-                            println!("{}={}", key, v);
+                        println!("{}={}", key, v);
                     }
                     None => {
-                            println!("{}=", key);
-                        }
+                        println!("{}=", key);
                     }
+                }
             }
         }
         Ok(())

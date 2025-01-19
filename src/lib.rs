@@ -15,6 +15,6 @@ mod pipeline;
 
 pub use package::Package;
 pub mod command;
+mod conf;
 mod lockfile;
 pub mod program;
-mod conf;

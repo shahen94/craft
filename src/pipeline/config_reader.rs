@@ -1,11 +1,11 @@
-use std::collections::{BTreeMap, HashMap};
-use std::env;
-use std::path::PathBuf;
-use async_trait::async_trait;
-use homedir::my_home;
 use crate::conf::NpmConfig;
 use crate::contracts::Pipe;
 use crate::errors::ExecutionError;
+use async_trait::async_trait;
+use homedir::my_home;
+use std::collections::BTreeMap;
+use std::env;
+use std::path::PathBuf;
 
 const CONFIG_PNPM: &str = "pnpm/rc";
 
@@ -89,7 +89,7 @@ pub fn read_config_file(config_file: PathBuf) -> Result<NpmConfig, std::io::Erro
             let read_conf = parse_config(conf);
             let npm_conf = NpmConfig::new(read_conf);
             Ok(npm_conf)
-        },
+        }
         Err(e) => {
             if e.kind() == std::io::ErrorKind::NotFound {
                 std::fs::File::create(&config_file)?;

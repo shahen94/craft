@@ -9,6 +9,7 @@ use crate::actors::peer_resolver::PeerResolver;
 use crate::cache::PackagesCache;
 use crate::contracts::{Lockfile, PersistentCache};
 use crate::lockfile::lock_file_actor::LockFileActor;
+use crate::pipeline::ConfigReader;
 use crate::{
     contracts::{Actor, Pipe, PipeArtifact, Progress, ProgressAction},
     errors::ExecutionError,
@@ -16,7 +17,6 @@ use crate::{
     pipeline::{DownloaderPipe, ExtractorPipe, LinkerPipe, ResolverPipe},
     ui::UIProgress,
 };
-use crate::pipeline::ConfigReader;
 
 #[derive(Debug, Clone)]
 pub enum PackageType {
@@ -98,8 +98,6 @@ impl Actor<PipeResult> for InstallActor {
 
         // ─── Read configuration ─────────────────────────
         let _conf = ConfigReader::new().run().await?;
-
-
 
         // ─── Start Resolving ─────────────────────────
 
