@@ -5,11 +5,12 @@ use async_trait::async_trait;
 use homedir::my_home;
 use std::collections::BTreeMap;
 use std::env;
+use std::env::current_dir;
 use std::path::PathBuf;
 
 const CONFIG_PNPM: &str = "pnpm/rc";
 
-pub fn determine_config_file_location() -> PathBuf {
+pub fn determine_global_config_file_location() -> PathBuf {
     if env::var("$XDG_CONFIG_HOME").is_ok() {
         let mut config_dir = PathBuf::from(env::var("$XDG_CONFIG_HOME").unwrap());
         config_dir.push(CONFIG_PNPM);
@@ -74,7 +75,10 @@ impl ConfigReader {
 #[async_trait]
 impl Pipe<NpmConfig> for ConfigReader {
     async fn run(&mut self) -> Result<NpmConfig, ExecutionError> {
-        let conf = read_config_file(determine_config_file_location());
+        let conf = read_config_file(determine_global_config_file_location());
+        if let Ok(cwd) = current_dir() {
+            let _local_conf = read_config_file(cwd);
+        }
         match conf {
             Ok(conf) => Ok(conf),
             Err(e) => Err(ExecutionError::ConfigError(e.to_string())),

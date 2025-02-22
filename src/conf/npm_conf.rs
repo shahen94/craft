@@ -1,27 +1,31 @@
 use crate::conf::constants::*;
 use crate::errors::ExecutionError;
-use crate::pipeline::{determine_config_file_location, parse_config};
+use crate::pipeline::{determine_global_config_file_location, parse_config};
 use chrono::NaiveDate;
 use std::cmp::PartialEq;
 use std::collections::BTreeMap;
 use std::string::ToString;
 
+#[derive(Debug)]
 pub enum Access {
     Public,
     Restricted,
     Null,
 }
 
+#[derive(Debug)]
 pub enum AuthType {
     Web,
     Legacy,
 }
 
+#[derive(Debug)]
 pub enum Depth {
     StringVal(String),
     IntVal(i32),
 }
 
+#[derive(Debug)]
 pub enum Include {
     Dev,
     Optional,
@@ -29,6 +33,7 @@ pub enum Include {
     Peer,
 }
 
+#[derive(Debug)]
 pub struct NpmConfig {
     pub _auth: Option<String>,
     pub access: Access,
@@ -96,9 +101,9 @@ pub struct NpmConfig {
     pub libc: Option<String>,
     pub link: bool,
     pub local_address: Option<String>,
-    pub location: Location,
+    pub _location: Location,
     pub lockfile_version: i32,
-    pub log_level: LogLevel,
+    pub _log_level: LogLevel,
     pub logs_dir: String,
     pub logs_max: i32,
     pub long: bool,
@@ -171,24 +176,26 @@ pub struct NpmConfig {
     pub cache_max: i32,
     pub cache_min: i32,
     pub cert: Option<String>,
-    pub key: Option<String>,
+    pub _key: Option<String>,
 }
 
-#[derive(PartialEq)]
-enum Location {
+#[derive(PartialEq, Debug)]
+pub enum Location {
     User,
     Global,
     Project,
 }
 
-enum InstallStrategy {
+#[derive(Debug)]
+pub enum InstallStrategy {
     Hoisted,
     Nested,
     Shallow,
     Linked,
 }
 
-enum LogLevel {
+#[derive(Debug)]
+pub enum LogLevel {
     Silent,
     Error,
     Warn,
@@ -389,8 +396,8 @@ impl NpmConfig {
             link: false,
             local_address: None,
             lockfile_version: 9,
-            location: Location::User,
-            log_level: LogLevel::Notice,
+            _location: Location::User,
+            _log_level: LogLevel::Notice,
             logs_dir: "_logs".into(),
             logs_max: 10,
             long: false,
@@ -463,13 +470,14 @@ impl NpmConfig {
             cache_max: 20000000,
             cache_min: 0,
             cert: None,
-            key: None,
+            _key: None,
         };
 
         let mut conf_struct = npm_config_defaults;
 
         Self::determine_config(&mut conf_struct, conf);
 
+        println!("{:?}", conf_struct);
         conf_struct
     }
 
@@ -790,10 +798,10 @@ impl NpmConfig {
             LOCATION => {
                 if let Some(v) = value {
                     match v.as_str() {
-                        "user" => conf_struct.location = Location::User,
-                        "global" => conf_struct.location = Location::Global,
-                        "project" => conf_struct.location = Location::Project,
-                        _ => conf_struct.location = Location::User,
+                        "user" => conf_struct._location = Location::User,
+                        "global" => conf_struct._location = Location::Global,
+                        "project" => conf_struct._location = Location::Project,
+                        _ => conf_struct._location = Location::User,
                     }
                 }
             }
@@ -807,18 +815,18 @@ impl NpmConfig {
             LOGLEVEL => {
                 if let Some(v) = value {
                     match v.as_str() {
-                        "silent" => conf_struct.log_level = LogLevel::Silent,
-                        "error" => conf_struct.log_level = LogLevel::Error,
-                        "warn" => conf_struct.log_level = LogLevel::Warn,
-                        "notice" => conf_struct.log_level = LogLevel::Notice,
-                        "verbose" => conf_struct.log_level = LogLevel::Verbose,
-                        "http" => conf_struct.log_level = LogLevel::Http,
-                        "timing" => conf_struct.log_level = LogLevel::Timing,
-                        "info" => conf_struct.log_level = LogLevel::Info,
-                        "https" => conf_struct.log_level = LogLevel::Https,
-                        "silly" => conf_struct.log_level = LogLevel::Silly,
-                        "none" => conf_struct.log_level = LogLevel::None,
-                        _ => conf_struct.log_level = LogLevel::Notice,
+                        "silent" => conf_struct._log_level = LogLevel::Silent,
+                        "error" => conf_struct._log_level = LogLevel::Error,
+                        "warn" => conf_struct._log_level = LogLevel::Warn,
+                        "notice" => conf_struct._log_level = LogLevel::Notice,
+                        "verbose" => conf_struct._log_level = LogLevel::Verbose,
+                        "http" => conf_struct._log_level = LogLevel::Http,
+                        "timing" => conf_struct._log_level = LogLevel::Timing,
+                        "info" => conf_struct._log_level = LogLevel::Info,
+                        "https" => conf_struct._log_level = LogLevel::Https,
+                        "silly" => conf_struct._log_level = LogLevel::Silly,
+                        "none" => conf_struct._log_level = LogLevel::None,
+                        _ => conf_struct._log_level = LogLevel::Notice,
                     }
                 }
             }
@@ -1096,10 +1104,10 @@ impl NpmConfig {
             return;
         }
         match location_val.unwrap().as_str() {
-            "user" => self.location = Location::User,
-            "global" => self.location = Location::Global,
-            "project" => self.location = Location::Project,
-            _ => self.location = Location::User,
+            "user" => self._location = Location::User,
+            "global" => self._location = Location::Global,
+            "project" => self._location = Location::Project,
+            _ => self._location = Location::User,
         }
     }
 
@@ -1123,12 +1131,12 @@ impl NpmConfig {
 
     pub fn set_value(&mut self, key: &str, value: Option<String>) -> Result<(), ExecutionError> {
         Self::handle_key_processing(self, key.to_string(), &value);
-        if self.location == Location::Global {
+        if self._location == Location::Global {
             self.global = true;
         }
 
-        if self.location == Location::User {
-            let conf_file = determine_config_file_location();
+        if self._location == Location::User {
+            let conf_file = determine_global_config_file_location();
             let conf_content = std::fs::read_to_string(&conf_file).unwrap();
             let mut read_conf = parse_config(conf_content);
 
@@ -1147,9 +1155,9 @@ impl NpmConfig {
     }
 
     pub fn get_value(&mut self, key: String) -> Result<(), ExecutionError> {
-        if self.location == Location::User {
+        if self._location == Location::User {
             let read_conf_string =
-                std::fs::read_to_string(determine_config_file_location()).unwrap();
+                std::fs::read_to_string(determine_global_config_file_location()).unwrap();
             let conf = parse_config(read_conf_string);
             let retrieved_kv = conf.get(&key);
             match retrieved_kv {
@@ -1165,9 +1173,9 @@ impl NpmConfig {
     }
 
     pub fn list_value(&self) -> Result<(), ExecutionError> {
-        if self.location == Location::User {
+        if self._location == Location::User {
             let read_conf_string =
-                std::fs::read_to_string(determine_config_file_location()).unwrap();
+                std::fs::read_to_string(determine_global_config_file_location()).unwrap();
             let conf = parse_config(read_conf_string);
 
             if self.json {
