@@ -484,13 +484,13 @@ fn ordered_map<S>(
 where
     S: serde::Serializer,
 {
-    return match value {
-        None => return serializer.serialize_none(),
+    match value {
+        None => serializer.serialize_none(),
         Some(v) => {
             let ordered: BTreeMap<_, _> = v.iter().collect();
             ordered.serialize(serializer)
         }
-    };
+    }
 }
 
 impl Default for LockfileStructure {
