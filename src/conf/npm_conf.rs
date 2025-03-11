@@ -1,3 +1,4 @@
+#[allow(clippy::all)]
 use crate::conf::constants::*;
 use crate::errors::ExecutionError;
 use crate::pipeline::{determine_global_config_file_location, parse_config};
@@ -20,6 +21,7 @@ pub enum AuthType {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum Depth {
     StringVal(String),
     IntVal(i32),
