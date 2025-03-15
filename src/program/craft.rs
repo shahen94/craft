@@ -1,7 +1,8 @@
 use crate::actors::{ExecActor, PackageType, PreprocessDependencyInstall, RunActor};
-use crate::command::ProgramDesire;
-use crate::contracts::Logger;
+use crate::command::{ConfigSubCommand, ProgramDesire};
+use crate::contracts::{Logger, Pipe};
 use crate::logger::CraftLogger;
+use crate::pipeline::ConfigReader;
 use crate::{
     actors::{CacheCleanActor, InstallActor},
     command::{Command, SubCommand},
@@ -34,8 +35,7 @@ impl Program {
                     let program_desire: ProgramDesire = args_install.into();
                     let deps_to_install = PreprocessDependencyInstall::new(program_desire)
                         .run()
-                        .await
-                        .unwrap();
+                        .await?;
 
                     let err = InstallActor::new(deps_to_install).start().await;
                     if let Err(err) = err {
@@ -65,7 +65,7 @@ impl Program {
                     })
                     .collect::<Vec<PackageType>>();
 
-                InstallActor::new(packages).start().await.unwrap();
+                InstallActor::new(packages).start().await?;
 
                 Ok(())
             }
@@ -104,6 +104,34 @@ impl Program {
                 ExecActor::new(e.command, e.args).start().await?;
 
                 Ok(())
+            }
+            SubCommand::Config(c) => {
+                UIProgress::default();
+                match c {
+                    ConfigSubCommand::Set(s) => {
+                        log::info!("{}", format!("Setting configuration: {:?}", s));
+                        let mut conf = ConfigReader::new().run().await?;
+                        conf.switch_global(s.global);
+                        conf.switch_location(s.location);
+                        conf.set_value(&s.key, Some(s.value))?;
+                        Ok(())
+                    }
+                    ConfigSubCommand::Get(g) => {
+                        let mut conf = ConfigReader::new().run().await?;
+                        conf.get_value(g.key)?;
+                        Ok(())
+                    }
+                    ConfigSubCommand::List(l) => {
+                        let mut conf = ConfigReader::new().run().await?;
+                        conf.switch_json(l.json);
+                        conf.list_value()?;
+                        Ok(())
+                    }
+                    _ => {
+                        CraftLogger::info("Reading configuration".to_string());
+                        Ok(())
+                    }
+                }
             }
         }
     }

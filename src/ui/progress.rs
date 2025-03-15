@@ -51,7 +51,10 @@ pub fn init_logging() -> Logger {
 // ─────────────────────────────────────────────────────────────────────────────
 
 impl Default for UIProgress {
+    // Init the logger and the progress bars
     fn default() -> Self {
+        let logger = init_logging();
+        let level = logger.filter();
         let multi_pb = MultiProgress::new();
         let resolving_spinner = multi_pb.add(ProgressBar::new_spinner());
         let downloading_spinner = multi_pb.add(ProgressBar::new_spinner());
@@ -62,8 +65,7 @@ impl Default for UIProgress {
             .unwrap_or("false".to_string())
             .parse::<bool>()
             .unwrap_or(false);
-        let logger = init_logging();
-        let level = logger.filter();
+
         LogWrapper::new(multi_pb.clone(), logger)
             .try_init()
             .unwrap();

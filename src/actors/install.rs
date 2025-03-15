@@ -9,6 +9,7 @@ use crate::actors::peer_resolver::PeerResolver;
 use crate::cache::PackagesCache;
 use crate::contracts::{Lockfile, PersistentCache};
 use crate::lockfile::lock_file_actor::LockFileActor;
+use crate::pipeline::ConfigReader;
 use crate::{
     contracts::{Actor, Pipe, PipeArtifact, Progress, ProgressAction},
     errors::ExecutionError,
@@ -94,6 +95,9 @@ impl Actor<PipeResult> for InstallActor {
         let mut cache = PackagesCache::default();
         cache.init().await.unwrap();
         let ui_thread = self.start_progress(rx);
+
+        // ─── Read configuration ─────────────────────────
+        let _conf = ConfigReader::new().run().await?;
 
         // ─── Start Resolving ─────────────────────────
 
